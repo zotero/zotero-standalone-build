@@ -1,0 +1,80 @@
+#!/bin/sh
+RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
+CALLDIR=`pwd`
+BUILDDIR=/tmp/zotero-build-$RAN
+SVNPREFIX="https://www.zotero.org/svn/extension/"
+SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
+REV="$2" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
+
+mkdir $BUILDDIR
+mkdir Zotero.app
+chmod 755 Zotero.app
+cp -r Contents Zotero.app
+CONTENTSDIR=`pwd`/Zotero.app/Contents
+
+mkdir $CONTENTSDIR/MacOS
+mkdir $CONTENTSDIR/Frameworks
+ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
+ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
+cp application.ini $CONTENTSDIR/Resources
+
+if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
+URL=${SVNPREFIX}${SVNPATH}/
+
+# If revision not supplied, checkout and use svnversion to get latest revision
+if [ -z $REV ]; then
+	svn co --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
+	cd $BUILDDIR/zotero
+	REV=`svnversion .`
+	cd ..
+	rm -rf $BUILDDIR/zotero
+fi
+
+# Export a clean copy of the tree
+svn export --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
+echo
+
+# Zip chrome into JAR and adjust chrome.manifest
+cd $BUILDDIR/zotero/chrome
+# Checkout failed -- bail
+if [ $? -eq 1 ]; then
+	exit;
+fi
+
+zip -0 -r ../zotero.jar .
+rm -rf $BUILDDIR/zotero/chrome/*
+mv ../zotero.jar .
+cd ..
+
+# Build translators.zip
+if [ -d translators ]; then
+	cd translators
+	mkdir output
+	counter=0;
+	for file in *.js; do
+		newfile=$counter.js;
+		cp "$file" output/$newfile;
+		counter=$(($counter+1))
+	done;
+	cd output
+	zip ../../translators.zip *
+	cd ../..
+	rm -rf translators
+fi
+
+# Build styles.zip with default styles
+if [ -d styles ]; then
+	cd styles
+	for i in *.csl; do
+		svn export https://www.zotero.org/svn/csl/$i;
+	done
+	zip ../styles.zip *
+	cd ..
+	rm -rf styles
+fi
+
+mv $BUILDDIR/zotero/* $CONTENTSDIR/Resources
+cd $CALLDIR
+cp prefs.js $CONTENTSDIR/Resources/defaults/preferences
+cp chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
+rm -rf $BUILDDIR
