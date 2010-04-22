@@ -23,7 +23,7 @@ URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
 if [ -z $REV ]; then
-	svn co --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
+	svn co --quiet --non-interactive $URL $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
 	REV=`svnversion .`
 	cd ..
@@ -31,7 +31,7 @@ if [ -z $REV ]; then
 fi
 
 # Export a clean copy of the tree
-svn export --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
+svn export --quiet --non-interactive $URL $BUILDDIR/zotero
 echo
 
 # Zip chrome into JAR and adjust chrome.manifest
