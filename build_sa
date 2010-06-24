@@ -1,4 +1,7 @@
 #!/bin/sh
+WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
+LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
+
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
 CALLDIR=`pwd`
 BUILDDIR=/tmp/zotero-build-$RAN
@@ -7,23 +10,13 @@ SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
 REV="$2" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
 
 mkdir $BUILDDIR
-mkdir Zotero.app
-chmod 755 Zotero.app
-cp -r Contents Zotero.app
-CONTENTSDIR=`pwd`/Zotero.app/Contents
-
-mkdir $CONTENTSDIR/MacOS
-mkdir $CONTENTSDIR/Frameworks
-ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
-ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
-cp application.ini $CONTENTSDIR/Resources
 
 if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
 URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
 if [ -z $REV ]; then
-	svn co --quiet --non-interactive $URL $BUILDDIR/zotero
+	svn co --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
 	REV=`svnversion .`
 	cd ..
@@ -31,7 +24,7 @@ if [ -z $REV ]; then
 fi
 
 # Export a clean copy of the tree
-svn export --quiet --non-interactive $URL $BUILDDIR/zotero
+svn export --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
 echo
 
 # Zip chrome into JAR and adjust chrome.manifest
@@ -73,8 +66,45 @@ if [ -d styles ]; then
 	rm -rf styles
 fi
 
-mv $BUILDDIR/zotero/* $CONTENTSDIR/Resources
-cd $CALLDIR
-cp prefs.js $CONTENTSDIR/Resources/defaults/preferences
-cp chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
+# Mac
+echo 'Building Zotero.app'
+APPDIR=$CALLDIR/Zotero.app
+mkdir $APPDIR
+chmod 755 $APPDIR
+cp -r $CALLDIR/Contents $APPDIR
+CONTENTSDIR=$APPDIR/Contents
+
+mkdir $CONTENTSDIR/MacOS
+mkdir $CONTENTSDIR/Frameworks
+ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
+ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
+cp $CALLDIR/application.ini $CONTENTSDIR/Resources
+
+cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
+cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
+cp $CALLDIR/chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
+
+# Win32
+echo 'Building Zotero_Win32'
+APPDIR=$CALLDIR/Zotero_Win32
+mkdir $APPDIR
+
+cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
+cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
+cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
+cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
+mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
+
+# Linux
+echo 'Building Zotero_Linux-i686'
+APPDIR=$CALLDIR/Zotero_Linux-i686
+mkdir $APPDIR
+
+cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
+cp -r $LINUX_RUNTIME_PATH $APPDIR/xulrunner
+cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
+cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
+mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
+chmod 755 $APPDIR/zotero
+
 rm -rf $BUILDDIR
