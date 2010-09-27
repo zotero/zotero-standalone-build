@@ -1,6 +1,16 @@
 #!/bin/sh
+BUILD_MAC=1
+BUILD_WIN32=1
+BUILD_LINUX=1
+
+PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.6.2.20100203-Darwin_universal.xpi
+MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
+WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
+OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
+
 WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
 LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
+JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
 
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
 CALLDIR=`pwd`
@@ -16,7 +26,8 @@ URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
 if [ -z $REV ]; then
-	svn co --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
+	echo "Getting latest Zotero revision"
+	svn co --quiet --non-interactive $URL $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
 	REV=`svnversion .`
 	cd ..
@@ -24,8 +35,8 @@ if [ -z $REV ]; then
 fi
 
 # Export a clean copy of the tree
-svn export --quiet --username zotero --password kn0wl3dge --non-interactive $URL $BUILDDIR/zotero
-echo
+echo "Checking out Zotero r$REV"
+svn export --quiet --non-interactive $URL $BUILDDIR/zotero
 
 # Zip chrome into JAR and adjust chrome.manifest
 cd $BUILDDIR/zotero/chrome
@@ -34,13 +45,15 @@ if [ $? -eq 1 ]; then
 	exit;
 fi
 
-zip -0 -r ../zotero.jar .
+zip -0 -r -q ../zotero.jar .
 rm -rf $BUILDDIR/zotero/chrome/*
 mv ../zotero.jar .
 cd ..
 
 # Build translators.zip
 if [ -d translators ]; then
+	echo "Building translators.zip"
+	
 	cd translators
 	mkdir output
 	counter=0;
@@ -50,61 +63,97 @@ if [ -d translators ]; then
 		counter=$(($counter+1))
 	done;
 	cd output
-	zip ../../translators.zip *
+	zip -q ../../translators.zip *
 	cd ../..
 	rm -rf translators
 fi
 
 # Build styles.zip with default styles
 if [ -d styles ]; then
+	echo "Building styles.zip"
+	
 	cd styles
 	for i in *.csl; do
-		svn export https://www.zotero.org/svn/csl/$i;
+		svn export --quiet --non-interactive https://www.zotero.org/svn/csl/$i;
 	done
-	zip ../styles.zip *
+	zip -q ../styles.zip *
 	cd ..
 	rm -rf styles
 fi
+	
+echo "Retrieving Zotero OpenOffice.org Integration"
+cd ..
+curl -s $OOO_URL -o ooo.zip
 
 # Mac
-echo 'Building Zotero.app'
-APPDIR=$CALLDIR/Zotero.app
-mkdir $APPDIR
-chmod 755 $APPDIR
-cp -r $CALLDIR/Contents $APPDIR
-CONTENTSDIR=$APPDIR/Contents
-
-mkdir $CONTENTSDIR/MacOS
-mkdir $CONTENTSDIR/Frameworks
-ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
-ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
-cp $CALLDIR/application.ini $CONTENTSDIR/Resources
-
-cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
-cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
-cp $CALLDIR/chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
+if [ $BUILD_MAC == 1 ]; then
+	echo "Retrieving PythonExt"
+	curl -s $PYTHONEXT_URL -o pythonext.zip
+	
+	echo "Retrieving Zotero MacWord Integration"
+	curl -s $MACWORD_URL -o macword.zip
+	
+	echo 'Building Zotero.app'
+	APPDIR=$CALLDIR/Zotero.app
+	mkdir $APPDIR
+	chmod 755 $APPDIR
+	cp -r $CALLDIR/Contents $APPDIR
+	CONTENTSDIR=$APPDIR/Contents
+	
+	mkdir $CONTENTSDIR/MacOS
+	mkdir $CONTENTSDIR/Frameworks
+	ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
+	ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
+	cp $CALLDIR/application.ini $CONTENTSDIR/Resources
+	
+	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
+	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
+	cp $CALLDIR/chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
+	
+	mkdir $CONTENTSDIR/Resources/plugins
+	cp -r $JAVA_EMBEDDING_PLUGIN_BINARY_PATH/* $CONTENTSDIR/Resources/plugins
+	
+	mkdir $CONTENTSDIR/Resources/extensions
+	unzip -q $BUILDDIR/pythonext.zip -d $CONTENTSDIR/Resources/extensions/pythonext@mozdev.org
+	unzip -q $BUILDDIR/macword.zip -d $CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org
+	unzip -q $BUILDDIR/ooo.zip -d $CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org
+fi
 
 # Win32
-echo 'Building Zotero_Win32'
-APPDIR=$CALLDIR/Zotero_Win32
-mkdir $APPDIR
-
-cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
-cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
-cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
-cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
-mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
+if [ $BUILD_WIN32 == 1 ]; then
+	echo "Retrieving Zotero WinWord Integration"
+	curl -s $WINWORD_URL -o winword.zip
+	
+	echo 'Building Zotero_Win32'
+	APPDIR=$CALLDIR/Zotero_Win32
+	mkdir $APPDIR
+	
+	cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
+	cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
+	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
+	cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
+	mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
+	
+	mkdir $APPDIR/extensions
+	unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
+	unzip -q $BUILDDIR/winword.zip -d $APPDIR/extensions/zoteroWinWordIntegration@zotero.org
+fi
 
 # Linux
-echo 'Building Zotero_Linux-i686'
-APPDIR=$CALLDIR/Zotero_Linux-i686
-mkdir $APPDIR
-
-cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
-cp -r $LINUX_RUNTIME_PATH $APPDIR/xulrunner
-cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
-cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
-mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
-chmod 755 $APPDIR/zotero
+if [ $BUILD_LINUX == 1 ]; then
+	echo 'Building Zotero_Linux-i686'
+	APPDIR=$CALLDIR/Zotero_Linux-i686
+	mkdir $APPDIR
+	
+	cp -r $BUILDDIR/zotero/* $CALLDIR/application.ini $APPDIR
+	cp -r $LINUX_RUNTIME_PATH $APPDIR/xulrunner
+	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
+	cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
+	mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
+	chmod 755 $APPDIR/zotero
+	
+	mkdir $APPDIR/extensions
+	unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
+fi
 
 rm -rf $BUILDDIR
