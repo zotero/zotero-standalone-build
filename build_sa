@@ -7,10 +7,14 @@ PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.6.2.2010020
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
+JEP_URL=http://downloads.sourceforge.net/project/javaplugin/javaplugin/0.9.7.3/JavaEmbeddingPlugin0.9.7.3.zip?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fjavaplugin%2F&ts=1286051303&use_mirror=cdnetworks-us-2
 
 MAC_RUNTIME_PATH=/Library/Frameworks/XUL.framework
 WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
 LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
+
+# Can be found at http://sourceforge.net/projects/javaplugin/
+# This should be the path to the "Binaries" directory included in the archive
 JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
 
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
