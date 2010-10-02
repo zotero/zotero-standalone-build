@@ -8,6 +8,7 @@ MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
 
+MAC_RUNTIME_PATH=/Library/Frameworks/XUL.framework
 WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
 LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
 JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
@@ -44,6 +45,9 @@ cd $BUILDDIR/zotero/chrome
 if [ $? -eq 1 ]; then
 	exit;
 fi
+
+# Adjust connector pref
+perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' $BUILDDIR/zotero/defaults/preferences/zotero.js
 
 zip -0 -r -q ../zotero.jar .
 rm -rf $BUILDDIR/zotero/chrome/*
@@ -102,7 +106,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	mkdir $CONTENTSDIR/MacOS
 	mkdir $CONTENTSDIR/Frameworks
-	ditto /Library/Frameworks/XUL.framework $CONTENTSDIR/Frameworks/XUL.framework
+	cp -a $MAC_RUNTIME_PATH $CONTENTSDIR/Frameworks/XUL.framework
 	ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
 	cp $CALLDIR/application.ini $CONTENTSDIR/Resources
 	
