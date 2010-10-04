@@ -23,6 +23,9 @@ BUILDDIR=/tmp/zotero-build-$RAN
 SVNPREFIX="https://www.zotero.org/svn/extension/"
 SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
 REV="$2" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
+VERSION="$3" # Version to write to application.ini
+DEFAULT_VERSION_PREFIX="2.1.SVN.r" # If version is not specified, version is this prefix followed by
+                                  # the revision
 
 mkdir $BUILDDIR
 
