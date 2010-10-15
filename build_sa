@@ -140,7 +140,6 @@ if [ $BUILD_MAC == 1 ]; then
 	ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
 	cp $BUILDDIR/application.ini $CONTENTSDIR/Resources
 	cp $BUILDDIR/Info.plist $CONTENTSDIR
-	perl -pi -e 's/2.0./pref("extensions.zotero.connector.enabled", true);/g' $BUILDDIR/zotero/defaults/preferences/zotero.js
 	
 	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
 	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
@@ -192,4 +191,4 @@ if [ $BUILD_LINUX == 1 ]; then
 	unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
 fi
 
-#rm -rf $BUILDDIR
+rm -rf $BUILDDIR
