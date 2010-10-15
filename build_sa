@@ -73,21 +73,25 @@ cd ..
 
 # Build translators.zip
 if [ -d translators ]; then
-	echo "Building translators.zip"
-	
 	cd translators
 	mkdir output
 	counter=0;
 	for file in *.js; do
 		newfile=$counter.js;
+		id=`grep '"translatorID" *: *"' "$file" | perl -pe 's/.*"translatorID"\s*:\s*"(.*)".*/\1/'`
+		label=`grep '"label" *: *"' "$file" | perl -pe 's/.*"label"\s*:\s*"(.*)".*/\1/'`
+		mtime=`grep '"lastUpdated" *: *"' "$file" | perl -pe 's/.*"lastUpdated"\s*:\s*"(.*)".*/\1/'`
+		echo $newfile,$id,$label,$mtime $file
+		echo $newfile,$id,$label,$mtime >> ../translators.index
 		cp "$file" output/$newfile;
 		counter=$(($counter+1))
 	done;
 	cd output
-	zip -q ../../translators.zip *
+	zip ../../translators.zip *
 	cd ../..
 	rm -rf translators
 fi
+
 
 # Build styles.zip with default styles
 if [ -d styles ]; then
