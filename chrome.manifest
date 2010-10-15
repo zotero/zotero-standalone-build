@@ -42,6 +42,9 @@ locale	zotero	vi-VN		jar:zotero.jar!/locale/vi-VN/zotero/
 locale	zotero	zh-CN		jar:zotero.jar!/locale/zh-CN/zotero/
 locale	zotero	zh-TW		jar:zotero.jar!/locale/zh-TW/zotero/
 
+locale	branding en-US		jar:zotero.jar!/branding/locale/
+content	branding			jar:zotero.jar!/branding/content/
+
 skin		zotero	default		jar:zotero.jar!/skin/default/zotero/
 
 overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/overlay.xul
@@ -49,3 +52,4 @@ overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/itemPane.
 
 style	chrome://zotero/content/standalone.xul	chrome://zotero/skin/zotero.css
 style	chrome://global/content/customizeToolbar.xul	chrome://zotero/skin/zotero.css
+
