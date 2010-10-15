@@ -1,7 +1,7 @@
-#!/bin/sh
-BUILD_MAC=1
+#!/bin/bash
+BUILD_MAC=0
 BUILD_WIN32=1
-BUILD_LINUX=1
+BUILD_LINUX=0
 
 PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.6.2.20100203-Darwin_universal.xpi
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
