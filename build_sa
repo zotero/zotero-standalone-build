@@ -1,9 +1,9 @@
 #!/bin/bash
 BUILD_MAC=1
-BUILD_WIN32=1
-BUILD_LINUX=1
+BUILD_WIN32=0
+BUILD_LINUX=0
 
-PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.6.2.20100203-Darwin_universal.xpi
+PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20101016-Darwin_x86.xpi
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
@@ -12,9 +12,10 @@ MAC_RUNTIME_PATH=/Library/Frameworks/XUL.framework
 WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
 LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
 
+# Only necessary to bundle this with XULRunner 1.9.2
 # Can be found at http://sourceforge.net/projects/javaplugin/
 # This should be the path to the "Binaries" directory included in the archive
-JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
+#JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
 
 DEFAULT_VERSION_PREFIX="2.1.SVN.r" # If version is not specified, version is this prefix followed by
                                    # the revision
@@ -56,7 +57,7 @@ fi
 # Copy branding
 cp -r $CALLDIR/branding $BUILDDIR/zotero/chrome
 
-# Zip chrome into JAR and adjust chrome.manifest
+# Zip chrome into JAR
 cd $BUILDDIR/zotero/chrome
 # Checkout failed -- bail
 if [ $? -eq 1 ]; then
@@ -70,6 +71,10 @@ zip -0 -r -q ../zotero.jar .
 rm -rf $BUILDDIR/zotero/chrome/*
 mv ../zotero.jar .
 cd ..
+
+# Adjust chrome.manifest
+cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
+perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' $BUILDDIR/zotero/chrome.manifest
 
 # Build translators.zip
 if [ -d translators ]; then
@@ -143,10 +148,9 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
 	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
-	cp $CALLDIR/chrome.manifest $CONTENTSDIR/Resources/chrome/chrome.manifest
 	
-	mkdir $CONTENTSDIR/Resources/plugins
-	cp -r $JAVA_EMBEDDING_PLUGIN_BINARY_PATH/* $CONTENTSDIR/Resources/plugins
+	#mkdir $CONTENTSDIR/Resources/plugins
+	#cp -r $JAVA_EMBEDDING_PLUGIN_BINARY_PATH/* $CONTENTSDIR/Resources/plugins
 	
 	mkdir $CONTENTSDIR/Resources/extensions
 	unzip -q $BUILDDIR/pythonext.zip -d $CONTENTSDIR/Resources/extensions/pythonext@mozdev.org
@@ -166,7 +170,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 	cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
 	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
-	cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
 	mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
 	
 	mkdir $APPDIR/extensions
@@ -183,7 +186,6 @@ if [ $BUILD_LINUX == 1 ]; then
 	cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 	cp -r $LINUX_RUNTIME_PATH $APPDIR/xulrunner
 	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
-	cp $CALLDIR/chrome.manifest $APPDIR/chrome/chrome.manifest
 	mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
 	chmod 755 $APPDIR/zotero
 	

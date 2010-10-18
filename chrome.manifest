@@ -1,55 +1,7 @@
-content	zotero				jar:zotero.jar!/content/zotero/
-content	zotero-platform		jar:zotero.jar!/content/zotero-platform/		platform 
-
-locale	zotero	en-US		jar:zotero.jar!/locale/en-US/zotero/
-locale	zotero	af-ZA		jar:zotero.jar!/locale/af-ZA/zotero/
-locale	zotero	ar			jar:zotero.jar!/locale/ar/zotero/
-locale	zotero	bg-BG		jar:zotero.jar!/locale/bg-BG/zotero/
-locale	zotero	ca-AD		jar:zotero.jar!/locale/ca-AD/zotero/
-locale	zotero	cs-CZ		jar:zotero.jar!/locale/cs-CZ/zotero/
-locale	zotero	da-DK		jar:zotero.jar!/locale/da-DK/zotero/
-locale	zotero	de-AT		jar:zotero.jar!/locale/de-AT/zotero/
-locale	zotero	de-CH		jar:zotero.jar!/locale/de-CH/zotero/
-locale	zotero	de			jar:zotero.jar!/locale/de-DE/zotero/
-locale	zotero	el-GR		jar:zotero.jar!/locale/el-GR/zotero/
-locale	zotero	es-ES		jar:zotero.jar!/locale/es-ES/zotero/
-locale	zotero	et-EE		jar:zotero.jar!/locale/et-EE/zotero/
-locale	zotero	fi-FI		jar:zotero.jar!/locale/fi-FI/zotero/
-locale	zotero	fr-FR		jar:zotero.jar!/locale/fr-FR/zotero/
-locale	zotero	gl-ES		jar:zotero.jar!/locale/gl-ES/zotero/
-locale	zotero	he-IL		jar:zotero.jar!/locale/he-IL/zotero/
-locale	zotero	hr-HR		jar:zotero.jar!/locale/hr-HR/zotero/
-locale	zotero	hu-HU		jar:zotero.jar!/locale/hu-HU/zotero/
-locale	zotero	is-IS		jar:zotero.jar!/locale/is-IS/zotero/
-locale	zotero	it-IT		jar:zotero.jar!/locale/it-IT/zotero/
-locale	zotero	ja-JP		jar:zotero.jar!/locale/ja-JP/zotero/
-locale	zotero	ko-KR		jar:zotero.jar!/locale/ko-KR/zotero/
-locale	zotero	mn-MN		jar:zotero.jar!/locale/mn-MN/zotero/
-locale	zotero	nb-NO		jar:zotero.jar!/locale/nb-NO/zotero/
-locale	zotero	nl-NL		jar:zotero.jar!/locale/nl-NL/zotero/
-locale	zotero	pl-PL		jar:zotero.jar!/locale/pl-PL/zotero/
-locale	zotero	pt-BR		jar:zotero.jar!/locale/pt-BR/zotero/
-locale	zotero	pt-PT		jar:zotero.jar!/locale/pt-PT/zotero/
-locale	zotero	ro-RO		jar:zotero.jar!/locale/ro-RO/zotero/
-locale	zotero	ru-RU		jar:zotero.jar!/locale/ru-RU/zotero/
-locale  zotero  sk-SK		jar:zotero.jar!/locale/sk-SK/zotero/
-locale	zotero	sl-SI		jar:zotero.jar!/locale/sl-SI/zotero/
-locale	zotero	sr-RS		jar:zotero.jar!/locale/sr-RS/zotero/
-locale	zotero	sv-SE		jar:zotero.jar!/locale/sv-SE/zotero/
-locale	zotero	th-TH		jar:zotero.jar!/locale/th-TH/zotero/
-locale	zotero	tr-TR		jar:zotero.jar!/locale/tr-TR/zotero/
-locale	zotero	vi-VN		jar:zotero.jar!/locale/vi-VN/zotero/
-locale	zotero	zh-CN		jar:zotero.jar!/locale/zh-CN/zotero/
-locale	zotero	zh-TW		jar:zotero.jar!/locale/zh-TW/zotero/
-
-locale	branding en-US		jar:zotero.jar!/branding/locale/
-content	branding			jar:zotero.jar!/branding/content/
-
-skin		zotero	default		jar:zotero.jar!/skin/default/zotero/
+locale	branding en-US		chrome/branding/locale/
+content	branding			chrome/branding/content/
 
 overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/overlay.xul
 overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/itemPane.xul
-
 style	chrome://zotero/content/standalone.xul	chrome://zotero/skin/zotero.css
 style	chrome://global/content/customizeToolbar.xul	chrome://zotero/skin/zotero.css
-
