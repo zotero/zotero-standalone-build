@@ -8,14 +8,10 @@ MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
 
+# Requires XULRunner runtime 2.0.*
 MAC_RUNTIME_PATH=/Library/Frameworks/XUL.framework
 WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
 LINUX_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
-
-# Only necessary to bundle this with XULRunner 1.9.2
-# Can be found at http://sourceforge.net/projects/javaplugin/
-# This should be the path to the "Binaries" directory included in the archive
-#JAVA_EMBEDDING_PLUGIN_BINARY_PATH=`pwd`/JavaEmbeddingPlugin
 
 DEFAULT_VERSION_PREFIX="2.1.SVN.r" # If version is not specified, version is this prefix followed by
                                    # the revision
@@ -148,9 +144,6 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
 	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
-	
-	#mkdir $CONTENTSDIR/Resources/plugins
-	#cp -r $JAVA_EMBEDDING_PLUGIN_BINARY_PATH/* $CONTENTSDIR/Resources/plugins
 	
 	mkdir $CONTENTSDIR/Resources/extensions
 	unzip -q $BUILDDIR/pythonext.zip -d $CONTENTSDIR/Resources/extensions/pythonext@mozdev.org
