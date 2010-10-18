@@ -3,7 +3,7 @@ BUILD_MAC=1
 BUILD_WIN32=0
 BUILD_LINUX=0
 
-PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20101016-Darwin_x86.xpi
+PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20101018-Darwin_x86.xpi
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
