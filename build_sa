@@ -160,7 +160,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Build disk image
 	$CALLDIR/pkg-dmg --source $CALLDIR/Zotero.app --target $CALLDIR/Zotero.dmg --sourcefile \
-		--volname Zotero --copy $CALLDIR/DS_Store:/.DS_Store \
+		--volname Zotero --copy $CALLDIR/DSStore:/.DS_Store \
 		--symlink /Applications:"/Drag Here to Install"
 fi
 
