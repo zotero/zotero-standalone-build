@@ -121,15 +121,19 @@ echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
 curl -s $OOO_URL -o ooo.zip
 
+cd $CALLDIR
+
 # Mac
 if [ $BUILD_MAC == 1 ]; then
 	echo "Retrieving PythonExt"
-	curl -s $PYTHONEXT_URL -o pythonext.zip
+	curl -s $PYTHONEXT_URL -o $BUILDDIR/pythonext.zip
 	
 	echo "Retrieving Zotero MacWord Integration"
-	curl -s $MACWORD_URL -o macword.zip
+	curl -s $MACWORD_URL -o $BUILDDIR/macword.zip
 	
 	echo 'Building Zotero.app'
+	
+	# Set up directory structure
 	APPDIR=$CALLDIR/Zotero.app
 	rm -rf $APPDIR
 	mkdir $APPDIR
@@ -137,6 +141,7 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r $CALLDIR/Contents $APPDIR
 	CONTENTSDIR=$APPDIR/Contents
 	
+	# Merge xulrunner and relevant assets
 	mkdir $CONTENTSDIR/MacOS
 	mkdir $CONTENTSDIR/Frameworks
 	cp -a $MAC_RUNTIME_PATH $CONTENTSDIR/Frameworks/XUL.framework
@@ -147,32 +152,46 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
 	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
 	
+	# Add word processor plug-ins
 	mkdir $CONTENTSDIR/Resources/extensions
 	unzip -q $BUILDDIR/pythonext.zip -d $CONTENTSDIR/Resources/extensions/pythonext@mozdev.org
 	unzip -q $BUILDDIR/macword.zip -d $CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org
 	unzip -q $BUILDDIR/ooo.zip -d $CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org
+	
+	# Build disk image
+	$CALLDIR/pkg-dmg --source $CALLDIR/Zotero.app --target $CALLDIR/Zotero.dmg --sourcefile \
+		--volname Zotero --copy $CALLDIR/DS_Store:/.DS_Store \
+		--symlink /Applications:"/Drag Here to Install"
 fi
 
 # Win32
 if [ $BUILD_WIN32 == 1 ]; then
 	
 	echo "Retrieving Zotero WinWord Integration"
-	curl -s $WINWORD_URL -o winword.zip
+	curl -s $WINWORD_URL -o $BUILDDIR/winword.zip
 	
 	echo 'Building Zotero_win32'
+	
+	# Set up directory
 	APPDIR=$CALLDIR/Zotero_win32
 	rm -rf $APPDIR
 	mkdir $APPDIR
 	
+	# Merge xulrunner and relevant assets
 	cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 	cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
 	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 	mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
 	cp $APPDIR/xulrunner/mozcrt19.dll $APPDIR/mozcrt19.dll
 	
+	# Add word processor plug-ins
 	mkdir $APPDIR/extensions
 	unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
 	unzip -q $BUILDDIR/winword.zip -d $APPDIR/extensions/zoteroWinWordIntegration@zotero.org
+	
+	# TODO: a real installer
+	rm -f $CALLDIR/Zotero_win32.zip
+	zip -rq $CALLDIR/Zotero_win32.zip $CALLDIR/Zotero_win32
 fi
 
 # Linux
@@ -180,19 +199,26 @@ if [ $BUILD_LINUX == 1 ]; then
 	for arch in "i686" "x86_64"; do
 		RUNTIME_PATH=`eval echo '$LINUX_'$arch'_RUNTIME_PATH'`
 		
+		# Set up directory
 		echo 'Building Zotero_linux-'$arch
 		APPDIR=$CALLDIR/Zotero_linux-$arch
 		rm -rf $APPDIR
 		mkdir $APPDIR
 		
+		# Merge xulrunner and relevant assets
 		cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 		cp -r $RUNTIME_PATH $APPDIR/xulrunner
 		cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 		mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
 		chmod 755 $APPDIR/zotero
 		
+		# Add word processor plug-ins
 		mkdir $APPDIR/extensions
 		unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
+		
+		# Create tar
+		rm -f $CALLDIR/Zotero_linux-$arch.tar.bz2
+		tar -cjf $CALLDIR/Zotero_linux-$arch.tar.bz2 Zotero_linux-$arch
 	done
 fi
 
