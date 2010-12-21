@@ -1,7 +1,7 @@
 #!/bin/bash
 BUILD_MAC=1
-BUILD_WIN32=1
-BUILD_LINUX=1
+BUILD_WIN32=0
+BUILD_LINUX=0
 
 PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20101219-Darwin_x86.xpi
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
@@ -23,6 +23,7 @@ CALLDIR=`pwd`
 BUILDDIR=/tmp/zotero-build-$RAN
 SVNPREFIX="https://www.zotero.org/svn/extension/"
 SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
+             # if this begins with /, a local build is made via symlinking
 REV="$2" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
 VERSION="$3" # Version to write to application.ini
 BUILDID=`date +%Y%m%d`
@@ -33,81 +34,102 @@ if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
 URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
-if [ -z $REV ]; then
-	echo "Getting latest Zotero revision"
-	svn co --quiet --non-interactive $URL $BUILDDIR/zotero
+if [ ${SVNPATH:0:1} == "/" ]; then
+	cp -R $SVNPATH $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
 	REV=`svnversion .`
-	cd ..
-	echo "Got Zotero r$REV"
 	rm -rf `find . -type d -name .svn`
+	
+	# Symlink chrome dirs
+	rm -rf $BUILDDIR/zotero/chrome/*
+	for i in `ls $SVNPATH/chrome`; do
+		ln -s $SVNPATH/chrome/$i $BUILDDIR/zotero/chrome/$i
+	done
+	
+	# Symlink translators and styles
+	ln -s $SVNPATH/translators $BUILDDIR/zotero/translators
+	ln -s $SVNPATH/styles $BUILDDIR/zotero/styles
+	
+	# Symlink branding
+	ln -s $CALLDIR/branding $BUILDDIR/zotero/chrome/branding
+	
+	# Add to chrome manifest
+	cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
 else
-	# Export a clean copy of the tree
-	echo "Checking out Zotero r$REV"
-	svn export --quiet --non-interactive -r $REV $URL $BUILDDIR/zotero
+	if [ -z $REV ]; then
+		echo "Getting latest Zotero revision"
+		svn co --quiet --non-interactive $URL $BUILDDIR/zotero
+		cd $BUILDDIR/zotero
+		REV=`svnversion .`
+		cd ..
+		echo "Got Zotero r$REV"
+		rm -rf `find . -type d -name .svn`
+	else
+		# Export a clean copy of the tree
+		echo "Checking out Zotero r$REV"
+		svn export --quiet --non-interactive -r $REV $URL $BUILDDIR/zotero
+	fi
+	
+	# Copy branding
+	cp -r $CALLDIR/branding $BUILDDIR/zotero/chrome
+	
+	# Zip chrome into JAR
+	cd $BUILDDIR/zotero/chrome
+	# Checkout failed -- bail
+	if [ $? -eq 1 ]; then
+		exit;
+	fi
+	zip -0 -r -q ../zotero.jar .
+	rm -rf $BUILDDIR/zotero/chrome/*
+	mv ../zotero.jar .
+	cd ..
+	
+	# Build translators.zip
+	if [ -d translators ]; then
+		echo "Building translators.zip"
+		
+		cd translators
+		mkdir output
+		counter=0;
+		for file in *.js; do
+			newfile=$counter.js;
+			id=`grep '"translatorID" *: *"' "$file" | perl -pe 's/.*"translatorID"\s*:\s*"(.*)".*/\1/'`
+			label=`grep '"label" *: *"' "$file" | perl -pe 's/.*"label"\s*:\s*"(.*)".*/\1/'`
+			mtime=`grep '"lastUpdated" *: *"' "$file" | perl -pe 's/.*"lastUpdated"\s*:\s*"(.*)".*/\1/'`
+			echo $newfile,$id,$label,$mtime >> ../translators.index
+			cp "$file" output/$newfile;
+			counter=$(($counter+1))
+		done;
+		cd output
+		zip -q ../../translators.zip *
+		cd ../..
+		rm -rf translators
+	fi
+	
+	# Build styles.zip with default styles
+	if [ -d styles ]; then
+		echo "Building styles.zip"
+		
+		cd styles
+		for i in *.csl; do
+			svn export --quiet --non-interactive https://www.zotero.org/svn/csl/$i;
+		done
+		zip -q ../styles.zip *
+		cd ..
+		rm -rf styles
+	fi
+	
+	# Adjust chrome.manifest
+	cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
+	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' $BUILDDIR/zotero/chrome.manifest
 fi
 
 if [ -z $VERSION ]; then
 	VERSION="$DEFAULT_VERSION_PREFIX$REV"
 fi
 
-# Copy branding
-cp -r $CALLDIR/branding $BUILDDIR/zotero/chrome
-
-# Zip chrome into JAR
-cd $BUILDDIR/zotero/chrome
-# Checkout failed -- bail
-if [ $? -eq 1 ]; then
-	exit;
-fi
-
 # Adjust connector pref
 perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' $BUILDDIR/zotero/defaults/preferences/zotero.js
-
-zip -0 -r -q ../zotero.jar .
-rm -rf $BUILDDIR/zotero/chrome/*
-mv ../zotero.jar .
-cd ..
-
-# Adjust chrome.manifest
-cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
-perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' $BUILDDIR/zotero/chrome.manifest
-
-# Build translators.zip
-if [ -d translators ]; then
-	echo "Building translators.zip"
-	
-	cd translators
-	mkdir output
-	counter=0;
-	for file in *.js; do
-		newfile=$counter.js;
-		id=`grep '"translatorID" *: *"' "$file" | perl -pe 's/.*"translatorID"\s*:\s*"(.*)".*/\1/'`
-		label=`grep '"label" *: *"' "$file" | perl -pe 's/.*"label"\s*:\s*"(.*)".*/\1/'`
-		mtime=`grep '"lastUpdated" *: *"' "$file" | perl -pe 's/.*"lastUpdated"\s*:\s*"(.*)".*/\1/'`
-		echo $newfile,$id,$label,$mtime >> ../translators.index
-		cp "$file" output/$newfile;
-		counter=$(($counter+1))
-	done;
-	cd output
-	zip -q ../../translators.zip *
-	cd ../..
-	rm -rf translators
-fi
-
-
-# Build styles.zip with default styles
-if [ -d styles ]; then
-	echo "Building styles.zip"
-	
-	cd styles
-	for i in *.csl; do
-		svn export --quiet --non-interactive https://www.zotero.org/svn/csl/$i;
-	done
-	zip -q ../styles.zip *
-	cd ..
-	rm -rf styles
-fi
 
 # Copy application.ini and modify
 cp $CALLDIR/application.ini $BUILDDIR/application.ini
@@ -119,7 +141,7 @@ perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" $BUILDDIR/Info.plist
 
 echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
-curl -s $OOO_URL -o ooo.zip
+curl -s $OOO_URL -o $BUILDDIR/ooo.zip
 
 cd $CALLDIR
 
@@ -149,7 +171,7 @@ if [ $BUILD_MAC == 1 ]; then
 	cp $BUILDDIR/application.ini $CONTENTSDIR/Resources
 	cp $BUILDDIR/Info.plist $CONTENTSDIR
 	
-	cp -r $BUILDDIR/zotero/* $CONTENTSDIR/Resources
+	cp -R $BUILDDIR/zotero/* $CONTENTSDIR/Resources
 	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
 	
 	# Add word processor plug-ins
@@ -178,7 +200,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	mkdir $APPDIR
 	
 	# Merge xulrunner and relevant assets
-	cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
+	cp -R $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 	cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
 	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 	mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
@@ -206,7 +228,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		mkdir $APPDIR
 		
 		# Merge xulrunner and relevant assets
-		cp -r $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
+		cp -R $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 		cp -r $RUNTIME_PATH $APPDIR/xulrunner
 		cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 		mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
