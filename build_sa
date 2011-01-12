@@ -24,8 +24,8 @@ BUILDDIR=/tmp/zotero-build-$RAN
 SVNPREFIX="https://www.zotero.org/svn/extension/"
 SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
              # if this begins with /, a local build is made via symlinking
-REV="$2" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
-VERSION="$3" # Version to write to application.ini
+VERSION="$2" # Version to write to application.ini
+REV="$3" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
 BUILDID=`date +%Y%m%d`
 
 mkdir $BUILDDIR
