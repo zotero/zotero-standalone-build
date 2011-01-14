@@ -213,7 +213,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# TODO: a real installer
 	rm -f $CALLDIR/Zotero_win32.zip
-	zip -rq $CALLDIR/Zotero_win32.zip $CALLDIR/Zotero_win32
+	cd $CALLDIR
+	zip -rq $CALLDIR/Zotero_win32.zip Zotero_win32
 fi
 
 # Linux
