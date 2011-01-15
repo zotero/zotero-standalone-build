@@ -1,0 +1,41 @@
+#!/bin/bash
+FROM=2.1a1
+TO=2.1a2
+
+for version in "$FROM" "$TO"; do
+	if [ -d $version ]; then
+		continue
+	fi
+	
+	echo "Getting Zotero $version..."
+	mkdir $version
+	
+	# Download archives
+	for archive in "Zotero.dmg" "Zotero_win32.zip" "Zotero_linux-i686.tar.bz2" "Zotero_linux-x86_64.tar.bz2"; do
+		rm -f $archive
+		wget -nv http://www.zotero.org/download/standalone/$version/$archive
+	done
+	
+	# Unpack Zotero.app
+	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
+	hdiutil attach -quiet Zotero.dmg
+	cp -R /Volumes/Zotero/Zotero.app $version
+	rm Zotero.dmg
+	hdiutil detach -quiet /Volumes/Zotero
+	
+	# Unpack Win32 zip
+	unzip -q Zotero_win32.zip
+	mv Zotero_win32 $version
+	rm Zotero_win32.zip
+	
+	# Unpack Linux tarballs
+	for build in "Zotero_linux-i686" "Zotero_linux-x86_64"; do
+		tar -xjf $build.tar.bz2
+		mv $build $version
+	done
+done
+
+for build in "Zotero.app" "Zotero_win32" "Zotero_linux-i686" "Zotero_linux-x86_64"; do
+	./make_incremental_update.sh ${build}_${FROM}_${TO}.mar $FROM/$build $TO/$build
+	./make_full_update.sh ${build}_${TO}_full.mar $TO/$build
+done

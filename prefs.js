@@ -85,4 +85,4 @@ pref("app.update.showInstalledUI", false);
 pref("app.update.incompatible.mode", 0);
 
 // update channel for this build
-pref("app.update.channel", "beta");
+pref("app.update.channel", "default");

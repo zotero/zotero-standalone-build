@@ -25,12 +25,15 @@ SVNPREFIX="https://www.zotero.org/svn/extension/"
 SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
              # if this begins with /, a local build is made via symlinking
 VERSION="$2" # Version to write to application.ini
-REV="$3" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
+UPDATE_CHANNEL="$3" # Usually "nightly", "beta", "release", or "default" (for custom builds)
+REV="$4" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
 BUILDID=`date +%Y%m%d`
 
 mkdir $BUILDDIR
 
 if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
+if [ -z $UPDATE_CHANNEL ]; then UPDATE_CHANNEL="default"; fi
+
 URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
@@ -139,6 +142,10 @@ perl -pi -e "s/{{BUILDID}}/$BUILDID/" $BUILDDIR/application.ini
 perl -pi -e "s/{{VERSION}}/$VERSION/" $BUILDDIR/Info.plist
 perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" $BUILDDIR/Info.plist
 
+# Copy prefs.js and modify
+cp $CALLDIR/prefs.js $BUILDDIR/zotero/defaults/preferences
+perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $BUILDDIR/zotero/defaults/preferences/prefs.js
+
 echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
 curl -s $OOO_URL -o $BUILDDIR/ooo.zip
@@ -172,7 +179,6 @@ if [ $BUILD_MAC == 1 ]; then
 	cp $BUILDDIR/Info.plist $CONTENTSDIR
 	
 	cp -R $BUILDDIR/zotero/* $CONTENTSDIR/Resources
-	cp $CALLDIR/prefs.js $CONTENTSDIR/Resources/defaults/preferences
 	
 	# Add word processor plug-ins
 	mkdir $CONTENTSDIR/Resources/extensions
@@ -202,7 +208,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# Merge xulrunner and relevant assets
 	cp -R $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 	cp -r $WIN32_RUNTIME_PATH $APPDIR/xulrunner
-	cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 	mv $APPDIR/xulrunner/xulrunner-stub.exe $APPDIR/zotero.exe
 	cp $APPDIR/xulrunner/mozcrt19.dll $APPDIR/mozcrt19.dll
 	
@@ -231,7 +236,6 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Merge xulrunner and relevant assets
 		cp -R $BUILDDIR/zotero/* $BUILDDIR/application.ini $APPDIR
 		cp -r $RUNTIME_PATH $APPDIR/xulrunner
-		cp $CALLDIR/prefs.js $APPDIR/defaults/preferences
 		mv $APPDIR/xulrunner/xulrunner-stub $APPDIR/zotero
 		chmod 755 $APPDIR/zotero
 		
