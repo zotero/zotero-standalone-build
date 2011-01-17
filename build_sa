@@ -40,6 +40,9 @@ URL=${SVNPREFIX}${SVNPATH}/
 if [ ${SVNPATH:0:1} == "/" ]; then
 	cp -R $SVNPATH $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
+	if [ $? != 0 ]; then
+		exit
+	fi
 	REV=`svnversion .`
 	rm -rf `find . -type d -name .svn`
 	
@@ -63,6 +66,9 @@ else
 		echo "Getting latest Zotero revision"
 		svn co --quiet --non-interactive $URL $BUILDDIR/zotero
 		cd $BUILDDIR/zotero
+		if [ $? != 0 ]; then
+			exit
+		fi
 		REV=`svnversion .`
 		cd ..
 		echo "Got Zotero r$REV"
