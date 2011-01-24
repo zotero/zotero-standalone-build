@@ -1,7 +1,4 @@
 locale	branding en-US		chrome/branding/locale/
 content	branding			chrome/branding/content/
 
-overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/overlay.xul
-overlay	chrome://zotero/content/standalone.xul	chrome://zotero/content/itemPane.xul
-style	chrome://zotero/content/standalone.xul	chrome://zotero/skin/zotero.css
 style	chrome://global/content/customizeToolbar.xul	chrome://zotero/skin/zotero.css
