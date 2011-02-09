@@ -1,6 +1,6 @@
 #!/bin/bash
 SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/nightly/latest-trunk/
-VERSION=2.0b10pre
+VERSION=2.0b11pre
 
 rm -rf XUL.framework xulrunner_win32 xulrunner_linux-i686 xulrunner_linux-x86_64 \
 	xulrunner-$VERSION.en-US.mac64-pkg.dmg xulrunner-$VERSION.en-US.win32.zip \
@@ -13,7 +13,7 @@ curl -O $SITE/xulrunner-$VERSION.en-US.mac64-pkg.dmg \
 
 hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
 hdiutil attach -quiet xulrunner-$VERSION.en-US.mac64-pkg.dmg
-gunzip -c /Volumes/XULRunner/xulrunner-2.0b10pre.en-US.mac64.pkg/Contents/Archive.pax.gz | pax -r
+gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac64.pkg/Contents/Archive.pax.gz | pax -r
 hdiutil detach -quiet /Volumes/XULRunner
 
 unzip -q xulrunner-$VERSION.en-US.win32.zip

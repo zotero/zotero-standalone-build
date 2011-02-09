@@ -3,7 +3,7 @@ BUILD_MAC=1
 BUILD_WIN32=1
 BUILD_LINUX=1
 
-PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20101219-Darwin_x86.xpi
+PYTHONEXT_URL=http://www.zotero.org/download/integration/pythonext-2.5.4.20110123-Darwin_x86.xpi
 MACWORD_URL=http://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
@@ -38,6 +38,7 @@ URL=${SVNPREFIX}${SVNPATH}/
 
 # If revision not supplied, checkout and use svnversion to get latest revision
 if [ ${SVNPATH:0:1} == "/" ]; then
+	echo "Building Zotero from local directory"
 	cp -R $SVNPATH $BUILDDIR/zotero
 	cd $BUILDDIR/zotero
 	if [ $? != 0 ]; then
@@ -175,6 +176,7 @@ if [ $BUILD_MAC == 1 ]; then
 	chmod 755 $APPDIR
 	cp -r $CALLDIR/Contents $APPDIR
 	CONTENTSDIR=$APPDIR/Contents
+	rm -rf `find $CONTENTSDIR -type d -name .svn`
 	
 	# Merge xulrunner and relevant assets
 	mkdir $CONTENTSDIR/MacOS
