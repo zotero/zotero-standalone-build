@@ -252,7 +252,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
 		
 		# Add run-zotero.sh
-		cp run-zotero.sh $APPDIR/run-zotero.sh
+		cp $CALLDIR/run-zotero.sh $APPDIR/run-zotero.sh
 		
 		# Create tar
 		rm -f $CALLDIR/Zotero_linux-$arch.tar.bz2
