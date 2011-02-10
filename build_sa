@@ -32,8 +32,10 @@ REV="$4" # Revision normally supplied by SVN post-commit script (to speed things
 BUILDID=`date +%Y%m%d`
 
 mkdir $BUILDDIR
-mkdir -p $STAGEDIR
-mkdir -p $DISTDIR
+rm -rf $STAGEDIR
+mkdir $STAGEDIR
+rm -rf $DISTDIR
+mkdir $DISTDIR
 
 if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
 if [ -z $UPDATE_CHANNEL ]; then UPDATE_CHANNEL="default"; fi
@@ -160,8 +162,9 @@ perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" $BUILDDIR/Info.plist
 cp $CALLDIR/assets/prefs.js $BUILDDIR/zotero/defaults/preferences
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $BUILDDIR/zotero/defaults/preferences/prefs.js
 
-# Delete DS_Store
-rm -rf `find $BUILDDIR -type d -name .DS_Store`
+# Delete .DS_Store and .svn
+rm -rf `find $BUILDDIR -type d -name .svn`
+rm `find $BUILDDIR -name .DS_Store`
 
 echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
