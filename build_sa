@@ -161,7 +161,7 @@ cp $CALLDIR/assets/prefs.js $BUILDDIR/zotero/defaults/preferences
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $BUILDDIR/zotero/defaults/preferences/prefs.js
 
 # Delete DS_Store
-rm -rf `find $BUILDDIR -type d -name .svn`
+rm -rf `find $BUILDDIR -type d -name .DS_Store`
 
 echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
