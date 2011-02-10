@@ -9,10 +9,10 @@ WINWORD_URL=http://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=http://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
 
 # Requires XULRunner runtime 2.0.*
-MAC_RUNTIME_PATH=`pwd`/XUL.framework
-WIN32_RUNTIME_PATH=`pwd`/xulrunner_win32
-LINUX_i686_RUNTIME_PATH=`pwd`/xulrunner_linux-i686
-LINUX_x86_64_RUNTIME_PATH=`pwd`/xulrunner_linux-x86_64
+MAC_RUNTIME_PATH=`pwd`/xulrunner/XUL.framework
+WIN32_RUNTIME_PATH=`pwd`/xulrunner/xulrunner_win32
+LINUX_i686_RUNTIME_PATH=`pwd`/xulrunner/xulrunner_linux-i686
+LINUX_x86_64_RUNTIME_PATH=`pwd`/xulrunner/xulrunner_linux-x86_64
 
 DEFAULT_VERSION_PREFIX="2.1.SVN.r" # If version is not specified, version is this prefix followed by
                                    # the revision
@@ -21,6 +21,8 @@ VERSION_NUMERIC="2.1.0"
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
 CALLDIR=`pwd`
 BUILDDIR=/tmp/zotero-build-$RAN
+DISTDIR=$CALLDIR/dist
+STAGEDIR=$CALLDIR/staging
 SVNPREFIX="https://www.zotero.org/svn/extension/"
 SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
              # if this begins with /, a local build is made via symlinking
@@ -30,6 +32,8 @@ REV="$4" # Revision normally supplied by SVN post-commit script (to speed things
 BUILDID=`date +%Y%m%d`
 
 mkdir $BUILDDIR
+mkdir -p $STAGEDIR
+mkdir -p $DISTDIR
 
 if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
 if [ -z $UPDATE_CHANNEL ]; then UPDATE_CHANNEL="default"; fi
@@ -58,10 +62,10 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 	ln -s $SVNPATH/styles $BUILDDIR/zotero/styles
 	
 	# Symlink branding
-	ln -s $CALLDIR/branding $BUILDDIR/zotero/chrome/branding
+	ln -s $CALLDIR/assets/branding $BUILDDIR/zotero/chrome/branding
 	
 	# Add to chrome manifest
-	cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
+	cat $CALLDIR/assets/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
 else
 	if [ -z $REV ]; then
 		echo "Getting latest Zotero revision"
@@ -81,7 +85,7 @@ else
 	fi
 	
 	# Copy branding
-	cp -r $CALLDIR/branding $BUILDDIR/zotero/chrome
+	cp -r $CALLDIR/assets/branding $BUILDDIR/zotero/chrome
 	
 	# Zip chrome into JAR
 	cd $BUILDDIR/zotero/chrome
@@ -130,7 +134,7 @@ else
 	fi
 	
 	# Adjust chrome.manifest
-	cat $CALLDIR/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
+	cat $CALLDIR/assets/chrome.manifest >> $BUILDDIR/zotero/chrome.manifest
 	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' $BUILDDIR/zotero/chrome.manifest
 fi
 
@@ -142,15 +146,15 @@ fi
 perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' $BUILDDIR/zotero/defaults/preferences/zotero.js
 
 # Copy application.ini and modify
-cp $CALLDIR/application.ini $BUILDDIR/application.ini
-cp $CALLDIR/Contents/Info.plist $BUILDDIR/Info.plist
+cp $CALLDIR/assets/application.ini $BUILDDIR/application.ini
+cp $CALLDIR/mac/Contents/Info.plist $BUILDDIR/Info.plist
 perl -pi -e "s/{{VERSION}}/$VERSION/" $BUILDDIR/application.ini
 perl -pi -e "s/{{BUILDID}}/$BUILDID/" $BUILDDIR/application.ini
 perl -pi -e "s/{{VERSION}}/$VERSION/" $BUILDDIR/Info.plist
 perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" $BUILDDIR/Info.plist
 
 # Copy prefs.js and modify
-cp $CALLDIR/prefs.js $BUILDDIR/zotero/defaults/preferences
+cp $CALLDIR/assets/prefs.js $BUILDDIR/zotero/defaults/preferences
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $BUILDDIR/zotero/defaults/preferences/prefs.js
 
 echo "Retrieving Zotero OpenOffice.org Integration"
@@ -170,13 +174,14 @@ if [ $BUILD_MAC == 1 ]; then
 	echo 'Building Zotero.app'
 	
 	# Set up directory structure
-	APPDIR=$CALLDIR/Zotero.app
+	APPDIR=$STAGEDIR/Zotero.app
 	rm -rf $APPDIR
 	mkdir $APPDIR
 	chmod 755 $APPDIR
-	cp -r $CALLDIR/Contents $APPDIR
+	cp -r $CALLDIR/mac/Contents $APPDIR
 	CONTENTSDIR=$APPDIR/Contents
 	rm -rf `find $CONTENTSDIR -type d -name .svn`
+	rm -rf `find $CONTENTSDIR -type d -name .DS_Store`
 	
 	# Merge xulrunner and relevant assets
 	mkdir $CONTENTSDIR/MacOS
@@ -195,8 +200,8 @@ if [ $BUILD_MAC == 1 ]; then
 	unzip -q $BUILDDIR/ooo.zip -d $CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org
 	
 	# Build disk image
-	$CALLDIR/pkg-dmg --source $CALLDIR/Zotero.app --target $CALLDIR/Zotero.dmg --sourcefile \
-		--volname Zotero --copy $CALLDIR/DSStore:/.DS_Store \
+	$CALLDIR/mac/pkg-dmg --source $STAGEDIR/Zotero.app --target $DISTDIR/Zotero.dmg --sourcefile \
+		--volname Zotero --copy $CALLDIR/mac/DSStore:/.DS_Store \
 		--symlink /Applications:"/Drag Here to Install"
 fi
 
@@ -209,7 +214,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	echo 'Building Zotero_win32'
 	
 	# Set up directory
-	APPDIR=$CALLDIR/Zotero_win32
+	APPDIR=$STAGEDIR/Zotero_win32
 	rm -rf $APPDIR
 	mkdir $APPDIR
 	
@@ -225,9 +230,9 @@ if [ $BUILD_WIN32 == 1 ]; then
 	unzip -q $BUILDDIR/winword.zip -d $APPDIR/extensions/zoteroWinWordIntegration@zotero.org
 	
 	# TODO: a real installer
-	rm -f $CALLDIR/Zotero_win32.zip
-	cd $CALLDIR
-	zip -rq $CALLDIR/Zotero_win32.zip Zotero_win32
+	rm -f $DISTDIR/Zotero_win32.zip
+	cd $STAGEDIR
+	zip -rq $DISTDIR/Zotero_win32.zip Zotero_win32
 fi
 
 # Linux
@@ -237,7 +242,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Set up directory
 		echo 'Building Zotero_linux-'$arch
-		APPDIR=$CALLDIR/Zotero_linux-$arch
+		APPDIR=$STAGEDIR/Zotero_linux-$arch
 		rm -rf $APPDIR
 		mkdir $APPDIR
 		
@@ -252,11 +257,12 @@ if [ $BUILD_LINUX == 1 ]; then
 		unzip -q $BUILDDIR/ooo.zip -d $APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org
 		
 		# Add run-zotero.sh
-		cp $CALLDIR/run-zotero.sh $APPDIR/run-zotero.sh
+		cp $CALLDIR/linux/run-zotero.sh $APPDIR/run-zotero.sh
 		
 		# Create tar
-		rm -f $CALLDIR/Zotero_linux-$arch.tar.bz2
-		tar -cjf $CALLDIR/Zotero_linux-$arch.tar.bz2 Zotero_linux-$arch
+		rm -f $DISTDIR/Zotero_linux-$arch.tar.bz2
+		cd $STAGEDIR
+		tar -cjf $DISTDIR/Zotero_linux-$arch.tar.bz2 Zotero_linux-$arch
 	done
 fi
 

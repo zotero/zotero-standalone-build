@@ -36,7 +36,7 @@
 #
 # ***** END LICENSE BLOCK *****
 cmdname=`basename "$0"`
-MOZ_DIST_BIN=`dirname "$0"`
+MOZ_DIST_BIN=`dirname "$0"`/xulrunner
 MOZ_DEFAULT_NAME="./${cmdname}-bin"
 MOZ_APPRUNNER_NAME="./zotero"
 MOZ_PROGRAM=""

@@ -1,14 +1,20 @@
 #!/bin/bash
-FROM=2.1a1
-TO=2.1a2
+FROM=2.1a2
+TO=2.1a3
+CALLDIR=`pwd`
+DISTDIR=$CALLDIR/../dist
+STAGEDIR=$CALLDIR/staging
 
 for version in "$FROM" "$TO"; do
-	if [ -d $version ]; then
+	versiondir=$STAGEDIR/$version
+	
+	if [ -d $versiondir ]; then
 		continue
 	fi
 	
 	echo "Getting Zotero $version..."
-	mkdir $version
+	mkdir -p $versiondir
+	cd $versiondir
 	
 	# Download archives
 	for archive in "Zotero.dmg" "Zotero_win32.zip" "Zotero_linux-i686.tar.bz2" "Zotero_linux-x86_64.tar.bz2"; do
@@ -19,23 +25,22 @@ for version in "$FROM" "$TO"; do
 	# Unpack Zotero.app
 	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
 	hdiutil attach -quiet Zotero.dmg
-	cp -R /Volumes/Zotero/Zotero.app $version
+	cp -R /Volumes/Zotero/Zotero.app $versiondir
 	rm Zotero.dmg
 	hdiutil detach -quiet /Volumes/Zotero
 	
 	# Unpack Win32 zip
 	unzip -q Zotero_win32.zip
-	mv Zotero_win32 $version
 	rm Zotero_win32.zip
 	
 	# Unpack Linux tarballs
 	for build in "Zotero_linux-i686" "Zotero_linux-x86_64"; do
 		tar -xjf $build.tar.bz2
-		mv $build $version
+		rm $build.tar.bz2
 	done
 done
 
 for build in "Zotero.app" "Zotero_win32" "Zotero_linux-i686" "Zotero_linux-x86_64"; do
-	./make_incremental_update.sh ${build}_${FROM}_${TO}.mar $FROM/$build $TO/$build
-	./make_full_update.sh ${build}_${TO}_full.mar $TO/$build
+	$CALLDIR/make_incremental_update.sh $DISTDIR/dist/${build}_${FROM}_${TO}.mar $STAGEDIR/$FROM/$build $STAGEDIR/$TO/$build
+	$CALLDIR/make_full_update.sh $DISTDIR/${build}_${TO}_full.mar $STAGEDIR/$TO/$build
 done
