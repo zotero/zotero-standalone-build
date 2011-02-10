@@ -145,6 +145,9 @@ fi
 # Adjust connector pref
 perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' $BUILDDIR/zotero/defaults/preferences/zotero.js
 
+# Copy icons
+cp -r $CALLDIR/assets/icons $BUILDDIR/zotero/chrome/icons
+
 # Copy application.ini and modify
 cp $CALLDIR/assets/application.ini $BUILDDIR/application.ini
 cp $CALLDIR/mac/Contents/Info.plist $BUILDDIR/Info.plist
@@ -156,6 +159,9 @@ perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" $BUILDDIR/Info.plist
 # Copy prefs.js and modify
 cp $CALLDIR/assets/prefs.js $BUILDDIR/zotero/defaults/preferences
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $BUILDDIR/zotero/defaults/preferences/prefs.js
+
+# Delete DS_Store
+rm -rf `find $BUILDDIR -type d -name .svn`
 
 echo "Retrieving Zotero OpenOffice.org Integration"
 cd ..
