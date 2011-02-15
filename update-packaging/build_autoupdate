@@ -1,6 +1,7 @@
 #!/bin/bash
 FROM=2.1a2
 TO=2.1a3
+USE_LOCAL_TO=1
 CALLDIR=`pwd`
 DISTDIR=$CALLDIR/../dist
 STAGEDIR=$CALLDIR/staging
@@ -9,6 +10,11 @@ for version in "$FROM" "$TO"; do
 	versiondir=$STAGEDIR/$version
 	
 	if [ -d $versiondir ]; then
+		continue
+	fi
+	
+	if [[ $version == $TO && $USE_LOCAL_TO == "1" ]]; then
+		ln -s $CALLDIR/../staging $versiondir
 		continue
 	fi
 	
@@ -41,6 +47,6 @@ for version in "$FROM" "$TO"; do
 done
 
 for build in "Zotero.app" "Zotero_win32" "Zotero_linux-i686" "Zotero_linux-x86_64"; do
-	$CALLDIR/make_incremental_update.sh $DISTDIR/dist/${build}_${FROM}_${TO}.mar $STAGEDIR/$FROM/$build $STAGEDIR/$TO/$build
+	$CALLDIR/make_incremental_update.sh $DISTDIR/${build}_${FROM}_${TO}.mar $STAGEDIR/$FROM/$build $STAGEDIR/$TO/$build
 	$CALLDIR/make_full_update.sh $DISTDIR/${build}_${TO}_full.mar $STAGEDIR/$TO/$build
 done
