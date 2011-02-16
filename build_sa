@@ -196,7 +196,9 @@ if [ $BUILD_MAC == 1 ]; then
 	mkdir $CONTENTSDIR/MacOS
 	mkdir $CONTENTSDIR/Frameworks
 	cp -a $MAC_RUNTIME_PATH $CONTENTSDIR/Frameworks/XUL.framework
-	ln -s ../Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
+	rm $CONTENTSDIR/Frameworks/XUL.framework/Versions/Current
+	mv $CONTENTSDIR/Frameworks/XUL.framework/Versions/2.0* $CONTENTSDIR/Frameworks/XUL.framework/Versions/Current
+	cp $CONTENTSDIR/Frameworks/XUL.framework/Versions/Current/xulrunner $CONTENTSDIR/MacOS/zotero
 	cp $BUILDDIR/application.ini $CONTENTSDIR/Resources
 	cp $BUILDDIR/Info.plist $CONTENTSDIR
 	
@@ -241,7 +243,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# TODO: a real installer
 	rm -f $DISTDIR/Zotero_win32.zip
 	cd $STAGEDIR
-	zip -rq $DISTDIR/Zotero_win32.zip Zotero_win32
+	zip -rqX $DISTDIR/Zotero_win32.zip Zotero_win32
 fi
 
 # Linux
