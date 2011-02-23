@@ -6,16 +6,16 @@ rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
 
-curl -O $SITE/xulrunner-$VERSION.en-US.mac64-pkg.dmg \
+curl -O $SITE/xulrunner-$VERSION.en-US.mac-pkg.dmg \
 	-O $SITE/xulrunner-$VERSION.en-US.win32.zip \
 	-O $SITE/xulrunner-$VERSION.en-US.linux-i686.tar.bz2 \
 	-O $SITE/xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2 
 
 hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
-hdiutil attach -quiet xulrunner-$VERSION.en-US.mac64-pkg.dmg
-gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac64.pkg/Contents/Archive.pax.gz | pax -r
+hdiutil attach -quiet xulrunner-$VERSION.en-US.mac-pkg.dmg
+gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
 hdiutil detach -quiet /Volumes/XULRunner
-rm xulrunner-$VERSION.en-US.mac64-pkg.dmg
+rm xulrunner-$VERSION.en-US.mac-pkg.dmg
 
 unzip -q xulrunner-$VERSION.en-US.win32.zip
 rm xulrunner-$VERSION.en-US.win32.zip
