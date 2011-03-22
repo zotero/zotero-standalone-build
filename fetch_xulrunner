@@ -1,6 +1,6 @@
 #!/bin/bash
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/nightly/latest-trunk/
-VERSION=2.0b12pre
+SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/2.0rc1/runtimes/
+VERSION=2.0
 
 rm -rf xulrunner
 mkdir xulrunner
