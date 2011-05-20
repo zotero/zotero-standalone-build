@@ -1,30 +1,43 @@
 #!/bin/bash
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/2.0rc1/runtimes/
+GET_MAC=1
+GET_WIN32=1
+GET_LINUX=1
+
+SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/2.0/runtimes/
 VERSION=2.0
 
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
 
-curl -O $SITE/xulrunner-$VERSION.en-US.mac-pkg.dmg \
-	-O $SITE/xulrunner-$VERSION.en-US.win32.zip \
-	-O $SITE/xulrunner-$VERSION.en-US.linux-i686.tar.bz2 \
-	-O $SITE/xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2 
 
-hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
-hdiutil attach -quiet xulrunner-$VERSION.en-US.mac-pkg.dmg
-gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
-hdiutil detach -quiet /Volumes/XULRunner
-rm xulrunner-$VERSION.en-US.mac-pkg.dmg
+if [ $GET_MAC == 1 ]; then
+	curl -O $SITE/xulrunner-$VERSION.en-US.mac-pkg.dmg
+	
+	hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
+	hdiutil attach -quiet xulrunner-$VERSION.en-US.mac-pkg.dmg
+	gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
+	hdiutil detach -quiet /Volumes/XULRunner
+	rm xulrunner-$VERSION.en-US.mac-pkg.dmg
+fi
 
-unzip -q xulrunner-$VERSION.en-US.win32.zip
-rm xulrunner-$VERSION.en-US.win32.zip
-mv xulrunner xulrunner_win32
+if [ $GET_WIN32 == 1 ]; then
+	curl -O $SITE/xulrunner-$VERSION.en-US.win32.zip
+	
+	unzip -q xulrunner-$VERSION.en-US.win32.zip
+	rm xulrunner-$VERSION.en-US.win32.zip
+	mv xulrunner xulrunner_win32
+fi
 
-tar -xjf xulrunner-$VERSION.en-US.linux-i686.tar.bz2
-rm xulrunner-$VERSION.en-US.linux-i686.tar.bz2
-mv xulrunner xulrunner_linux-i686
-
-tar -xjf xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
-rm xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
-mv xulrunner xulrunner_linux-x86_64
+if [ $GET_LINUX == 1 ]; then
+	curl -O $SITE/xulrunner-$VERSION.en-US.linux-i686.tar.bz2 \
+		-O $SITE/xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2 
+	
+	tar -xjf xulrunner-$VERSION.en-US.linux-i686.tar.bz2
+	rm xulrunner-$VERSION.en-US.linux-i686.tar.bz2
+	mv xulrunner xulrunner_linux-i686
+	
+	tar -xjf xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
+	rm xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
+	mv xulrunner xulrunner_linux-x86_64
+fi
