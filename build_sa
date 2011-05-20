@@ -1,5 +1,6 @@
 #!/bin/bash
-BUILD_MAC=1
+[ `uname` != Darwin ]
+BUILD_MAC=$?
 BUILD_WIN32=1
 BUILD_LINUX=1
 
