@@ -7,7 +7,7 @@
 
 !define AppVendor             "Zotero"
 !define AppName               "Standalone"
-!define AppVersion            "2.1a3"
+!define AppVersion            "{{VERSION}}"
 !define AppUserModelID        "${AppVendor}.${AppName}.${AppVersion}"
 !define GREVersion            2.0
 !define AB_CD                 "en-US"
