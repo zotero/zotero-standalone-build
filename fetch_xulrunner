@@ -1,6 +1,5 @@
 #!/bin/bash
-[ `uname` != Darwin ]
-GET_MAC=$?
+GET_MAC=1
 GET_WIN32=1
 GET_LINUX=1
 
