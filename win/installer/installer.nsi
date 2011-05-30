@@ -40,8 +40,8 @@
 # ShellLink     http://nsis.sourceforge.net/ShellLink_plug-in
 # UAC           http://nsis.sourceforge.net/UAC_plug-in
 
-; Set verbosity to 3 (e.g. no script) to lessen the noise in the build logs
-!verbose 3
+; Set verbosity to 2 to lessen the noise in the build logs
+!verbose 2
 
 ; TODO 7-Zip provides better compression than the lzma from NSIS so we add the files
 ; uncompressed and use 7-Zip to create a SFX archive of it

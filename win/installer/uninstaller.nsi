@@ -39,8 +39,8 @@
 # ShellLink   http://nsis.sourceforge.net/ShellLink_plug-in
 # UAC         http://nsis.sourceforge.net/UAC_plug-in
 
-; Set verbosity to 3 (e.g. no script) to lessen the noise in the build logs
-!verbose 3
+; Set verbosity to 2 to lessen the noise in the build logs
+!verbose 2
 
 ; 7-Zip provides better compression than the lzma from NSIS so we add the files
 ; uncompressed and use 7-Zip to create a SFX archive of it
@@ -155,14 +155,14 @@ ShowUnInstDetails nevershow
 !define MUI_WELCOMEPAGE_TITLE_3LINES
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP wizWatermark.bmp
+#TODO !define MUI_UNWELCOMEFINISHPAGE_BITMAP wizWatermark.bmp
 
 ; Use a right to left header image when the language is right to left
-!ifdef ${AB_CD}_rtl
-!define MUI_HEADERIMAGE_BITMAP_RTL wizHeaderRTL.bmp
-!else
-!define MUI_HEADERIMAGE_BITMAP wizHeader.bmp
-!endif
+#TODO !ifdef ${AB_CD}_rtl
+#TODO !define MUI_HEADERIMAGE_BITMAP_RTL wizHeaderRTL.bmp
+#TODO !else
+#TODO !define MUI_HEADERIMAGE_BITMAP wizHeader.bmp
+#TODO !endif
 
 /**
  * Uninstall Pages
@@ -223,14 +223,12 @@ Section "Uninstall"
 
   ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
   ${If} "$0" == "1"
-    ${un.DeleteRelativeProfiles} "Mozilla\Firefox"
-    RmDir "$APPDATA\Mozilla\Extensions\{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-    RmDir "$APPDATA\Mozilla\Extensions"
-    RmDir "$APPDATA\Mozilla"
+    ${un.DeleteRelativeProfiles} "Zotero\Zotero"
+    RmDir "$APPDATA\Zotero"
   ${EndIf}
 
   SetShellVarContext current  ; Set SHCTX to HKCU
-  ${un.RegCleanMain} "Software\Mozilla"
+  ${un.RegCleanMain} "Software\Zotero"
   ${un.RegCleanUninstall}
   ${un.DeleteShortcuts}
 
@@ -238,43 +236,26 @@ Section "Uninstall"
   ApplicationID::UninstallJumpLists "${AppUserModelID}"
 
   ClearErrors
-  WriteRegStr HKLM "Software\Mozilla" "${BrandShortName}InstallerTest" "Write Test"
+  WriteRegStr HKLM "Software\Zotero" "${BrandShortName}InstallerTest" "Write Test"
   ${If} ${Errors}
     StrCpy $TmpVal "HKCU" ; used primarily for logging
   ${Else}
     SetShellVarContext all  ; Set SHCTX to HKLM
-    DeleteRegValue HKLM "Software\Mozilla" "${BrandShortName}InstallerTest"
+    DeleteRegValue HKLM "Software\Zotero" "${BrandShortName}InstallerTest"
     StrCpy $TmpVal "HKLM" ; used primarily for logging
-    ${un.RegCleanMain} "Software\Mozilla"
+    ${un.RegCleanMain} "Software\Zotero"
     ${un.RegCleanUninstall}
     ${un.DeleteShortcuts}
     ${un.SetAppLSPCategories}
   ${EndIf}
 
-  ${un.RegCleanAppHandler} "FirefoxURL"
-  ${un.RegCleanAppHandler} "FirefoxHTML"
-  ${un.RegCleanProtocolHandler} "ftp"
-  ${un.RegCleanProtocolHandler} "http"
-  ${un.RegCleanProtocolHandler} "https"
-
   ClearErrors
-  ReadRegStr $R9 HKCR "FirefoxHTML" ""
-  ; Don't clean up the file handlers if the FirefoxHTML key still exists since
-  ; there should be a second installation that may be the default file handler
-  ${If} ${Errors}
-    ${un.RegCleanFileHandler}  ".htm"   "FirefoxHTML"
-    ${un.RegCleanFileHandler}  ".html"  "FirefoxHTML"
-    ${un.RegCleanFileHandler}  ".shtml" "FirefoxHTML"
-    ${un.RegCleanFileHandler}  ".xht"   "FirefoxHTML"
-    ${un.RegCleanFileHandler}  ".xhtml" "FirefoxHTML"
-    ${un.RegCleanFileHandler}  ".webm"  "FirefoxHTML"
-  ${EndIf}
 
   SetShellVarContext all  ; Set SHCTX to HKLM
-  ${un.GetSecondInstallPath} "Software\Mozilla" $R9
+  ${un.GetSecondInstallPath} "Software\Zotero" $R9
   ${If} $R9 == "false"
     SetShellVarContext current  ; Set SHCTX to HKCU
-    ${un.GetSecondInstallPath} "Software\Mozilla" $R9
+    ${un.GetSecondInstallPath} "Software\Zotero" $R9
   ${EndIf}
 
   StrCpy $0 "Software\Clients\StartMenuInternet\${FileMainEXE}\shell\open\command"
@@ -334,7 +315,7 @@ Section "Uninstall"
   ${EndIf}
 
   ; Remove the updates directory for Vista and above
-  ${un.CleanUpdatesDir} "Mozilla\Firefox"
+  ${un.CleanUpdatesDir} "Zotero\Standalone"
 
   ; Remove files that may be left behind by the application in the
   ; VirtualStore directory.

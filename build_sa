@@ -265,17 +265,27 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	if [ $WIN_NATIVE == 1 ]; then
 		echo 'Creating Windows installer'
-		# Build setup.exe
+		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
-		"`cygpath -m \"$MAKENSISU\"`" /V2 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
+		
+		# Build uninstaller
+		"`cygpath -m \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
+		mkdir "$APPDIR/uninstall"
+		mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
+		
+		# Build setup.exe
 		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
+		"`cygpath -m \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
 		mv "$BUILDDIR/win_installer/setup.exe" "$WINSTAGEDIR"
+		
 		# Compress application
 		cd "$WINSTAGEDIR" && "`cygpath -m \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
-			-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3
+			-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
+			
 		# Compress 7zSD.sfx
 		"`cygpath -m \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
 			"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
+		
 		# Combine 7zSD.sfx and app.tag into setup.exe
 		cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
 			"$BUILDDIR/app_win32.7z" > "$DISTDIR/Zotero_setup.exe"
