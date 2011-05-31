@@ -86,3 +86,6 @@ pref("app.update.incompatible.mode", 0);
 
 // update channel for this build
 pref("app.update.channel", "default");
+
+// even though we don't use the addons repository, we need this
+pref("extensions.getAddons.cache.enabled", false);
