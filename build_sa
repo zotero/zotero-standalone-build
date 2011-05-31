@@ -1,7 +1,7 @@
 #!/bin/bash
-BUILD_MAC=0
+BUILD_MAC=1
 BUILD_WIN32=1
-BUILD_LINUX=0
+BUILD_LINUX=1
 
 [ "`uname`" != "Darwin" ]
 MAC_NATIVE=$?
