@@ -1,7 +1,7 @@
 #!/bin/bash
-BUILD_MAC=1
+BUILD_MAC=0
 BUILD_WIN32=1
-BUILD_LINUX=1
+BUILD_LINUX=0
 
 [ "`uname`" != "Darwin" ]
 MAC_NATIVE=$?
@@ -264,26 +264,30 @@ if [ $BUILD_WIN32 == 1 ]; then
 	unzip -q "$BUILDDIR/winword.zip" -d "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
 	
 	if [ $WIN_NATIVE == 1 ]; then
+		# Add icon to xulrunner-stub
+		"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
+			"`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
+		
 		echo 'Creating Windows installer'
 		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
 		
 		# Build uninstaller
-		"`cygpath -m \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
+		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
 		mkdir "$APPDIR/uninstall"
 		mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
 		
 		# Build setup.exe
 		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
-		"`cygpath -m \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
+		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
 		mv "$BUILDDIR/win_installer/setup.exe" "$WINSTAGEDIR"
 		
 		# Compress application
-		cd "$WINSTAGEDIR" && "`cygpath -m \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
+		cd "$WINSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
 			-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
 			
 		# Compress 7zSD.sfx
-		"`cygpath -m \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
+		"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
 			"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
 		
 		# Combine 7zSD.sfx and app.tag into setup.exe
