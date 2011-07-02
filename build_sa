@@ -27,7 +27,6 @@ MAC_NATIVE=$?
 [ "`uname -o 2> /dev/null`" != "Cygwin" ]
 WIN_NATIVE=$?
 
-PYTHONEXT_URL=https://www.zotero.org/download/integration/pythonext-2.5.4.20110123-Darwin_x86.xpi
 MACWORD_URL=https://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
 WINWORD_URL=https://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
 OOO_URL=https://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
@@ -200,9 +199,6 @@ cd "$CALLDIR"
 
 # Mac
 if [ $BUILD_MAC == 1 ]; then
-	echo "Retrieving PythonExt"
-	curl -4s "$PYTHONEXT_URL" -o "$BUILDDIR/pythonext.zip"
-	
 	echo "Retrieving Zotero MacWord Integration"
 	curl -4s "$MACWORD_URL" -o "$BUILDDIR/macword.zip"
 	
@@ -241,7 +237,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
-	unzip -q "$BUILDDIR/pythonext.zip" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
+	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
 	unzip -q "$BUILDDIR/macword.zip" -d "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
 	unzip -q "$BUILDDIR/ooo.zip" -d "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
 	
