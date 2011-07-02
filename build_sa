@@ -86,7 +86,7 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 		echo "Windows host detected; copying files instead of symlinking"
 		
 		# Copy branding
-		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+		cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
 	else	
 		# Symlink chrome dirs
 		rm -rf "$BUILDDIR/zotero/chrome/"*
