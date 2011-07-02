@@ -81,18 +81,27 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 	REV=`svnversion .`
 	find . -depth -type d -name .svn -exec rm -rf {} \;
 	
-	# Symlink chrome dirs
-	rm -rf "$BUILDDIR/zotero/chrome/"*
-	for i in `ls $SVNPATH/chrome`; do
-		ln -s "$SVNPATH/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
-	done
-	
-	# Symlink translators and styles
-	ln -s "$SVNPATH/translators" "$BUILDDIR/zotero/translators"
-	ln -s "$SVNPATH/styles" "$BUILDDIR/zotero/styles"
-	
-	# Symlink branding
-	ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+	# Windows can't actually symlink; copy instead, with a note
+	if [ $WIN_NATIVE == 1 ]; then
+		echo "Windows host detected; copying files instead of symlinking"
+		
+		# Copy branding
+		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+	else	
+		# Symlink chrome dirs
+		rm -rf "$BUILDDIR/zotero/chrome/"*
+		for i in `ls $SVNPATH/chrome`; do
+			ln -s "$SVNPATH/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
+		done
+		
+		# Symlink translators and styles
+		rm -rf "$BUILDDIR/zotero/translators" "$BUILDDIR/zotero/styles"
+		ln -s "$SVNPATH/translators" "$BUILDDIR/zotero/translators"
+		ln -s "$SVNPATH/styles" "$BUILDDIR/zotero/styles"
+		
+		# Symlink branding
+		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+	fi
 	
 	# Add to chrome manifest
 	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
