@@ -95,6 +95,7 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 	ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
 	
 	# Add to chrome manifest
+	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
 	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
 else
 	if [ -z $REV ]; then
@@ -164,6 +165,7 @@ else
 	fi
 	
 	# Adjust chrome.manifest
+	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
 	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
 	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' "$BUILDDIR/zotero/chrome.manifest"
 fi
