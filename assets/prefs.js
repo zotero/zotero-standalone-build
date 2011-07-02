@@ -1,5 +1,5 @@
 // This is the URI that is loaded when Zotero Standalone is opened
-pref("toolkit.defaultChromeURI", "chrome://zotero/content/standalone.xul");
+pref("toolkit.defaultChromeURI", "chrome://zotero/content/standalone/standalone.xul");
 
 // For debugging purposes, show errors in console by default
 pref("javascript.options.showInConsole", true);
