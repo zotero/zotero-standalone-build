@@ -14,7 +14,6 @@
 
 !define FileMainEXE           "zotero.exe"
 !define WindowClass           "ZoteroMessageWindow"
-!define DDEApplication        "Zotero"
 !define AppRegName            "Zotero"
 
 !define BrandShortName        "Zotero"

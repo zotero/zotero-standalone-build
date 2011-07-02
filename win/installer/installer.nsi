@@ -100,7 +100,7 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 ; Must be inserted before other macros that use logging
 !insertmacro _LoggingCommon
 
-!insertmacro AddDDEHandlerValues
+!insertmacro AddHandlerValues
 !insertmacro ChangeMUIHeaderImage
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
@@ -227,9 +227,8 @@ Section "-InstallStartCleanup"
   ${EndIf}
 
   ; Remove the updates directory for Vista and above
-  ${CleanUpdatesDir} "Zotero\Firefox"
+  ${CleanUpdatesDir} "Zotero\Zotero"
 
-  ${RemoveDeprecatedFiles}
 
   ${InstallStartCleanupCommon}
 SectionEnd
@@ -320,8 +319,6 @@ Section "-Application" APP_IDX
     ${EndIf}
   ${EndIf}
 
-  ${RemoveDeprecatedKeys}
-
   ; The previous installer adds several regsitry values to both HKLM and HKCU.
   ; We now try to add to HKLM and if that fails to HKCU
 
@@ -337,24 +334,13 @@ Section "-Application" APP_IDX
   ; Uninstall keys can only exist under HKLM on some versions of windows. Since
   ; it doesn't cause problems always add them.
   ${SetUninstallKeys}
-
-  ; On install always add the FirefoxHTML and FirefoxURL keys.
-  ; An empty string is used for the 5th param because FirefoxHTML and FirefoxURL
-  ; are not protocol handlers.
-  ;${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
-  ;StrCpy $2 "$\"$8$\" -requestPending -osint -url $\"%1$\""
-  ;StrCpy $3 "$\"%1$\",,0,0,,,,"
-
-  ;${AddDDEHandlerValues} "FirefoxHTML" "$2" "$8,1" "${AppRegName} Document" "" \
-  ;                       "${DDEApplication}" "$3" "WWW_OpenURL"
-
-  ;${AddDDEHandlerValues} "FirefoxURL" "$2" "$8,1" "${AppRegName} URL" "true" \
-  ;                       "${DDEApplication}" "$3" "WWW_OpenURL"
+  
+  ; Register zotero protocol handler
+  ${SetHandlers}
 
   ; The following keys should only be set if we can write to HKLM
   ${If} $TmpVal == "HKLM"
     ; Set the Start Menu Internet and Vista Registered App HKLM registry keys.
-    ${SetStartMenuInternet}
     ${FixShellIconHandler}
 
     ; If we are writing to HKLM and create either the desktop or start menu
@@ -483,22 +469,6 @@ Section "-InstallEndCleanup"
   SetDetailsPrint both
   DetailPrint "$(STATUS_CLEANUP)"
   SetDetailsPrint none
-
-  ${Unless} ${Silent}
-    ${MUI_INSTALLOPTIONS_READ} $0 "summary.ini" "Field 4" "State"
-    ${If} "$0" == "1"
-      ${LogHeader} "Setting as the default browser"
-      ClearErrors
-      ${GetParameters} $0
-      ${GetOptions} "$0" "/UAC:" $0
-      ${If} ${Errors}
-        Call SetAsDefaultAppUserHKCU
-      ${Else}
-        GetFunctionAddress $0 SetAsDefaultAppUserHKCU
-        UAC::ExecCodeSegment $0
-      ${EndIf}
-    ${EndIf}
-  ${EndUnless}
 
   ; Adds a pinned Task Bar shortcut (see MigrateTaskBarShortcut for details).
   ${MigrateTaskBarShortcut}

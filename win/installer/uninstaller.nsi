@@ -87,7 +87,7 @@ Var TmpVal
 VIAddVersionKey "FileDescription" "${BrandShortName} Helper"
 VIAddVersionKey "OriginalFilename" "helper.exe"
 
-!insertmacro AddDDEHandlerValues
+!insertmacro AddHandlerValues
 !insertmacro CleanVirtualStore
 !insertmacro ElevateUAC
 !insertmacro GetLongPath
@@ -248,6 +248,8 @@ Section "Uninstall"
     ${un.DeleteShortcuts}
     ${un.SetAppLSPCategories}
   ${EndIf}
+  
+  ${un.RegCleanProtocolHandler} "zotero"
 
   ClearErrors
 

@@ -64,19 +64,6 @@
     ; Win7 taskbar and start menu link maintenance
     Call FixShortcutAppModelIDs
 
-    ; Only update the Clients\StartMenuInternet registry key values if they
-    ; don't exist or this installation is the same as the one set in those keys.
-    ${StrFilter} "${FileMainEXE}" "+" "" "" $1
-    ReadRegStr $0 HKLM "Software\Clients\StartMenuInternet\$1\DefaultIcon" ""
-    ${GetPathFromString} "$0" $0
-    ${GetParent} "$0" $0
-    ${If} ${FileExists} "$0"
-      ${GetLongPath} "$0" $0
-    ${EndIf}
-    ${If} "$0" == "$INSTDIR"
-      ${SetStartMenuInternet}
-    ${EndIf}
-
     ReadRegStr $0 HKLM "Software\zotero.org\Zotero" "CurrentVersion"
     ${If} "$0" != "${GREVersion}"
       WriteRegStr HKLM "Software\zotero.org\Zotero" "CurrentVersion" "${GREVersion}"
@@ -90,8 +77,6 @@
   ; Adds a pinned Task Bar shortcut (see MigrateTaskBarShortcut for details).
   ${MigrateTaskBarShortcut}
 
-  ${RemoveDeprecatedKeys}
-
   ${SetAppKeys}
   ${FixClassKeys}
   ${SetUninstallKeys}
@@ -99,21 +84,10 @@
   ; Remove files that may be left behind by the application in the
   ; VirtualStore directory.
   ${CleanVirtualStore}
-
-  ${RemoveDeprecatedFiles}
 !macroend
 !define PostUpdate "!insertmacro PostUpdate"
 
 !macro SetAsDefaultAppGlobal
-  ${RemoveDeprecatedKeys}
-
-  SetShellVarContext all      ; Set SHCTX to all users (e.g. HKLM)
-  ${SetHandlers}
-  ${SetStartMenuInternet}
-  ${FixShellIconHandler}
-  ${ShowShortcuts}
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-  WriteRegStr HKLM "Software\Clients\StartMenuInternet" "" "$R9"
 !macroend
 !define SetAsDefaultAppGlobal "!insertmacro SetAsDefaultAppGlobal"
 
@@ -245,138 +219,52 @@
 !macroend
 !define ShowShortcuts "!insertmacro ShowShortcuts"
 
-; Adds the protocol and file handler registry entries for making Firefox the
-; default handler (uses SHCTX).
+; Adds zotero:// protocol handler (TODO: make Zotero open exported bib files)
 !macro SetHandlers
   ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
-
-  StrCpy $0 "SOFTWARE\Classes"
-  StrCpy $2 "$\"$8$\" -requestPending -osint -url $\"%1$\""
+  
+  ${AddHandlerValues} "SOFTWARE\Classes\zotero" "$\"$8$\" -url $\"%1$\"" \
+      "$8,1" "Zotero" "true" ""
 
   ; Associate the file handlers with FirefoxHTML
-  ReadRegStr $6 SHCTX "$0\.htm" ""
-  ${If} "$6" != "FirefoxHTML"
-    WriteRegStr SHCTX "$0\.htm"   "" "FirefoxHTML"
-  ${EndIf}
-
-  ReadRegStr $6 SHCTX "$0\.html" ""
-  ${If} "$6" != "FirefoxHTML"
-    WriteRegStr SHCTX "$0\.html"  "" "FirefoxHTML"
-  ${EndIf}
-
-  ReadRegStr $6 SHCTX "$0\.shtml" ""
-  ${If} "$6" != "FirefoxHTML"
-    WriteRegStr SHCTX "$0\.shtml" "" "FirefoxHTML"
-  ${EndIf}
-
-  ReadRegStr $6 SHCTX "$0\.xht" ""
-  ${If} "$6" != "FirefoxHTML"
-    WriteRegStr SHCTX "$0\.xht"   "" "FirefoxHTML"
-  ${EndIf}
-
-  ReadRegStr $6 SHCTX "$0\.xhtml" ""
-  ${If} "$6" != "FirefoxHTML"
-    WriteRegStr SHCTX "$0\.xhtml" "" "FirefoxHTML"
-  ${EndIf}
-
+  ;ReadRegStr $6 SHCTX "$0\.htm" ""
+  ;${If} "$6" != "FirefoxHTML"
+  ;  WriteRegStr SHCTX "$0\.htm"   "" "FirefoxHTML"
+  ;${EndIf}
+  ;
+  ;ReadRegStr $6 SHCTX "$0\.html" ""
+  ;${If} "$6" != "FirefoxHTML"
+  ;  WriteRegStr SHCTX "$0\.html"  "" "FirefoxHTML"
+  ;${EndIf}
+  ;
+  ;ReadRegStr $6 SHCTX "$0\.shtml" ""
+  ;${If} "$6" != "FirefoxHTML"
+  ;  WriteRegStr SHCTX "$0\.shtml" "" "FirefoxHTML"
+  ;${EndIf}
+  ;
+  ;ReadRegStr $6 SHCTX "$0\.xht" ""
+  ;${If} "$6" != "FirefoxHTML"
+  ;  WriteRegStr SHCTX "$0\.xht"   "" "FirefoxHTML"
+  ;${EndIf}
+  ;
+  ;ReadRegStr $6 SHCTX "$0\.xhtml" ""
+  ;${If} "$6" != "FirefoxHTML"
+  ;  WriteRegStr SHCTX "$0\.xhtml" "" "FirefoxHTML"
+  ;${EndIf}
+  ;
   ; Only add webm if it's not present
-  ${CheckIfRegistryKeyExists} "$0" ".webm" $7
-  ${If} $7 == "false"
-    WriteRegStr SHCTX "$0\.webm"  "" "FirefoxHTML"
-  ${EndIf}
-
-  StrCpy $3 "$\"%1$\",,0,0,,,,"
-
+  ;${CheckIfRegistryKeyExists} "$0" ".webm" $7
+  ;${If} $7 == "false"
+  ;  WriteRegStr SHCTX "$0\.webm"  "" "FirefoxHTML"
+  ;${EndIf}
+  ;
+  ;StrCpy $3 "$\"%1$\",,0,0,,,,"
+  ;
   ; An empty string is used for the 5th param because FirefoxHTML is not a
   ; protocol handler
-  ${AddDDEHandlerValues} "FirefoxHTML" "$2" "$8,1" "${AppRegName} Document" "" \
-                         "${DDEApplication}" "$3" "WWW_OpenURL"
-
-  ${AddDDEHandlerValues} "FirefoxURL" "$2" "$8,1" "${AppRegName} URL" "true" \
-                         "${DDEApplication}" "$3" "WWW_OpenURL"
-
-  ; An empty string is used for the 4th & 5th params because the following
-  ; protocol handlers already have a display name and the additional keys
-  ; required for a protocol handler.
-  ${AddDDEHandlerValues} "ftp" "$2" "$8,1" "" "" \
-                         "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${AddDDEHandlerValues} "http" "$2" "$8,1" "" "" \
-                         "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${AddDDEHandlerValues} "https" "$2" "$8,1" "" "" \
-                         "${DDEApplication}" "$3" "WWW_OpenURL"
+  ;${AddDDEHandlerValues} "FirefoxHTML" "$2" "$8,1" "${AppRegName} Document" "" "${DDEApplication}" "$3" "WWW_OpenURL"
 !macroend
 !define SetHandlers "!insertmacro SetHandlers"
-
-; Adds the HKLM\Software\Clients\StartMenuInternet\FIREFOX.EXE registry
-; entries (does not use SHCTX).
-;
-; The values for StartMenuInternet are only valid under HKLM and there can only
-; be one installation registerred under StartMenuInternet per application since
-; the key name is derived from the main application executable.
-; http://support.microsoft.com/kb/297878
-;
-; Note: we might be able to get away with using the full path to the
-; application executable for the key name in order to support multiple
-; installations.
-!macro SetStartMenuInternet
-  ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
-  ${GetLongPath} "$INSTDIR\uninstall\helper.exe" $7
-
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-
-  StrCpy $0 "Software\Clients\StartMenuInternet\$R9"
-
-  WriteRegStr HKLM "$0" "" "${BrandFullName}"
-
-  WriteRegStr HKLM "$0\DefaultIcon" "" "$8,0"
-
-  ; The Reinstall Command is defined at
-  ; http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/programmersguide/shell_adv/registeringapps.asp
-  WriteRegStr HKLM "$0\InstallInfo" "HideIconsCommand" "$\"$7$\" /HideShortcuts"
-  WriteRegStr HKLM "$0\InstallInfo" "ShowIconsCommand" "$\"$7$\" /ShowShortcuts"
-  WriteRegStr HKLM "$0\InstallInfo" "ReinstallCommand" "$\"$7$\" /SetAsDefaultAppGlobal"
-
-  ClearErrors
-  ReadRegDWORD $1 HKLM "$0\InstallInfo" "IconsVisible"
-  ; If the IconsVisible name value pair doesn't exist add it otherwise the
-  ; application won't be displayed in Set Program Access and Defaults.
-  ${If} ${Errors}
-    ${If} ${FileExists} "$QUICKLAUNCH\${BrandFullName}.lnk"
-      WriteRegDWORD HKLM "$0\InstallInfo" "IconsVisible" 1
-    ${Else}
-      WriteRegDWORD HKLM "$0\InstallInfo" "IconsVisible" 0
-    ${EndIf}
-  ${EndIf}
-
-  WriteRegStr HKLM "$0\shell\open\command" "" "$8"
-
-  WriteRegStr HKLM "$0\shell\properties" "" "$(CONTEXT_OPTIONS)"
-  WriteRegStr HKLM "$0\shell\properties\command" "" "$\"$8$\" -preferences"
-
-  WriteRegStr HKLM "$0\shell\safemode" "" "$(CONTEXT_SAFE_MODE)"
-  WriteRegStr HKLM "$0\shell\safemode\command" "" "$\"$8$\" -safe-mode"
-
-  ; Vista Capabilities registry keys
-  WriteRegStr HKLM "$0\Capabilities" "ApplicationDescription" "$(REG_APP_DESC)"
-  WriteRegStr HKLM "$0\Capabilities" "ApplicationIcon" "$8,0"
-  WriteRegStr HKLM "$0\Capabilities" "ApplicationName" "${BrandShortName}"
-
-  WriteRegStr HKLM "$0\Capabilities\FileAssociations" ".htm"   "FirefoxHTML"
-  WriteRegStr HKLM "$0\Capabilities\FileAssociations" ".html"  "FirefoxHTML"
-  WriteRegStr HKLM "$0\Capabilities\FileAssociations" ".shtml" "FirefoxHTML"
-  WriteRegStr HKLM "$0\Capabilities\FileAssociations" ".xht"   "FirefoxHTML"
-  WriteRegStr HKLM "$0\Capabilities\FileAssociations" ".xhtml" "FirefoxHTML"
-
-  WriteRegStr HKLM "$0\Capabilities\StartMenu" "StartMenuInternet" "$R9"
-
-  WriteRegStr HKLM "$0\Capabilities\URLAssociations" "ftp"    "FirefoxURL"
-  WriteRegStr HKLM "$0\Capabilities\URLAssociations" "http"   "FirefoxURL"
-  WriteRegStr HKLM "$0\Capabilities\URLAssociations" "https"  "FirefoxURL"
-
-  ; Vista Registered Application
-  WriteRegStr HKLM "Software\RegisteredApplications" "${AppRegName}" "$0\Capabilities"
-!macroend
-!define SetStartMenuInternet "!insertmacro SetStartMenuInternet"
 
 ; The IconHandler reference for FirefoxHTML can end up in an inconsistent state
 ; due to changes not being detected by the IconHandler for side by side
@@ -499,193 +387,17 @@
 !macro UpdateProtocolHandlers
   ; Store the command to open the app with an url in a register for easy access.
   ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
-  StrCpy $2 "$\"$8$\" -requestPending -osint -url $\"%1$\""
-  StrCpy $3 "$\"%1$\",,0,0,,,,"
 
   ; Only set the file and protocol handlers if the existing one under HKCR is
   ; for this install location.
 
-  ${IsHandlerForInstallDir} "FirefoxHTML" $R9
+  ${IsHandlerForInstallDir} "zotero" $R9
   ${If} "$R9" == "true"
-    ; An empty string is used for the 5th param because FirefoxHTML is not a
-    ; protocol handler.
-    ${AddDDEHandlerValues} "FirefoxHTML" "$2" "$8,1" "${AppRegName} Document" "" \
-                           "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${EndIf}
-
-  ${IsHandlerForInstallDir} "FirefoxURL" $R9
-  ${If} "$R9" == "true"
-    ${AddDDEHandlerValues} "FirefoxURL" "$2" "$8,1" "${AppRegName} URL" "true" \
-                           "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${EndIf}
-
-  ${IsHandlerForInstallDir} "ftp" $R9
-  ${If} "$R9" == "true"
-    ${AddDDEHandlerValues} "ftp" "$2" "$8,1" "" "" \
-                           "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${EndIf}
-
-  ${IsHandlerForInstallDir} "http" $R9
-  ${If} "$R9" == "true"
-    ${AddDDEHandlerValues} "http" "$2" "$8,1" "" "" \
-                           "${DDEApplication}" "$3" "WWW_OpenURL"
-  ${EndIf}
-
-  ${IsHandlerForInstallDir} "https" $R9
-  ${If} "$R9" == "true"
-    ${AddDDEHandlerValues} "https" "$2" "$8,1" "" "" \
-                           "${DDEApplication}" "$3" "WWW_OpenURL"
+     ${AddHandlerValues} "SOFTWARE\Classes\zotero" "$\"$8$\" -url $\"%1$\"" \
+	     "$8,1" "Zotero" "true" ""
   ${EndIf}
 !macroend
 !define UpdateProtocolHandlers "!insertmacro UpdateProtocolHandlers"
-
-; Removes various registry entries for reasons noted below (does not use SHCTX).
-!macro RemoveDeprecatedKeys
-  StrCpy $0 "SOFTWARE\Classes"
-  ; Remove support for launching gopher urls from the shell during install or
-  ; update if the DefaultIcon is from firefox.exe.
-  ${RegCleanAppHandler} "gopher"
-
-  ; Remove support for launching chrome urls from the shell during install or
-  ; update if the DefaultIcon is from firefox.exe (Bug 301073).
-  ${RegCleanAppHandler} "chrome"
-
-  ; Remove protocol handler registry keys added by the MS shim
-  DeleteRegKey HKLM "Software\Classes\Firefox.URL"
-  DeleteRegKey HKCU "Software\Classes\Firefox.URL"
-
-  ; Remove the app compatibility registry key
-  StrCpy $0 "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
-  DeleteRegValue HKLM "$0" "$INSTDIR\${FileMainEXE}"
-  DeleteRegValue HKCU "$0" "$INSTDIR\${FileMainEXE}"
-
-  ; Delete gopher from Capabilities\URLAssociations if it is present.
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-  StrCpy $0 "Software\Clients\StartMenuInternet\$R9"
-  ClearErrors
-  ReadRegStr $2 HKLM "$0\Capabilities\URLAssociations" "gopher"
-  ${Unless} ${Errors}
-    DeleteRegValue HKLM "$0\Capabilities\URLAssociations" "gopher"
-  ${EndUnless}
-
-  ; Delete gopher from the user's UrlAssociations if it points to FirefoxURL.
-  StrCpy $0 "Software\Microsoft\Windows\Shell\Associations\UrlAssociations\gopher"
-  ReadRegStr $2 HKCU "$0\UserChoice" "Progid"
-  ${If} "$2" == "FirefoxURL"
-    DeleteRegKey HKCU "$0"
-  ${EndIf}
-!macroend
-!define RemoveDeprecatedKeys "!insertmacro RemoveDeprecatedKeys"
-
-; Removes various directories and files for reasons noted below.
-!macro RemoveDeprecatedFiles
-  ; Remove talkback if it is present (remove after bug 386760 is fixed)
-  ${If} ${FileExists} "$INSTDIR\extensions\talkback@mozilla.org\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\talkback@mozilla.org\"
-  ${EndIf}
-
-  ; Remove the Java Console extension (bug 597235)
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0012-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0012-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0013-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0013-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0014-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0014-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0015-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0015-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0016-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0016-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0017-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0017-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0018-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0018-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0019-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0019-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0020-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0020-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0021-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0021-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0022-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0015-0000-0022-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0000-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0000-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0001-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0001-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0002-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0002-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0003-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0003-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0004-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0004-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0005-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0005-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0006-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0006-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0010-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0010-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0012-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0012-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0013-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0013-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0014-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0014-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0015-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0015-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0016-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0016-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0017-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0017-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0018-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0018-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0019-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0019-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0020-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0020-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0021-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0021-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0023-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0016-0000-0023-ABCDEFFEDCBA}\"
-  ${EndIf}
-  ${If} ${FileExists} "$INSTDIR\extensions\{CAFEEFAC-0017-0000-0000-ABCDEFFEDCBA}\"
-    RmDir /r /REBOOTOK "$INSTDIR\extensions\{CAFEEFAC-0017-0000-0000-ABCDEFFEDCBA}\"
-  ${EndIf}
-!macroend
-!define RemoveDeprecatedFiles "!insertmacro RemoveDeprecatedFiles"
 
 ; Adds a pinned shortcut to Task Bar on update for Windows 7 and above if this
 ; macro has never been called before and the application is default (see
@@ -930,48 +642,6 @@
 !macroend
 !define PushFilesToCheck "!insertmacro PushFilesToCheck"
 
-
-; Sets this installation as the default browser by setting the registry keys
-; under HKEY_CURRENT_USER via registry calls and using the AppAssocReg NSIS
-; plugin for Vista and above. This is a function instead of a macro so it is
-; easily called from an elevated instance of the binary. Since this can be
-; called by an elevated instance logging is not performed in this function.
-Function SetAsDefaultAppUserHKCU
-  ; Only set as the user's StartMenuInternet browser if the StartMenuInternet
-  ; registry keys are for this install.
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-  ClearErrors
-  ReadRegStr $0 HKLM "Software\Clients\StartMenuInternet\$R9\DefaultIcon" ""
-  ${Unless} ${Errors}
-    ${GetPathFromString} "$0" $0
-    ${GetParent} "$0" $0
-    ${If} ${FileExists} "$0"
-      ${GetLongPath} "$0" $0
-      ${If} "$0" == "$INSTDIR"
-        WriteRegStr HKCU "Software\Clients\StartMenuInternet" "" "$R9"
-      ${EndIf}
-    ${EndIf}
-  ${EndUnless}
-
-  SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
-  ${SetHandlers}
-
-  ${If} ${AtLeastWinVista}
-    ; Only register as the handler on Vista and above if the app registry name
-    ; exists under the RegisteredApplications registry key. The protocol and
-    ; file handlers set previously at the user level will associate this install
-    ; as the default browser.
-    ClearErrors
-    ReadRegStr $0 HKLM "Software\RegisteredApplications" "${AppRegName}"
-    ${Unless} ${Errors}
-      AppAssocReg::SetAppAsDefaultAll "${AppRegName}"
-    ${EndUnless}
-  ${EndIf}
-  ${RemoveDeprecatedKeys}
-
-  ${PinToTaskBar}
-FunctionEnd
-
 ; Helper for updating the shortcut application model IDs.
 Function FixShortcutAppModelIDs
   ${UpdateShortcutAppModelIDs} "$INSTDIR\${FileMainEXE}" "${AppUserModelID}" $0
@@ -982,57 +652,6 @@ FunctionEnd
 !ifdef NO_LOG
 
 Function SetAsDefaultAppUser
-  ; It is only possible to set this installation of the application as the
-  ; StartMenuInternet handler if it was added to the HKLM StartMenuInternet
-  ; registry keys.
-  ; http://support.microsoft.com/kb/297878
-
-  ; Check if this install location registered as the StartMenuInternet client
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-  ClearErrors
-  ReadRegStr $0 HKLM "Software\Clients\StartMenuInternet\$R9\DefaultIcon" ""
-  ${Unless} ${Errors}
-    ${GetPathFromString} "$0" $0
-    ${GetParent} "$0" $0
-    ${If} ${FileExists} "$0"
-      ${GetLongPath} "$0" $0
-      ${If} "$0" == "$INSTDIR"
-        ; Check if this is running in an elevated process
-        ClearErrors
-        ${GetParameters} $0
-        ${GetOptions} "$0" "/UAC:" $0
-        ${If} ${Errors} ; Not elevated
-          Call SetAsDefaultAppUserHKCU
-        ${Else} ; Elevated - execute the function in the unelevated process
-          GetFunctionAddress $0 SetAsDefaultAppUserHKCU
-          UAC::ExecCodeSegment $0
-        ${EndIf}
-        Return ; Nothing more needs to be done
-      ${EndIf}
-    ${EndIf}
-  ${EndUnless}
-
-  ; The code after ElevateUAC won't be executed on Vista and above when the
-  ; user:
-  ; a) is a member of the administrators group (e.g. elevation is required)
-  ; b) is not a member of the administrators group and chooses to elevate
-  ${ElevateUAC}
-
-  ${SetStartMenuInternet}
-
-  SetShellVarContext all  ; Set SHCTX to all users (e.g. HKLM)
-  ${FixShellIconHandler}
-  ${RemoveDeprecatedKeys}
-
-  ClearErrors
-  ${GetParameters} $0
-  ${GetOptions} "$0" "/UAC:" $0
-  ${If} ${Errors}
-    Call SetAsDefaultAppUserHKCU
-  ${Else}
-    GetFunctionAddress $0 SetAsDefaultAppUserHKCU
-    UAC::ExecCodeSegment $0
-  ${EndIf}
 FunctionEnd
 !define SetAsDefaultAppUser "Call SetAsDefaultAppUser"
 
