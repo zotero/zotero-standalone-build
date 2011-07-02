@@ -125,7 +125,7 @@ else
 		exit;
 	fi
 	zip -0 -r -q ../zotero.jar .
-	rm -rf "$BUILDDIR/zotero/chrome/*"
+	rm -rf "$BUILDDIR/zotero/chrome/"*
 	mv ../zotero.jar .
 	cd ..
 	
