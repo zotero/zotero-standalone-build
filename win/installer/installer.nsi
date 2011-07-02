@@ -661,8 +661,7 @@ Function LaunchAppFromElevatedProcess
 
   ; Find the installation directory when launching using GetFunctionAddress
   ; from an elevated installer since $INSTDIR will not be set in this installer
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
-  ReadRegStr $0 HKLM "Software\Clients\StartMenuInternet\$R9\DefaultIcon" ""
+  ReadRegStr $0 HKLM "Software\Classes\zotero\DefaultIcon" ""
   ${GetPathFromString} "$0" $0
   ${GetParent} "$0" $1
   ; Set our current working directory to the application's install directory
