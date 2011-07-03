@@ -89,3 +89,7 @@ pref("app.update.channel", "default");
 
 // even though we don't use the addons repository, we need this
 pref("extensions.getAddons.cache.enabled", false);
+
+// expose only zotero protocol
+pref("network.protocol-handler.expose-all", false);
+pref("network.protocol-handler.zotero", true);
