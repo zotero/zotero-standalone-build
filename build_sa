@@ -65,8 +65,8 @@ mkdir "$STAGEDIR"
 rm -rf "$DISTDIR"
 mkdir "$DISTDIR"
 
-if [ -z $SVNPATH ]; then SVNPATH="trunk"; fi
-if [ -z $UPDATE_CHANNEL ]; then UPDATE_CHANNEL="default"; fi
+if [ -z "$SVNPATH" ]; then SVNPATH="trunk"; fi
+if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
 URL=${SVNPREFIX}${SVNPATH}/
 
