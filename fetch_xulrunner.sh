@@ -22,13 +22,12 @@ GET_MAC=1
 GET_WIN32=1
 GET_LINUX=1
 
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/2.0/runtimes/
-VERSION=2.0
+SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/nightly/2011-07-19-03-08-42-mozilla-beta/
+VERSION=6.0
 
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
-
 
 if [ $GET_MAC == 1 ]; then
 	curl -O $SITE/xulrunner-$VERSION.en-US.mac-pkg.dmg
