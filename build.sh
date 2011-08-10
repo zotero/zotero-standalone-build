@@ -142,7 +142,6 @@ else
 	echo "Retrieving translators"
 	rm -rf translators
 	git clone -q https://github.com/zotero/translators.git
-	rm -rf translators/.git
 	
 	echo "Building translators.zip"
 	cd translators
@@ -160,6 +159,7 @@ else
 	cd output
 	zip -q ../../translators.zip *
 	cd ../..
+	rm -rf translators
 	
 	# Build styles.zip with default styles
 	if [ -d styles ]; then
