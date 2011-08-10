@@ -141,7 +141,8 @@ else
 	# Build translators.zip
 	echo "Retrieving translators"
 	rm -rf translators
-	git clone -q https://github.com/zotero/translators
+	git clone -q https://github.com/zotero/translators.git
+	rm -rf translators/.git
 	
 	echo "Building translators.zip"
 	cd translators
