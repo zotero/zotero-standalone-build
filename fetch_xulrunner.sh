@@ -22,7 +22,7 @@ GET_MAC=1
 GET_WIN32=1
 GET_LINUX=1
 
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/nightly/2011-07-19-03-08-42-mozilla-beta/
+SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/nightly/2011-08-05-03-07-53-mozilla-beta/
 VERSION=6.0
 
 rm -rf xulrunner

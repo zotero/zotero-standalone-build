@@ -42,9 +42,9 @@ MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
 UPX='C:\Program Files (x86)\upx\upx.exe'
 EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 
-DEFAULT_VERSION_PREFIX="2.1.SVN.r" # If version is not specified, version is this prefix followed by
+DEFAULT_VERSION_PREFIX="3.0a1.SVN.r" # If version is not specified, version is this prefix followed by
                                    # the revision
-VERSION_NUMERIC="2.1.0"
+VERSION_NUMERIC="3.0"
 
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
 CALLDIR=`pwd`
