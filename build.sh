@@ -163,8 +163,6 @@ else
 	# Delete translators directory except for deleted.txt
 	mv translators/deleted.txt deleted.txt
 	rm -rf translators
-	mkdir translators
-	mv deleted.txt translators/
 	
 	# Build styles.zip with default styles
 	if [ -d styles ]; then
@@ -172,7 +170,8 @@ else
 		
 		cd styles
 		for i in *.csl; do
-			svn export --quiet --non-interactive https://www.zotero.org/svn/csl/$i;
+			rm -f "$i"
+			curl -sO "https://raw.github.com/citation-style-language/styles/master/$i"
 		done
 		zip -q ../styles.zip *
 		cd ..
