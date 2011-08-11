@@ -87,6 +87,8 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 		
 		# Copy branding
 		cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+		find "$BUILDDIR/zotero/chrome/branding" -depth -type d -name .svn -exec rm -rf {} \;
+		find "$BUILDDIR/zotero/chrome/branding" -name .DS_Store -exec rm -f {} \;
 	else	
 		# Symlink chrome dirs
 		rm -rf "$BUILDDIR/zotero/chrome/"*
@@ -117,7 +119,6 @@ else
 		REV=`svnversion .`
 		cd ..
 		echo "Got Zotero r$REV"
-		rm -rf `find . -type d -name .svn`
 	else
 		# Export a clean copy of the tree
 		echo "Checking out Zotero r$REV"
@@ -125,7 +126,11 @@ else
 	fi
 	
 	# Copy branding
-	cp -r "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome"
+	cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+	
+	# Delete files that shouldn't be distributed
+	find "$BUILDDIR/zotero/chrome" -depth -type d -name .svn -exec rm -rf {} \;
+	find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 	
 	# Zip chrome into JAR
 	cd "$BUILDDIR/zotero/chrome"
