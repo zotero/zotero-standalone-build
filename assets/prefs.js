@@ -1,19 +1,19 @@
 // This is the URI that is loaded when Zotero Standalone is opened
 pref("toolkit.defaultChromeURI", "chrome://zotero/content/standalone/standalone.xul");
 
+// We only want a single window, I think
+pref("toolkit.singletonWindowType", "navigator:browser");
+
 // For debugging purposes, show errors in console by default
 pref("javascript.options.showInConsole", true);
 
-// Don't retreive unrequested links when performing standalone translation
+// Don't retrieve unrequested links when performing standalone translation
 pref("network.prefetch-next", false);
 
 // Let operations run as long as necessary
 pref("dom.max_chrome_script_run_time", 0);
 
-// Disable OOP Java; see Mozilla bug 563891
-pref("dom.ipc.plugins.java.enabled", false);
-
-// Enable JaegerMonkey (this is alpha software, after all)
+// Enable JaegerMonkey
 pref("javascript.options.methodjit.chrome", true);
 
 /** The below is imported from https://developer.mozilla.org/en/XULRunner/Application_Update **/
