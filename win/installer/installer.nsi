@@ -319,9 +319,6 @@ Section "-Application" APP_IDX
     ${EndIf}
   ${EndIf}
 
-  ; The previous installer adds several regsitry values to both HKLM and HKCU.
-  ; We now try to add to HKLM and if that fails to HKCU
-
   ; The order that reg keys and values are added is important if you use the
   ; uninstall log to remove them on uninstall. When using the uninstall log you
   ; MUST add children first so they will be removed first on uninstall so they
@@ -340,9 +337,6 @@ Section "-Application" APP_IDX
 
   ; The following keys should only be set if we can write to HKLM
   ${If} $TmpVal == "HKLM"
-    ; Set the Start Menu Internet and Vista Registered App HKLM registry keys.
-    ${FixShellIconHandler}
-
     ; If we are writing to HKLM and create either the desktop or start menu
     ; shortcuts set IconsVisible to 1 otherwise to 0.
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9

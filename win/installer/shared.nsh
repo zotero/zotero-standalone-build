@@ -58,7 +58,6 @@
     ${RegCleanMain} "Software\Zotero"
     ${RegCleanUninstall}
     ${UpdateProtocolHandlers}
-    ${FixShellIconHandler}
     ${SetAppLSPCategories} ${LSP_CATEGORIES}
 
     ; Win7 taskbar and start menu link maintenance
@@ -219,69 +218,85 @@
 !macroend
 !define ShowShortcuts "!insertmacro ShowShortcuts"
 
-; Adds zotero:// protocol handler (TODO: make Zotero open exported bib files)
+; Adds zotero:// protocol handler and makes Zotero open exported bib files
 !macro SetHandlers
   ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
   
-  ${AddHandlerValues} "SOFTWARE\Classes\zotero" "$\"$8$\" -url $\"%1$\"" \
-      "$8,1" "Zotero" "true" ""
-
-  ; Associate the file handlers with FirefoxHTML
-  ;ReadRegStr $6 SHCTX "$0\.htm" ""
-  ;${If} "$6" != "FirefoxHTML"
-  ;  WriteRegStr SHCTX "$0\.htm"   "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ;ReadRegStr $6 SHCTX "$0\.html" ""
-  ;${If} "$6" != "FirefoxHTML"
-  ;  WriteRegStr SHCTX "$0\.html"  "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ;ReadRegStr $6 SHCTX "$0\.shtml" ""
-  ;${If} "$6" != "FirefoxHTML"
-  ;  WriteRegStr SHCTX "$0\.shtml" "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ;ReadRegStr $6 SHCTX "$0\.xht" ""
-  ;${If} "$6" != "FirefoxHTML"
-  ;  WriteRegStr SHCTX "$0\.xht"   "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ;ReadRegStr $6 SHCTX "$0\.xhtml" ""
-  ;${If} "$6" != "FirefoxHTML"
-  ;  WriteRegStr SHCTX "$0\.xhtml" "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ; Only add webm if it's not present
-  ;${CheckIfRegistryKeyExists} "$0" ".webm" $7
-  ;${If} $7 == "false"
-  ;  WriteRegStr SHCTX "$0\.webm"  "" "FirefoxHTML"
-  ;${EndIf}
-  ;
-  ;StrCpy $3 "$\"%1$\",,0,0,,,,"
-  ;
-  ; An empty string is used for the 5th param because FirefoxHTML is not a
-  ; protocol handler
-  ;${AddDDEHandlerValues} "FirefoxHTML" "$2" "$8,1" "${AppRegName} Document" "" "${DDEApplication}" "$3" "WWW_OpenURL"
+  ${AddHandlerValues} "Software\Classes\zotero" "$\"$8$\" -url $\"%1$\"" \
+      "$8,1" "Zotero Protocol" "true" ""
+  
+  ; Add handlers for reference formats
+  ${AddHandlerValues} "Software\Classes\ZoteroRIS" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "Research Information Systems Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroISI" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "ISI Common Export Format Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroMODS" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "Metadata Object Description Schema Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroRDF" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "Resource Description Framework Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroBibTeX" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "BibTeX Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroMARC" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "MARC Document" "" ""
+  
+  ${AddHandlerValues} "Software\Classes\ZoteroCSL" "$\"$8$\" -file $\"%1$\"" \
+      "$8,1" "CSL Citation Style" "" ""
+  
+  ; Associate file handlers
+  ReadRegStr $6 SHCTX "Software\Classes\.ris" ""
+  ${If} "$6" != "ZoteroRIS"
+    WriteRegStr SHCTX "Software\Classes\.ris"   "" "ZoteroRIS"
+    WriteRegStr SHCTX "Software\Classes\.ris"   "Content Type" "application/x-research-info-systems"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.mods" ""
+  ${If} "$6" != "ZoteroMODS"
+    WriteRegStr SHCTX "Software\Classes\.mods"  "" "ZoteroMODS"
+    WriteRegStr SHCTX "Software\Classes\.mods"   "Content Type" "application/mods+xml"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.isi" ""
+  ${If} "$6" != "ZoteroMODS"
+    WriteRegStr SHCTX "Software\Classes\.isi"  "" "ZoteroISI"
+    WriteRegStr SHCTX "Software\Classes\.isi"   "Content Type" "application/x-inst-for-Scientific-info"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.rdf" ""
+  ${If} "$6" != "ZoteroRDF"
+    WriteRegStr SHCTX "Software\Classes\.rdf"  "" "ZoteroRDF"
+    WriteRegStr SHCTX "Software\Classes\.rdf"   "Content Type" "application/rdf+xml"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.bib" ""
+  ${If} "$6" != "ZoteroBibTeX"
+    WriteRegStr SHCTX "Software\Classes\.bib"  "" "ZoteroBibTeX"
+    WriteRegStr SHCTX "Software\Classes\.bib"   "Content Type" "application/x-bibtex"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.bibtex" ""
+  ${If} "$6" != "ZoteroMARC"
+    WriteRegStr SHCTX "Software\Classes\.bibtex"  "" "ZoteroBibTeX"
+    WriteRegStr SHCTX "Software\Classes\.bibtex"   "Content Type" "application/x-bibtex"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.marc" ""
+  ${If} "$6" != "ZoteroMARC"
+    WriteRegStr SHCTX "Software\Classes\.marc"  "" "ZoteroMARC"
+    WriteRegStr SHCTX "Software\Classes\.marc"   "Content Type" "application/marc"
+  ${EndIf}
+  
+  ReadRegStr $6 SHCTX "Software\Classes\.csl" ""
+  ${If} "$6" != "ZoteroCSL"
+    WriteRegStr SHCTX "Software\Classes\.csl"  "" "ZoteroCSL"
+    WriteRegStr SHCTX "Software\Classes\.csl"   "Content Type" "text/x-csl"
+  ${EndIf}
 !macroend
 !define SetHandlers "!insertmacro SetHandlers"
-
-; The IconHandler reference for FirefoxHTML can end up in an inconsistent state
-; due to changes not being detected by the IconHandler for side by side
-; installs (see bug 268512). The symptoms can be either an incorrect icon or no
-; icon being displayed for files associated with Firefox (does not use SHCTX).
-!macro FixShellIconHandler
-  ClearErrors
-  ReadRegStr $1 HKLM "Software\Classes\FirefoxHTML\ShellEx\IconHandler" ""
-  ${Unless} ${Errors}
-    ReadRegStr $1 HKLM "Software\Classes\FirefoxHTML\" ""
-    ${GetLongPath} "$INSTDIR\${FileMainEXE}" $2
-    ${If} "$1" != "$2,1"
-      WriteRegStr HKLM "Software\Classes\FirefoxHTML\DefaultIcon" "" "$2,1"
-    ${EndIf}
-  ${EndUnless}
-!macroend
-!define FixShellIconHandler "!insertmacro FixShellIconHandler"
 
 ; Add Software\Zotero\ registry entries (uses SHCTX).
 !macro SetAppKeys

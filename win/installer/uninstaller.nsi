@@ -250,8 +250,28 @@ Section "Uninstall"
   ${EndIf}
   
   ${un.RegCleanProtocolHandler} "zotero"
+  ${un.RegCleanAppHandler} "ZoteroRIS"
+  ${un.RegCleanAppHandler} "ZoteroISI"
+  ${un.RegCleanAppHandler} "ZoteroMODS"
+  ${un.RegCleanAppHandler} "ZoteroRDF"
+  ${un.RegCleanAppHandler} "ZoteroBibTeX"
+  ${un.RegCleanAppHandler} "ZoteroMARC"
+  ${un.RegCleanAppHandler} "ZoteroCSL"
 
   ClearErrors
+  ReadRegStr $R9 HKCR "ZoteroRDF" ""
+  ; Don't clean up the file handlers if the ZoteroRDF key still exists since
+  ; there should be a second installation that may be the default file handler
+  ${If} ${Errors}
+    ${un.RegCleanFileHandler}  ".rdf"    "ZoteroRDF"
+    ${un.RegCleanFileHandler}  ".ris"    "ZoteroRIS"
+    ${un.RegCleanFileHandler}  ".isi"    "ZoteroRIS"
+    ${un.RegCleanFileHandler}  ".mods"   "ZoteroMODS"
+    ${un.RegCleanFileHandler}  ".bib"    "ZoteroBibTeX"
+    ${un.RegCleanFileHandler}  ".bibtex" "ZoteroBibTeX"
+    ${un.RegCleanFileHandler}  ".marc"   "ZoteroMARC"
+    ${un.RegCleanFileHandler}  ".csl"    "ZoteroCSL"
+  ${EndIf}
 
   SetShellVarContext all  ; Set SHCTX to HKLM
   ${un.GetSecondInstallPath} "Software\Zotero" $R9
