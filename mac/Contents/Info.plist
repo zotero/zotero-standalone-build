@@ -6,6 +6,7 @@
 	<string>English</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
+		<!-- Import formats -->
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
@@ -13,8 +14,34 @@
 			</array>
 			<!--<key>CFBundleTypeIconFile</key>
 			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/x-research-info-systems</string>
+				<string>application/x-endnote-refer</string>
+				<string>text/x-research-info-systems</string>
+				<string>text/application/x-research-info-systems</string>
+				<string>text/ris</string>
+				<string>ris</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>Research Information Systems Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ciw</string>
+				<string>isi</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/x-inst-for-Scientific-info</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>ISI Common Export Format Document</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
@@ -25,6 +52,10 @@
 			</array>
 			<!--<key>CFBundleTypeIconFile</key>
 			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/mods+xml</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>Metadata Object Description Schema Document</string>
 			<key>CFBundleTypeRole</key>
@@ -37,8 +68,92 @@
 			</array>
 			<!--<key>CFBundleTypeIconFile</key>
 			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/rdf+xml</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>Resource Description Framework Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>bib</string>
+				<string>bibtex</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/x-bibtex</string>
+				<string>text/x-bibtex</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>BibTeX Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mrc</string>
+				<string>marc</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>application/marc</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>MARC Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		
+		<!-- Citation styles -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>csl</string>
+				<string>csl.txt</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeMIMETypes</key>
+			<array>
+				<string>text/x-csl</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>CSL Citation Style</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		
+		<!-- Hopefully, we don't become the default app for these -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>xml</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeName</key>
+			<string>XML Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>txt</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeName</key>
+			<string>Text File</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
@@ -46,7 +161,7 @@
 	<key>CFBundleExecutable</key>
 	<string>zotero</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Zotero {{VERSION}}, © 2006-2010 Contributors</string>
+	<string>Zotero {{VERSION}}, © 2006-2011 Contributors</string>
 	<key>CFBundleIconFile</key>
 	<string>zotero</string>
 	<key>CFBundleIdentifier</key>
