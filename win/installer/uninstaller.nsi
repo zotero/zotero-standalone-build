@@ -265,7 +265,7 @@ Section "Uninstall"
   ${If} ${Errors}
     ${un.RegCleanFileHandler}  ".rdf"    "ZoteroRDF"
     ${un.RegCleanFileHandler}  ".ris"    "ZoteroRIS"
-    ${un.RegCleanFileHandler}  ".isi"    "ZoteroRIS"
+    ${un.RegCleanFileHandler}  ".isi"    "ZoteroISI"
     ${un.RegCleanFileHandler}  ".mods"   "ZoteroMODS"
     ${un.RegCleanFileHandler}  ".bib"    "ZoteroBibTeX"
     ${un.RegCleanFileHandler}  ".bibtex" "ZoteroBibTeX"
