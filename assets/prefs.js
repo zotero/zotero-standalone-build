@@ -16,6 +16,9 @@ pref("dom.max_chrome_script_run_time", 0);
 // Enable JaegerMonkey
 pref("javascript.options.methodjit.chrome", true);
 
+// Use OS locale
+pref("intl.locale.matchOS", true);
+
 /** The below is imported from https://developer.mozilla.org/en/XULRunner/Application_Update **/
 // Whether or not app updates are enabled
 pref("app.update.enabled", true);
