@@ -336,7 +336,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	else
 		echo 'Not building on Windows; creating Windows distribution as a zip file'
 		rm -f "$DISTDIR/Zotero_win32.zip"
-		cd "$APPDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" "zotero"
+		cd "$APPDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" *
 	fi
 fi
 
