@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-BUILD_MAC=1
+BUILD_MAC=0
 BUILD_WIN32=1
-BUILD_LINUX=1
+BUILD_LINUX=0
 
 [ "`uname`" != "Darwin" ]
 MAC_NATIVE=$?
@@ -284,10 +284,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	echo 'Building Zotero_win32'
 	
 	# Set up directory
-	WINSTAGEDIR="$STAGEDIR/Zotero_win32"
-	APPDIR="$WINSTAGEDIR/core"
-	rm -rf "$STAGEDIR/Zotero_win32"
-	mkdir -p "$APPDIR"
+	APPDIR="$STAGEDIR/Zotero_win32"
+	mkdir "$APPDIR"
 	
 	# Merge xulrunner and relevant assets
 	cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
@@ -309,6 +307,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
 		
+		INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
+		mkdir "$INSTALLERSTAGEDIR"
+		cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
+		
 		# Build uninstaller
 		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
 		mkdir "$APPDIR/uninstall"
@@ -317,10 +319,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 		# Build setup.exe
 		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
 		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
-		mv "$BUILDDIR/win_installer/setup.exe" "$WINSTAGEDIR"
+		mv "$BUILDDIR/win_installer/setup.exe" "$INSTALLERSTAGEDIR"
 		
 		# Compress application
-		cd "$WINSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
+		cd "$INSTALLERSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
 			-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
 			
 		# Compress 7zSD.sfx
@@ -333,9 +335,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 		chmod 755 "$DISTDIR/Zotero_setup.exe"
 	else
 		echo 'Not building on Windows; creating Windows distribution as a zip file'
-		rm -f $DISTDIR/Zotero_win32.zip
-		mv "$WINSTAGEDIR/core" "$WINSTAGEDIR/zotero"
-		cd "$WINSTAGEDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" "zotero"
+		rm -f "$DISTDIR/Zotero_win32.zip"
+		cd "$APPDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" "zotero"
 	fi
 fi
 
