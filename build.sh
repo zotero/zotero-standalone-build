@@ -307,14 +307,15 @@ if [ $BUILD_WIN32 == 1 ]; then
 		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
 		
-		INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
-		mkdir "$INSTALLERSTAGEDIR"
-		cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
-		
 		# Build uninstaller
 		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
 		mkdir "$APPDIR/uninstall"
 		mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
+
+		# Stage installer
+		INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
+		mkdir "$INSTALLERSTAGEDIR"
+		cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
 		
 		# Build setup.exe
 		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
