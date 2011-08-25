@@ -19,6 +19,34 @@ pref("javascript.options.methodjit.chrome", true);
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
+pref("network.protocol-handler.expose-all", false);
+pref("network.protocol-handler.expose.zotero", true);
+pref("network.protocol-handler.expose.http", true);
+pref("network.protocol-handler.expose.https", true);
+
+// Never go offline
+pref("offline.autoDetect", false);
+
+// Preferences for add-on discovery
+pref("extensions.getAddons.cache.enabled", false);
+//pref("extensions.getAddons.maxResults", 15);
+//pref("extensions.getAddons.get.url", "https://services.addons.mozilla.org/%LOCALE%/%APP%/api/%API_VERSION%/search/guid:%IDS%?src=thunderbird&appOS=%OS%&appVersion=%VERSION%&tMain=%TIME_MAIN%&tFirstPaint=%TIME_FIRST_PAINT%&tSessionRestored=%TIME_SESSION_RESTORED%");
+//pref("extensions.getAddons.search.browseURL", "https://addons.mozilla.org/%LOCALE%/%APP%/search?q=%TERMS%");
+//pref("extensions.getAddons.search.url", "https://services.addons.mozilla.org/%LOCALE%/%APP%/api/%API_VERSION%/search/%TERMS%/all/%MAX_RESULTS%/%OS%/%VERSION%?src=thunderbird");
+pref("extensions.webservice.discoverURL", "https://www.zotero.org/support/plugins");
+
+// Allow installing XPIs from any host
+pref("xpinstall.whitelist.required", false);
+
+// Disable places
+pref("places.history.enabled", false);
+
+// Preferences to allow updating add-ons from AMO
+// TODO: Does this work for Standalone, or do we need to pretend to be Firefox?
+pref("extensions.update.enabled", true);
+pref("extensions.update.url", "https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=%REQ_VERSION%&id=%ITEM_ID%&version=%ITEM_VERSION%&maxAppVersion=%ITEM_MAXAPPVERSION%&status=%ITEM_STATUS%&appID=%APP_ID%&appVersion=%APP_VERSION%&appOS=%APP_OS%&appABI=%APP_ABI%&locale=%APP_LOCALE%&currentAppVersion=%CURRENT_APP_VERSION%&updateType=%UPDATE_TYPE%");
+pref("extensions.update.interval", 86400);
+
 /** The below is imported from https://developer.mozilla.org/en/XULRunner/Application_Update **/
 // Whether or not app updates are enabled
 pref("app.update.enabled", true);
@@ -41,6 +69,7 @@ pref("app.update.mode", 2);
 
 // If set to true, the Update Service will present no UI for any event.
 pref("app.update.silent", false);
+pref("app.update.showInstalledUI", true);
 
 // Update service URL:
 // You do not need to use all the %VAR% parameters. Use what you need, %PRODUCT%,%VERSION%,%BUILD_ID%,%CHANNEL% for example
@@ -89,10 +118,3 @@ pref("app.update.incompatible.mode", 0);
 
 // update channel for this build
 pref("app.update.channel", "default");
-
-// even though we don't use the addons repository, we need this
-pref("extensions.getAddons.cache.enabled", false);
-
-// expose only zotero protocol
-pref("network.protocol-handler.expose-all", false);
-pref("network.protocol-handler.zotero", true);
