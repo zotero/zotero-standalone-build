@@ -33,7 +33,7 @@ pref("extensions.getAddons.cache.enabled", false);
 //pref("extensions.getAddons.get.url", "https://services.addons.mozilla.org/%LOCALE%/%APP%/api/%API_VERSION%/search/guid:%IDS%?src=thunderbird&appOS=%OS%&appVersion=%VERSION%&tMain=%TIME_MAIN%&tFirstPaint=%TIME_FIRST_PAINT%&tSessionRestored=%TIME_SESSION_RESTORED%");
 //pref("extensions.getAddons.search.browseURL", "https://addons.mozilla.org/%LOCALE%/%APP%/search?q=%TERMS%");
 //pref("extensions.getAddons.search.url", "https://services.addons.mozilla.org/%LOCALE%/%APP%/api/%API_VERSION%/search/%TERMS%/all/%MAX_RESULTS%/%OS%/%VERSION%?src=thunderbird");
-pref("extensions.webservice.discoverURL", "https://www.zotero.org/support/plugins");
+//pref("extensions.webservice.discoverURL", "https://www.zotero.org/support/plugins");
 
 // Allow installing XPIs from any host
 pref("xpinstall.whitelist.required", false);
