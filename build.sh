@@ -186,6 +186,10 @@ else
 	# Adjust chrome.manifest
 	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
 	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
+	
+	# Copy updater.ini
+	cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
+	
 	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' "$BUILDDIR/zotero/chrome.manifest"
 fi
 
@@ -364,6 +368,9 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Add run-zotero.sh
 		cp "$CALLDIR/linux/run-zotero.sh" "$APPDIR/run-zotero.sh"
+		
+		# Move icons, so that updater.png doesn't fail
+		mv "$APPDIR/xulrunner/icons" "$APPDIR/icons"
 		
 		# Create tar
 		rm -f "$DISTDIR/Zotero_linux-$arch.tar.bz2"
