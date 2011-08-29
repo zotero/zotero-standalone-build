@@ -339,10 +339,9 @@ if [ $BUILD_WIN32 == 1 ]; then
 			"$BUILDDIR/app_win32.7z" > "$DISTDIR/Zotero_setup.exe"
 		chmod 755 "$DISTDIR/Zotero_setup.exe"
 	else
-		echo 'Not building on Windows; creating Windows distribution as a zip file'
-		rm -f "$DISTDIR/Zotero_win32.zip"
-		cd "$APPDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" *
+		echo 'Not building on Windows; only building zip file'
 	fi
+	cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" Zotero_win32
 fi
 
 # Linux
