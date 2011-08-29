@@ -26,6 +26,7 @@ pref("network.protocol-handler.expose.https", true);
 
 // Never go offline
 pref("offline.autoDetect", false);
+pref("network.manage-offline-status", false);
 
 // Preferences for add-on discovery
 pref("extensions.getAddons.cache.enabled", false);
