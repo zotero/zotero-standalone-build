@@ -22,6 +22,9 @@ BUILD_MAC=1
 BUILD_WIN32=1
 BUILD_LINUX=1
 
+# Whether to sign binaries
+SIGN=1
+
 [ "`uname`" != "Darwin" ]
 MAC_NATIVE=$?
 [ "`uname -o 2> /dev/null`" != "Cygwin" ]
@@ -41,6 +44,10 @@ LINUX_x86_64_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-x86_64"
 MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
 UPX='C:\Program Files (x86)\upx\upx.exe'
 EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
+
+# These are only necessary to produce signed binaries
+SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
+SIGNATURE_URL='https://www.zotero.org/'
 
 DEFAULT_VERSION_PREFIX="3.0b2.SVN.r" # If version is not specified, version is this prefix followed by
                                    # the revision
@@ -311,20 +318,34 @@ if [ $BUILD_WIN32 == 1 ]; then
 		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
 		
-		# Build uninstaller
+		# Build and sign uninstaller
 		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
 		mkdir "$APPDIR/uninstall"
 		mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
-
+		
+		# Sign zotero.exe, updater, and uninstaller
+		if [ $SIGN == 1 ]; then
+			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
+				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
+			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Updater" \
+				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
+			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Uninstaller" \
+				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+		fi
+		
 		# Stage installer
 		INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
 		mkdir "$INSTALLERSTAGEDIR"
 		cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
 		
-		# Build setup.exe
+		# Build and sign setup.exe
 		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
 		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
 		mv "$BUILDDIR/win_installer/setup.exe" "$INSTALLERSTAGEDIR"
+		if [ $SIGN == 1 ]; then
+			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
+				/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLERSTAGEDIR/setup.exe\"`"
+		fi
 		
 		# Compress application
 		cd "$INSTALLERSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
@@ -337,6 +358,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 		# Combine 7zSD.sfx and app.tag into setup.exe
 		cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
 			"$BUILDDIR/app_win32.7z" > "$DISTDIR/Zotero_setup.exe"
+		
+		# Sign Zotero_setup.exe
+		if [ $SIGN == 1 ]; then
+			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
+				/du "$SIGNATURE_URL" "`cygpath -w \"$DISTDIR/Zotero_setup.exe\"`"
+		fi
+		
 		chmod 755 "$DISTDIR/Zotero_setup.exe"
 	else
 		echo 'Not building on Windows; only building zip file'
