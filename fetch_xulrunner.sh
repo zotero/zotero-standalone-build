@@ -22,8 +22,8 @@ GET_MAC=1
 GET_WIN32=1
 GET_LINUX=1
 
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/6.0/runtimes/
-VERSION=6.0
+SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/7.0/runtimes/
+VERSION=7.0
 
 rm -rf xulrunner
 mkdir xulrunner
