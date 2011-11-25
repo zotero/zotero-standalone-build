@@ -30,10 +30,6 @@ MAC_NATIVE=$?
 [ "`uname -o 2> /dev/null`" != "Cygwin" ]
 WIN_NATIVE=$?
 
-MACWORD_URL=https://www.zotero.org/download/dev/Zotero-MacWord-Plugin-trunk.xpi
-WINWORD_URL=https://www.zotero.org/download/dev/Zotero-WinWord-Plugin-trunk.xpi
-OOO_URL=https://www.zotero.org/download/dev/Zotero-OpenOffice-Plugin-trunk.xpi
-
 # Requires XULRunner runtime 2.0.*
 MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
 WIN32_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_win32"
@@ -49,8 +45,8 @@ EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
-DEFAULT_VERSION_PREFIX="3.0b2.SVN.r" # If version is not specified, version is this prefix followed by
-                                   # the revision
+DEFAULT_VERSION_PREFIX="3.0b3.SOURCE." # If version is not specified, version is this prefix 
+                                   	   # followed by the revision
 VERSION_NUMERIC="3.0"
 
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
@@ -58,12 +54,11 @@ CALLDIR=`pwd`
 BUILDDIR="/tmp/zotero-build-$RAN"
 DISTDIR="$CALLDIR/dist"
 STAGEDIR="$CALLDIR/staging"
-SVNPREFIX="https://www.zotero.org/svn/extension/"
-SVNPATH="$1" # e.g. branches/1.0, defaults to "trunk"
-             # if this begins with /, a local build is made via symlinking
+URL="git://github.com/zotero/zotero.git"
+GITBRANCH="$1" # e.g. 1.0, defaults to "HEAD"
+               # if this begins with /, a local build is made via symlinking
 VERSION="$2" # Version to write to application.ini
 UPDATE_CHANNEL="$3" # Usually "nightly", "beta", "release", or "default" (for custom builds)
-REV="$4" # Revision normally supplied by SVN post-commit script (to speed things up) or left blank
 BUILDID=`date +%Y%m%d`
 
 mkdir "$BUILDDIR"
@@ -72,21 +67,19 @@ mkdir "$STAGEDIR"
 rm -rf "$DISTDIR"
 mkdir "$DISTDIR"
 
-if [ -z "$SVNPATH" ]; then SVNPATH="trunk"; fi
+if [ -z "$GITBRANCH" ]; then GITBRANCH="HEAD"; fi
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-URL=${SVNPREFIX}${SVNPATH}/
-
-# If revision not supplied, checkout and use svnversion to get latest revision
-if [ ${SVNPATH:0:1} == "/" ]; then
+if [ ${GITBRANCH:0:1} == "/" ]; then
 	echo "Building Zotero from local directory"
-	cp -R "$SVNPATH" "$BUILDDIR/zotero"
+	
+	cp -R "$GITBRANCH" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	if [ $? != 0 ]; then
 		exit
 	fi
-	REV=`svnversion .`
-	find . -depth -type d -name .svn -exec rm -rf {} \;
+	REV=`git log -n 1 --pretty='format:%h'`
+	find . -depth -type d -name .git -exec rm -rf {} \;
 	
 	# Windows can't actually symlink; copy instead, with a note
 	if [ $WIN_NATIVE == 1 ]; then
@@ -94,19 +87,19 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 		
 		# Copy branding
 		cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
-		find "$BUILDDIR/zotero/chrome/branding" -depth -type d -name .svn -exec rm -rf {} \;
+		find "$BUILDDIR/zotero/chrome/branding" -depth -type d -name .git -exec rm -rf {} \;
 		find "$BUILDDIR/zotero/chrome/branding" -name .DS_Store -exec rm -f {} \;
 	else	
 		# Symlink chrome dirs
 		rm -rf "$BUILDDIR/zotero/chrome/"*
-		for i in `ls $SVNPATH/chrome`; do
-			ln -s "$SVNPATH/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
+		for i in `ls $GITBRANCH/chrome`; do
+			ln -s "$GITBRANCH/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
 		done
 		
 		# Symlink translators and styles
 		rm -rf "$BUILDDIR/zotero/translators" "$BUILDDIR/zotero/styles"
-		ln -s "$SVNPATH/translators" "$BUILDDIR/zotero/translators"
-		ln -s "$SVNPATH/styles" "$BUILDDIR/zotero/styles"
+		ln -s "$GITBRANCH/translators" "$BUILDDIR/zotero/translators"
+		ln -s "$GITBRANCH/styles" "$BUILDDIR/zotero/styles"
 		
 		# Symlink branding
 		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
@@ -116,27 +109,18 @@ if [ ${SVNPATH:0:1} == "/" ]; then
 	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
 	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
 else
-	if [ -z $REV ]; then
-		echo "Getting latest Zotero revision"
-		svn co --quiet --non-interactive "$URL" "$BUILDDIR/zotero"
-		cd "$BUILDDIR/zotero"
-		if [ $? != 0 ]; then
-			exit
-		fi
-		REV=`svnversion .`
-		cd ..
-		echo "Got Zotero r$REV"
-	else
-		# Export a clean copy of the tree
-		echo "Checking out Zotero r$REV"
-		svn export --quiet --non-interactive -r "$REV" "$URL" "$BUILDDIR/zotero"
-	fi
+	echo "Building from bundled submodule"
+	
+	# Copy Zotero directory
+	cp -R "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
+	cd "$BUILDDIR/zotero"
+	REV=`git log -n 1 --pretty='format:%h'`
 	
 	# Copy branding
 	cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
 	
 	# Delete files that shouldn't be distributed
-	find "$BUILDDIR/zotero/chrome" -depth -type d -name .svn -exec rm -rf {} \;
+	find "$BUILDDIR/zotero/chrome" -depth -type d -name .git -exec rm -rf {} \;
 	find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 	
 	# Zip chrome into JAR
@@ -151,12 +135,8 @@ else
 	cd ..
 	
 	# Build translators.zip
-	echo "Retrieving translators"
-	rm -rf translators
-	git clone -q https://github.com/zotero/translators.git
-	
 	echo "Building translators.zip"
-	cd translators
+	cd "$BUILDDIR/zotero/translators"
 	mkdir output
 	counter=0;
 	for file in *.js; do
@@ -181,10 +161,6 @@ else
 		echo "Building styles.zip"
 		
 		cd styles
-		for i in *.csl; do
-			rm -f "$i"
-			curl -sO "https://raw.github.com/citation-style-language/styles/master/$i"
-		done
 		zip -q ../styles.zip *
 		cd ..
 		rm -rf styles
@@ -220,20 +196,14 @@ perl -pi -e "s/{{BUILDID}}/$BUILDID/" "$BUILDDIR/application.ini"
 cp "$CALLDIR/assets/prefs.js" "$BUILDDIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 
-# Delete .DS_Store and .svn
-find "$BUILDDIR" -depth -type d -name .svn -exec rm -rf {} \;
+# Delete .DS_Store and .git
+find "$BUILDDIR" -depth -type d -name .git -exec rm -rf {} \;
 find "$BUILDDIR" -name .DS_Store -exec rm -f {} \;
-
-echo "Retrieving Zotero OpenOffice.org Integration"
-curl -4s "$OOO_URL" -o "$BUILDDIR/ooo.zip"
 
 cd "$CALLDIR"
 
 # Mac
 if [ $BUILD_MAC == 1 ]; then
-	echo "Retrieving Zotero MacWord Integration"
-	curl -4s "$MACWORD_URL" -o "$BUILDDIR/macword.zip"
-	
 	echo 'Building Zotero.app'
 		
 	# Set up directory structure
@@ -243,8 +213,6 @@ if [ $BUILD_MAC == 1 ]; then
 	chmod 755 "$APPDIR"
 	cp -r "$CALLDIR/mac/Contents" "$APPDIR"
 	CONTENTSDIR="$APPDIR/Contents"
-	find "$CONTENTSDIR" -depth -type d -name .svn -exec rm -rf {} \;
-	find "$CONTENTSDIR" -name .DS_Store -exec rm -f {} \;
 	
 	# Merge xulrunner and relevant assets
 	mkdir "$CONTENTSDIR/MacOS"
@@ -270,8 +238,13 @@ if [ $BUILD_MAC == 1 ]; then
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
 	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
-	unzip -q "$BUILDDIR/macword.zip" -d "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
-	unzip -q "$BUILDDIR/ooo.zip" -d "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	cp -R "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
+	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	
+	# Delete extraneous files
+	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
+	find "$CONTENTSDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+	find "$CONTENTSDIR/Resources/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
 	# Build disk image
 	if [ $MAC_NATIVE == 1 ]; then
@@ -288,10 +261,6 @@ fi
 
 # Win32
 if [ $BUILD_WIN32 == 1 ]; then
-	
-	echo "Retrieving Zotero WinWord Integration"
-	curl -4s "$WINWORD_URL" -o "$BUILDDIR/winword.zip"
-	
 	echo 'Building Zotero_win32'
 	
 	# Set up directory
@@ -306,8 +275,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
-	unzip -q "$BUILDDIR/ooo.zip" -d "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
-	unzip -q "$BUILDDIR/winword.zip" -d "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
+	cp -R "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
+	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	
+	# Delete extraneous files
+	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
+	find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
 	if [ $WIN_NATIVE == 1 ]; then
 		# Add icon to xulrunner-stub
@@ -391,7 +365,12 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
-		unzip -q "$BUILDDIR/ooo.zip" -d "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+		cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+		
+		# Delete extraneous files
+		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
+		find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+		find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 		
 		# Add run-zotero.sh
 		cp "$CALLDIR/linux/run-zotero.sh" "$APPDIR/run-zotero.sh"
