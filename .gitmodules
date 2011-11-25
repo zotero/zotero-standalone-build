@@ -1,0 +1,12 @@
+[submodule "modules/zotero"]
+	path = modules/zotero
+	url = git://github.com/zotero/zotero.git
+[submodule "modules/zotero-word-for-mac-integration"]
+	path = modules/zotero-word-for-mac-integration
+	url = git://github.com/zotero/zotero-word-for-mac-integration.git
+[submodule "modules/zotero-word-for-windows-integration"]
+	path = modules/zotero-word-for-windows-integration
+	url = git://github.com/zotero/zotero-word-for-windows-integration.git
+[submodule "modules/zotero-libreoffice-integration"]
+	path = modules/zotero-libreoffice-integration
+	url = git://github.com/zotero/zotero-libreoffice-integration.git
