@@ -290,8 +290,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
-	# Does not appear to exist under XULRunner 9
-	#cp "$APPDIR/xulrunner/mozcrt19.dll" "$APPDIR/mozcrt19.dll"
+	cp "$APPDIR/xulrunner/mozutils.dll" "$APPDIR/mozutils.dll"
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
