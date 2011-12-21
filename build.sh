@@ -35,6 +35,7 @@ MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
 WIN32_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_win32"
 LINUX_i686_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-i686"
 LINUX_x86_64_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-x86_64"
+GECKO_VERSION="9.0"
 
 # Paths for Win32 installer build
 MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
@@ -61,6 +62,7 @@ VERSION="$2" # Version to write to application.ini
 UPDATE_CHANNEL="$3" # Usually "nightly", "beta", "release", or "default" (for custom builds)
 BUILDID=`date +%Y%m%d`
 
+shopt -s extglob
 mkdir "$BUILDDIR"
 rm -rf "$STAGEDIR"
 mkdir "$STAGEDIR"
@@ -218,7 +220,8 @@ if [ $BUILD_MAC == 1 ]; then
 	mkdir "$CONTENTSDIR/MacOS"
 	mkdir "$CONTENTSDIR/Frameworks"
 	cp -a "$MAC_RUNTIME_PATH" "$CONTENTSDIR/Frameworks/XUL.framework"
-	rm "$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current"
+	CURRENT_FRAMEWORK="$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current"
+	rm "$CURRENT_FRAMEWORK"
 	mv "$CONTENTSDIR/Frameworks/XUL.framework/Versions/"[1-9]* "$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current"
 	cp "$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current/xulrunner" "$CONTENTSDIR/MacOS/zotero"
 	cp "$BUILDDIR/application.ini" "$CONTENTSDIR/Resources"
@@ -241,6 +244,22 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -R "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
 	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
 	
+	# UGLY HACK for XULRunner 9.0 builds, which require modified paths
+	install_name_tool -change "@executable_path/libmozutils.dylib" \
+		"@executable_path/../Frameworks/XUL.framework/Versions/Current/libmozutils.dylib" \
+		"$CONTENTSDIR/MacOS/zotero"
+	for lib in "$CURRENT_FRAMEWORK"/*.dylib "$CURRENT_FRAMEWORK/XUL"
+	do
+		for libChange in `basename "$CURRENT_FRAMEWORK"/*.dylib` "XUL"; do
+			install_name_tool -change "@executable_path/$libChange" "@loader_path/$libChange" "$lib"
+		done
+	done
+	for lib in "$CURRENT_FRAMEWORK"/components/*.dylib
+	do
+		for libChange in `basename "$CURRENT_FRAMEWORK"/*.dylib` "XUL"; do
+			install_name_tool -change "@executable_path/$libChange" "@loader_path/../$libChange" "$lib"
+		done
+	done
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$CONTENTSDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
@@ -271,12 +290,17 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
-	cp "$APPDIR/xulrunner/mozcrt19.dll" "$APPDIR/mozcrt19.dll"
+	# Does not appear to exist under XULRunner 9
+	#cp "$APPDIR/xulrunner/mozcrt19.dll" "$APPDIR/mozcrt19.dll"
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
 	cp -R "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
 	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	
+	# Remove unnecessary dlls
+	rm "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/components/zoteroWinWordIntegration.dll"
+	rm -rf "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"components-!($GECKO_VERSION)
 	
 	# Delete extraneous files
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
