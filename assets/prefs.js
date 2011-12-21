@@ -19,6 +19,10 @@ pref("javascript.options.methodjit.chrome", true);
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
+// Don't show add-on selection dialog
+pref("extensions.shownSelectionUI", true);
+pref("extensions.autoDisableScope", 11);
+
 pref("network.protocol-handler.expose-all", false);
 pref("network.protocol-handler.expose.zotero", true);
 pref("network.protocol-handler.expose.http", true);
