@@ -238,6 +238,10 @@ if [ $BUILD_MAC == 1 ]; then
 	# Add components
 	cp -R "$BUILDDIR/zotero/"* "$CONTENTSDIR/Resources"
 	
+	# Add Mac-specific Standalone assets
+	cd "$CALLDIR/assets/mac"
+	zip -0 -r -q "$CONTENTSDIR/Resources/chrome/zotero.jar" *
+	
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
 	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
@@ -291,6 +295,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
 	cp "$APPDIR/xulrunner/mozutils.dll" "$APPDIR/mozutils.dll"
+	
+	# Add Windows-specific Standalone assets
+	cd "$CALLDIR/assets/win"
+	zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
@@ -385,6 +393,10 @@ if [ $BUILD_LINUX == 1 ]; then
 		cp -r "$RUNTIME_PATH" "$APPDIR/xulrunner"
 		mv "$APPDIR/xulrunner/xulrunner-stub" "$APPDIR/zotero"
 		chmod 755 "$APPDIR/zotero"
+	
+		# Add Unix-specific Standalone assets
+		cd "$CALLDIR/assets/unix"
+		zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
 		
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
