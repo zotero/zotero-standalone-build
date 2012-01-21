@@ -19,6 +19,9 @@ pref("javascript.options.methodjit.chrome", true);
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
+// Use basicViewer for opening new DOM windows from content (for TinyMCE)
+pref("browser.chromeURL", "chrome://zotero/content/standalone/basicViewer.xul");
+
 // Don't show add-on selection dialog
 pref("extensions.shownSelectionUI", true);
 pref("extensions.autoDisableScope", 11);
