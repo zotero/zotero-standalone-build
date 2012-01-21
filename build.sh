@@ -125,6 +125,10 @@ else
 	find "$BUILDDIR/zotero/chrome" -depth -type d -name .git -exec rm -rf {} \;
 	find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 	
+	# Set version
+	perl -pi -e "s/VERSION: \"[^\"]*\"/VERSION: \"$VERSION\"/" \
+		"$BUILDDIR/zotero/chrome/content/zotero/xpcom/zotero.js"
+	
 	# Zip chrome into JAR
 	cd "$BUILDDIR/zotero/chrome"
 	# Checkout failed -- bail
