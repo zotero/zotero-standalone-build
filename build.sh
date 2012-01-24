@@ -46,8 +46,8 @@ EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
-DEFAULT_VERSION_PREFIX="3.0b3.SOURCE." # If version is not specified, version is this prefix 
-                                   	   # followed by the revision
+DEFAULT_VERSION_PREFIX="3.0rc1.SOURCE." # If version is not specified, version is this prefix 
+                                   	    # followed by the revision
 VERSION_NUMERIC="3.0"
 
 RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
@@ -56,10 +56,7 @@ BUILDDIR="/tmp/zotero-build-$RAN"
 DISTDIR="$CALLDIR/dist"
 STAGEDIR="$CALLDIR/staging"
 URL="git://github.com/zotero/zotero.git"
-GITBRANCH="$1" # e.g. 1.0, defaults to "HEAD"
-               # if this begins with /, a local build is made via symlinking
-VERSION="$2" # Version to write to application.ini
-UPDATE_CHANNEL="$3" # Usually "nightly", "beta", "release", or "default" (for custom builds)
+UPDATE_CHANNEL="$2" # Usually "nightly", "beta", "release", or "default" (for custom builds)
 BUILDID=`date +%Y%m%d`
 
 shopt -s extglob
@@ -69,18 +66,19 @@ mkdir "$STAGEDIR"
 rm -rf "$DISTDIR"
 mkdir "$DISTDIR"
 
-if [ -z "$GITBRANCH" ]; then GITBRANCH="HEAD"; fi
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-if [ ${GITBRANCH:0:1} == "/" ]; then
+if [ ${1:0:1} == "/" ]; then
 	echo "Building Zotero from local directory"
 	
-	cp -R "$GITBRANCH" "$BUILDDIR/zotero"
+	
+	cp -R "$1" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	if [ $? != 0 ]; then
 		exit
 	fi
 	REV=`git log -n 1 --pretty='format:%h'`
+	VERSION="$DEFAULT_VERSION_PREFIX$REV"
 	find . -depth -type d -name .git -exec rm -rf {} \;
 	
 	# Windows can't actually symlink; copy instead, with a note
@@ -94,14 +92,14 @@ if [ ${GITBRANCH:0:1} == "/" ]; then
 	else	
 		# Symlink chrome dirs
 		rm -rf "$BUILDDIR/zotero/chrome/"*
-		for i in `ls $GITBRANCH/chrome`; do
-			ln -s "$GITBRANCH/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
+		for i in `ls $1/chrome`; do
+			ln -s "$1/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
 		done
 		
 		# Symlink translators and styles
 		rm -rf "$BUILDDIR/zotero/translators" "$BUILDDIR/zotero/styles"
-		ln -s "$GITBRANCH/translators" "$BUILDDIR/zotero/translators"
-		ln -s "$GITBRANCH/styles" "$BUILDDIR/zotero/styles"
+		ln -s "$1/translators" "$BUILDDIR/zotero/translators"
+		ln -s "$1/styles" "$BUILDDIR/zotero/styles"
 		
 		# Symlink branding
 		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
@@ -117,6 +115,12 @@ else
 	cp -R "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	REV=`git log -n 1 --pretty='format:%h'`
+	
+	if [ -z "$1" ]; then
+		VERSION="$DEFAULT_VERSION_PREFIX$REV"
+	else
+		VERSION="$1"
+	fi
 	
 	# Copy branding
 	cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
@@ -180,10 +184,6 @@ else
 	cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
 	
 	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' "$BUILDDIR/zotero/chrome.manifest"
-fi
-
-if [ -z $VERSION ]; then
-	VERSION="$DEFAULT_VERSION_PREFIX$REV"
 fi
 
 # Adjust connector pref
@@ -276,13 +276,14 @@ if [ $BUILD_MAC == 1 ]; then
 	# Build disk image
 	if [ $MAC_NATIVE == 1 ]; then
 		echo 'Creating Mac installer'
-		"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" --target "$DISTDIR/Zotero.dmg" \
+		"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" \
+			--target "$DISTDIR/Zotero-$VERSION.dmg" \
 			--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
 			--symlink /Applications:"/Drag Here to Install" > /dev/null
 	else
 		echo 'Not building on Mac; creating Mac distribution as a zip file'
 		rm -f "$DISTDIR/Zotero_mac.zip"
-		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero_mac.zip" Zotero.app
+		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-$VERSION_mac.zip" Zotero.app
 	fi
 fi
 
@@ -319,6 +320,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
 	if [ $WIN_NATIVE == 1 ]; then
+		INSTALLER_PATH="$DISTDIR/Zotero-${VERSION}_setup.exe"
+		
 		# Add icon to xulrunner-stub
 		"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
 			"`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
@@ -366,19 +369,19 @@ if [ $BUILD_WIN32 == 1 ]; then
 		
 		# Combine 7zSD.sfx and app.tag into setup.exe
 		cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
-			"$BUILDDIR/app_win32.7z" > "$DISTDIR/Zotero_setup.exe"
+			"$BUILDDIR/app_win32.7z" > "$INSTALLER_PATH"
 		
 		# Sign Zotero_setup.exe
 		if [ $SIGN == 1 ]; then
 			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$DISTDIR/Zotero_setup.exe\"`"
+				/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_PATH\"`"
 		fi
 		
-		chmod 755 "$DISTDIR/Zotero_setup.exe"
+		chmod 755 "$INSTALLER_PATH"
 	else
 		echo 'Not building on Windows; only building zip file'
 	fi
-	cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero_win32.zip" Zotero_win32
+	cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_win32.zip" Zotero_win32
 fi
 
 # Linux
@@ -418,9 +421,9 @@ if [ $BUILD_LINUX == 1 ]; then
 		mv "$APPDIR/xulrunner/icons" "$APPDIR/icons"
 		
 		# Create tar
-		rm -f "$DISTDIR/Zotero_linux-$arch.tar.bz2"
+		rm -f "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
 		cd "$STAGEDIR"
-		tar -cjf "$DISTDIR/Zotero_linux-$arch.tar.bz2" "Zotero_linux-$arch"
+		tar -cjf "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
 	done
 fi
 
