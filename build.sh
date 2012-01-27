@@ -68,11 +68,11 @@ mkdir "$DISTDIR"
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-if [ ${1:0:1} == "/" ]; then
+if [[ -n "$1" && ${1:0:1} == "/" ]]; then
 	echo "Building Zotero from local directory"
 	
 	
-	cp -R "$1" "$BUILDDIR/zotero"
+	cp -RH "$1" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	if [ $? != 0 ]; then
 		exit
@@ -112,7 +112,7 @@ else
 	echo "Building from bundled submodule"
 	
 	# Copy Zotero directory
-	cp -R "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
+	cp -RH "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	REV=`git log -n 1 --pretty='format:%h'`
 	
@@ -249,8 +249,8 @@ if [ $BUILD_MAC == 1 ]; then
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
 	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
-	cp -R "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
-	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
+	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
 	
 	# UGLY HACK for XULRunner 9.0 builds, which require modified paths
 	install_name_tool -change "@executable_path/libmozutils.dylib" \
@@ -307,8 +307,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
-	cp -R "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
-	cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
+	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
 	
 	# Remove unnecessary dlls
 	rm "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/components/zoteroWinWordIntegration.dll"
@@ -407,7 +407,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
-		cp -R "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
