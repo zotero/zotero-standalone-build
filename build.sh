@@ -251,6 +251,8 @@ if [ $BUILD_MAC == 1 ]; then
 	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
 	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
 	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org/install.rdf"
+	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
 	# UGLY HACK for XULRunner 9.0 builds, which require modified paths
 	install_name_tool -change "@executable_path/libmozutils.dylib" \
@@ -309,6 +311,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	mkdir "$APPDIR/extensions"
 	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
 	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/install.rdf"
+	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
 	# Remove unnecessary dlls
 	rm "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/components/zoteroWinWordIntegration.dll"
@@ -408,6 +412,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
 		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+		perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
