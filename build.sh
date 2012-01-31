@@ -35,7 +35,7 @@ MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
 WIN32_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_win32"
 LINUX_i686_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-i686"
 LINUX_x86_64_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-x86_64"
-GECKO_VERSION="9.0"
+GECKO_VERSION="10.0"
 
 # Paths for Win32 installer build
 MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
@@ -300,8 +300,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# Merge xulrunner and relevant assets
 	cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
+	
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
-	cp "$APPDIR/xulrunner/mozutils.dll" "$APPDIR/mozutils.dll"
+	# Bug 706186 and 722810
+	cp "$APPDIR/xulrunner/mozutils.dll" \
+	   "$APPDIR/xulrunner/msvcr80.dll" \
+	   "$APPDIR/xulrunner/Microsoft.VC80.CRT.manifest" \
+	   "$APPDIR/"
 	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"

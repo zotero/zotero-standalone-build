@@ -22,7 +22,7 @@ GET_MAC=1
 GET_WIN32=1
 GET_LINUX=1
 
-VERSION=9.0
+VERSION=10.0
 SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$VERSION/runtimes/
 
 rm -rf xulrunner
