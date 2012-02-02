@@ -171,7 +171,7 @@ else
 		echo "Building styles.zip"
 		
 		cd styles
-		zip -q ../styles.zip *
+		zip -q ../styles.zip *.csl
 		cd ..
 		rm -rf styles
 	fi
