@@ -201,6 +201,7 @@ perl -pi -e "s/{{BUILDID}}/$BUILDID/" "$BUILDDIR/application.ini"
 # Copy prefs.js and modify
 cp "$CALLDIR/assets/prefs.js" "$BUILDDIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 
 # Delete .DS_Store and .git
 find "$BUILDDIR" -depth -type d -name .git -exec rm -rf {} \;
