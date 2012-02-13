@@ -26,7 +26,54 @@ MAC_NATIVE=$?
 [ "`uname -o 2> /dev/null`" != "Cygwin" ]
 WIN_NATIVE=$?
 
-UPDATE_CHANNEL="$2" # Usually "nightly", "beta", "release", or "default" (for custom builds)
+function usage {
+	cat >&2 <<DONE
+Usage: $0 [-p PLATFORMS] [-p DIR] [-v VERSION] [-c CHANNEL]
+Options
+ -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, c=Linux)
+ -s DIR              build symlinked to Zotero checkout DIR
+ -v VERSION          use version VERSION
+ -c CHANNEL          use update channel CHANNEL
+DONE
+	exit 1
+}
+
+while getopts "p:s:v:c:" opt; do
+	case $opt in
+		p)
+			BUILD_MAC=0
+			BUILD_WIN32=0
+			BUILD_LINUX=0
+			for i in `seq 0 1 $((${#OPTARG}-1))`
+			do
+				case ${OPTARG:i:1} in
+					m) BUILD_MAC=1;;
+					w) BUILD_WIN32=1;;
+					l) BUILD_LINUX=1;;
+					*) usage;;
+				esac
+			done
+			;;
+		s)
+			SYMLINK_DIR="$OPTARG"
+			;;
+		v)
+			VERSION="$OPTARG"
+			;;
+		c)
+			UPDATE_CHANNEL="$OPTARG"
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+if [ ! -z $1 ]; then
+	usage
+fi
+
 BUILDID=`date +%Y%m%d`
 
 shopt -s extglob
@@ -38,11 +85,10 @@ mkdir "$DISTDIR"
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-if [[ -n "$1" && ${1:0:1} == "/" ]]; then
-	echo "Building Zotero from local directory"
+if [ ! -z "$SYMLINK_DIR" ]; then
+	echo "Building Zotero from $SYMLINK_DIR"
 	
-	
-	cp -RH "$1" "$BUILDDIR/zotero"
+	cp -RH "$SYMLINK_DIR" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
 	if [ $? != 0 ]; then
 		exit
@@ -52,7 +98,7 @@ if [[ -n "$1" && ${1:0:1} == "/" ]]; then
 	find . -depth -type d -name .git -exec rm -rf {} \;
 	
 	# Windows can't actually symlink; copy instead, with a note
-	if [ $WIN_NATIVE == 1 ]; then
+	if [ "$WIN_NATIVE" == 1 ]; then
 		echo "Windows host detected; copying files instead of symlinking"
 		
 		# Copy branding
@@ -62,14 +108,14 @@ if [[ -n "$1" && ${1:0:1} == "/" ]]; then
 	else	
 		# Symlink chrome dirs
 		rm -rf "$BUILDDIR/zotero/chrome/"*
-		for i in `ls $1/chrome`; do
-			ln -s "$1/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
+		for i in `ls $SYMLINK_DIR/chrome`; do
+			ln -s "$SYMLINK_DIR/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
 		done
 		
 		# Symlink translators and styles
 		rm -rf "$BUILDDIR/zotero/translators" "$BUILDDIR/zotero/styles"
-		ln -s "$1/translators" "$BUILDDIR/zotero/translators"
-		ln -s "$1/styles" "$BUILDDIR/zotero/styles"
+		ln -s "$SYMLINK_DIR/translators" "$BUILDDIR/zotero/translators"
+		ln -s "$SYMLINK_DIR/styles" "$BUILDDIR/zotero/styles"
 		
 		# Symlink branding
 		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
@@ -86,10 +132,8 @@ else
 	cd "$BUILDDIR/zotero"
 	REV=`git log -n 1 --pretty='format:%h'`
 	
-	if [ -z "$1" ]; then
+	if [ -z "$VERSION" ]; then
 		VERSION="$DEFAULT_VERSION_PREFIX$REV"
-	else
-		VERSION="$1"
 	fi
 	
 	# Copy branding
