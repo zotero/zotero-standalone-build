@@ -18,44 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-BUILD_MAC=1
-BUILD_WIN32=1
-BUILD_LINUX=1
-
-# Whether to sign binaries
-SIGN=1
+CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. "$CALLDIR/config.sh"
 
 [ "`uname`" != "Darwin" ]
 MAC_NATIVE=$?
 [ "`uname -o 2> /dev/null`" != "Cygwin" ]
 WIN_NATIVE=$?
 
-# Requires XULRunner runtime 2.0.*
-MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
-WIN32_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_win32"
-LINUX_i686_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-i686"
-LINUX_x86_64_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-x86_64"
-GECKO_VERSION="10.0"
-
-# Paths for Win32 installer build
-MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
-UPX='C:\Program Files (x86)\upx\upx.exe'
-EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
-
-# These are only necessary to produce signed binaries
-SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
-SIGNATURE_URL='https://www.zotero.org/'
-
-DEFAULT_VERSION_PREFIX="3.0rc1.SOURCE." # If version is not specified, version is this prefix 
-                                   	    # followed by the revision
-VERSION_NUMERIC="3.0"
-
-RAN=`uuidgen | head -c 8`  # Get random 8-character string for build directory
-CALLDIR=`pwd`
-BUILDDIR="/tmp/zotero-build-$RAN"
-DISTDIR="$CALLDIR/dist"
-STAGEDIR="$CALLDIR/staging"
-URL="git://github.com/zotero/zotero.git"
 UPDATE_CHANNEL="$2" # Usually "nightly", "beta", "release", or "default" (for custom builds)
 BUILDID=`date +%Y%m%d`
 

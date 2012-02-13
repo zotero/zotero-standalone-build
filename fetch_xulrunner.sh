@@ -18,44 +18,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-GET_MAC=1
-GET_WIN32=1
-GET_LINUX=1
-
-VERSION=10.0
-SITE=https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$VERSION/runtimes/
+CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. "$CALLDIR/config.sh"
+SITE="https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
 
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
 
-if [ $GET_MAC == 1 ]; then
-	curl -O $SITE/xulrunner-$VERSION.en-US.mac-pkg.dmg
+if [ $BUILD_MAC == 1 ]; then
+	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
 	
 	hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
-	hdiutil attach -quiet xulrunner-$VERSION.en-US.mac-pkg.dmg
-	gunzip -c /Volumes/XULRunner/xulrunner-$VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
+	hdiutil attach -quiet xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
+	gunzip -c /Volumes/XULRunner/xulrunner-$GECKO_VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
 	hdiutil detach -quiet /Volumes/XULRunner
-	rm xulrunner-$VERSION.en-US.mac-pkg.dmg
+	rm xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
 fi
 
-if [ $GET_WIN32 == 1 ]; then
-	curl -O $SITE/xulrunner-$VERSION.en-US.win32.zip
+if [ $BUILD_WIN32 == 1 ]; then
+	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.win32.zip
 	
-	unzip -q xulrunner-$VERSION.en-US.win32.zip
-	rm xulrunner-$VERSION.en-US.win32.zip
+	unzip -q xulrunner-$GECKO_VERSION.en-US.win32.zip
+	rm xulrunner-$GECKO_VERSION.en-US.win32.zip
 	mv xulrunner xulrunner_win32
 fi
 
-if [ $GET_LINUX == 1 ]; then
-	curl -O $SITE/xulrunner-$VERSION.en-US.linux-i686.tar.bz2 \
-		-O $SITE/xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2 
+if [ $BUILD_LINUX == 1 ]; then
+	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2 \
+		-O $SITE/xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2 
 	
-	tar -xjf xulrunner-$VERSION.en-US.linux-i686.tar.bz2
-	rm xulrunner-$VERSION.en-US.linux-i686.tar.bz2
+	tar -xjf xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2
+	rm xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2
 	mv xulrunner xulrunner_linux-i686
 	
-	tar -xjf xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
-	rm xulrunner-$VERSION.en-US.linux-x86_64.tar.bz2
+	tar -xjf xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2
+	rm xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2
 	mv xulrunner xulrunner_linux-x86_64
 fi
