@@ -30,7 +30,7 @@ function usage {
 	cat >&2 <<DONE
 Usage: $0 [-p PLATFORMS] [-p DIR] [-v VERSION] [-c CHANNEL]
 Options
- -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, c=Linux)
+ -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
  -s DIR              build symlinked to Zotero checkout DIR
  -v VERSION          use version VERSION
  -c CHANNEL          use update channel CHANNEL
@@ -50,7 +50,10 @@ while getopts "p:s:v:c:" opt; do
 					m) BUILD_MAC=1;;
 					w) BUILD_WIN32=1;;
 					l) BUILD_LINUX=1;;
-					*) usage;;
+					*)
+						echo "$0: Invalid platform option ${OPTARG:i:1}"
+						usage
+						;;
 				esac
 			done
 			;;
