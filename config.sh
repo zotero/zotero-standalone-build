@@ -23,9 +23,9 @@ SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
 # If version is not specified on the command line, version is this prefix followed by the revision
-DEFAULT_VERSION_PREFIX="3.0rc1.SOURCE."
+DEFAULT_VERSION_PREFIX="3.0.3.SOURCE."
 # Numeric version for OS X bundle
-VERSION_NUMERIC="3.0.2"
+VERSION_NUMERIC="3.0.3"
 
 # Directory for building
 BUILDDIR="/tmp/zotero-build-`uuidgen | head -c 8`"
