@@ -353,7 +353,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
-	find "$APPDIR" -name '*.exe' -or '*.dll' -exec chmod 755 {} \;
+	find "$APPDIR" -name '*.exe' -or -name '*.dll' -exec chmod 755 {} \;
 	
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
