@@ -328,7 +328,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
-	chmod 755 "$APPDIR/zotero.exe"
 	# Bug 706186 and 722810
 	cp "$APPDIR/xulrunner/mozutils.dll" \
 	   "$APPDIR/xulrunner/msvcr80.dll" \
@@ -354,6 +353,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
+	find "$APPDIR" -name '*.exe' -or '*.dll' -exec chmod 755 {} \;
 	
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
