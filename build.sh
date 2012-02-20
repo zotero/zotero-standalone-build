@@ -31,14 +31,16 @@ function usage {
 Usage: $0 [-p PLATFORMS] [-p DIR] [-v VERSION] [-c CHANNEL]
 Options
  -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
- -s DIR              build symlinked to Zotero checkout DIR
+ -s DIR              build symlinked to Zotero checkout DIR (implies -d)
  -v VERSION          use version VERSION
  -c CHANNEL          use update channel CHANNEL
+ -d                  don't package; only build binaries in staging/ directory
 DONE
 	exit 1
 }
 
-while getopts "p:s:v:c:" opt; do
+PACKAGE=1
+while getopts "p:s:v:c:d" opt; do
 	case $opt in
 		p)
 			BUILD_MAC=0
@@ -59,12 +61,16 @@ while getopts "p:s:v:c:" opt; do
 			;;
 		s)
 			SYMLINK_DIR="$OPTARG"
+			PACKAGE=0
 			;;
 		v)
 			VERSION="$OPTARG"
 			;;
 		c)
 			UPDATE_CHANNEL="$OPTARG"
+			;;
+		d)
+			PACKAGE=0
 			;;
 		*)
 			usage
@@ -294,16 +300,18 @@ if [ $BUILD_MAC == 1 ]; then
 	find "$CONTENTSDIR/Resources/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
 	# Build disk image
-	if [ $MAC_NATIVE == 1 ]; then
-		echo 'Creating Mac installer'
-		"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" \
-			--target "$DISTDIR/Zotero-$VERSION.dmg" \
-			--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
-			--symlink /Applications:"/Drag Here to Install" > /dev/null
-	else
-		echo 'Not building on Mac; creating Mac distribution as a zip file'
-		rm -f "$DISTDIR/Zotero_mac.zip"
-		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-$VERSION_mac.zip" Zotero.app
+	if [ $PACKAGE == 1 ]; then
+		if [ $MAC_NATIVE == 1 ]; then
+			echo 'Creating Mac installer'
+			"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" \
+				--target "$DISTDIR/Zotero-$VERSION.dmg" \
+				--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
+				--symlink /Applications:"/Drag Here to Install" > /dev/null
+		else
+			echo 'Not building on Mac; creating Mac distribution as a zip file'
+			rm -f "$DISTDIR/Zotero_mac.zip"
+			cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-$VERSION_mac.zip" Zotero.app
+		fi
 	fi
 fi
 
@@ -346,69 +354,71 @@ if [ $BUILD_WIN32 == 1 ]; then
 	find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
-	if [ $WIN_NATIVE == 1 ]; then
-		INSTALLER_PATH="$DISTDIR/Zotero-${VERSION}_setup.exe"
-		
-		# Add icon to xulrunner-stub
-		"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
-			"`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
-		
-		echo 'Creating Windows installer'
-		# Copy installer files
-		cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
-		
-		# Build and sign uninstaller
-		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
-		mkdir "$APPDIR/uninstall"
-		mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
-		
-		# Sign zotero.exe, updater, and uninstaller
-		if [ $SIGN == 1 ]; then
-			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
-			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Updater" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
-			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Uninstaller" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
-		fi
-		
-		# Stage installer
-		INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
-		mkdir "$INSTALLERSTAGEDIR"
-		cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
-		
-		# Build and sign setup.exe
-		perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
-		"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
-		mv "$BUILDDIR/win_installer/setup.exe" "$INSTALLERSTAGEDIR"
-		if [ $SIGN == 1 ]; then
-			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLERSTAGEDIR/setup.exe\"`"
-		fi
-		
-		# Compress application
-		cd "$INSTALLERSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
-			-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
+	if [ $PACKAGE == 1 ]; then
+		if [ $WIN_NATIVE == 1 ]; then
+			INSTALLER_PATH="$DISTDIR/Zotero-${VERSION}_setup.exe"
 			
-		# Compress 7zSD.sfx
-		"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
-			"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
-		
-		# Combine 7zSD.sfx and app.tag into setup.exe
-		cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
-			"$BUILDDIR/app_win32.7z" > "$INSTALLER_PATH"
-		
-		# Sign Zotero_setup.exe
-		if [ $SIGN == 1 ]; then
-			"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
-				/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_PATH\"`"
+			# Add icon to xulrunner-stub
+			"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
+				"`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
+			
+			echo 'Creating Windows installer'
+			# Copy installer files
+			cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
+			
+			# Build and sign uninstaller
+			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
+			mkdir "$APPDIR/uninstall"
+			mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
+			
+			# Sign zotero.exe, updater, and uninstaller
+			if [ $SIGN == 1 ]; then
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
+					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Updater" \
+					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Uninstaller" \
+					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+			fi
+			
+			# Stage installer
+			INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
+			mkdir "$INSTALLERSTAGEDIR"
+			cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
+			
+			# Build and sign setup.exe
+			perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
+			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
+			mv "$BUILDDIR/win_installer/setup.exe" "$INSTALLERSTAGEDIR"
+			if [ $SIGN == 1 ]; then
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
+					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLERSTAGEDIR/setup.exe\"`"
+			fi
+			
+			# Compress application
+			cd "$INSTALLERSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
+				-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
+				
+			# Compress 7zSD.sfx
+			"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
+				"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
+			
+			# Combine 7zSD.sfx and app.tag into setup.exe
+			cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
+				"$BUILDDIR/app_win32.7z" > "$INSTALLER_PATH"
+			
+			# Sign Zotero_setup.exe
+			if [ $SIGN == 1 ]; then
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
+					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_PATH\"`"
+			fi
+			
+			chmod 755 "$INSTALLER_PATH"
+		else
+			echo 'Not building on Windows; only building zip file'
 		fi
-		
-		chmod 755 "$INSTALLER_PATH"
-	else
-		echo 'Not building on Windows; only building zip file'
+		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_win32.zip" Zotero_win32
 	fi
-	cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_win32.zip" Zotero_win32
 fi
 
 # Linux
@@ -448,10 +458,12 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Move icons, so that updater.png doesn't fail
 		mv "$APPDIR/xulrunner/icons" "$APPDIR/icons"
 		
-		# Create tar
-		rm -f "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
-		cd "$STAGEDIR"
-		tar -cjf "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
+		if [ $PACKAGE == 1 ]; then
+			# Create tar
+			rm -f "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
+			cd "$STAGEDIR"
+			tar -cjf "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
+		fi
 	done
 fi
 
