@@ -22,6 +22,29 @@ CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
 SITE="https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
 
+while getopts "p:" opt; do
+	case $opt in
+		p)
+			BUILD_MAC=0
+			BUILD_WIN32=0
+			BUILD_LINUX=0
+			for i in `seq 0 1 $((${#OPTARG}-1))`
+			do
+				case ${OPTARG:i:1} in
+					m) BUILD_MAC=1;;
+					w) BUILD_WIN32=1;;
+					l) BUILD_LINUX=1;;
+					*)
+						echo "$0: Invalid platform option ${OPTARG:i:1}"
+						usage
+						;;
+				esac
+			done
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
