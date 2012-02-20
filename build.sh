@@ -328,6 +328,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
+	chmod 755 "$APPDIR/zotero.exe"
 	# Bug 706186 and 722810
 	cp "$APPDIR/xulrunner/mozutils.dll" \
 	   "$APPDIR/xulrunner/msvcr80.dll" \
