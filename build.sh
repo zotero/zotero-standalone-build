@@ -296,7 +296,7 @@ if [ $BUILD_MAC == 1 ]; then
 	done
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
-	find "$CONTENTSDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+	find "$CONTENTSDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
 	find "$CONTENTSDIR/Resources/extensions" -depth -type d -name build -exec rm -rf {} \;
 	
 	# Build disk image
@@ -351,9 +351,9 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Delete extraneous files
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
-	find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+	find "$APPDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
-	find "$APPDIR" -name '*.exe' -or -name '*.dll' -exec chmod 755 {} \;
+	find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
 	
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
@@ -450,7 +450,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
-		find "$APPDIR" -name .DS_Store -or -name update.rdf -exec rm -f {} \;
+		find "$APPDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
 		find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 		
 		# Add run-zotero.sh
