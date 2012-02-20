@@ -35,6 +35,9 @@ pref("network.protocol-handler.expose.https", true);
 pref("offline.autoDetect", false);
 pref("network.manage-offline-status", false);
 
+// Without this, we will throw up dialogs if asked to translate strange pages
+pref("browser.xul.error_pages.enabled", true);
+
 // Preferences for add-on discovery
 pref("extensions.getAddons.cache.enabled", false);
 //pref("extensions.getAddons.maxResults", 15);
