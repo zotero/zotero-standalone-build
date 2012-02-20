@@ -28,7 +28,7 @@ WIN_NATIVE=$?
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 [-p PLATFORMS] [-p DIR] [-v VERSION] [-c CHANNEL]
+Usage: $0 [-p PLATFORMS] [-p DIR] [-v VERSION] [-c CHANNEL] [-d]
 Options
  -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
  -s DIR              build symlinked to Zotero checkout DIR (implies -d)
