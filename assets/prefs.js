@@ -37,6 +37,8 @@ pref("network.manage-offline-status", false);
 
 // Without this, we will throw up dialogs if asked to translate strange pages
 pref("browser.xul.error_pages.enabled", true);
+// Without this, scripts may decide to open popups
+pref("dom.popup_allowed_events", "");
 
 // Preferences for add-on discovery
 pref("extensions.getAddons.cache.enabled", false);
