@@ -39,7 +39,7 @@ pref("network.manage-offline-status", false);
 pref("browser.xul.error_pages.enabled", true);
 
 // Without this, scripts may decide to open popups
-pref("dom.disable_open_during_laod", true);
+pref("dom.disable_open_during_load", true);
 pref("dom.popup_allowed_events", "");
 
 // Preferences for add-on discovery
