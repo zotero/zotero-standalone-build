@@ -41,6 +41,11 @@ pref("browser.xul.error_pages.enabled", true);
 // Without this, scripts may decide to open popups
 pref("dom.disable_open_during_load", true);
 
+// Don't show security warning. The "warn_viewing_mixed" warning just lets the user know that some
+// page elements were loaded over an insecure connection. This doesn't matter if all we're doing is
+// scraping the page, since we don't provide any information to the site.
+pref("security.warn_viewing_mixed", false);
+
 // Preferences for add-on discovery
 pref("extensions.getAddons.cache.enabled", false);
 //pref("extensions.getAddons.maxResults", 15);
