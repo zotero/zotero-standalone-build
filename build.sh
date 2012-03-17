@@ -272,16 +272,12 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
-	unzip -q "$CALLDIR/mac/pythonext-Darwin_universal.xpi" -d "$CONTENTSDIR/Resources/extensions/pythonext@mozdev.org"
 	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
 	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org/install.rdf"
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
 	# UGLY HACK for XULRunner 9.0 builds, which require modified paths
-	install_name_tool -change "@executable_path/libmozutils.dylib" \
-		"@executable_path/../Frameworks/XUL.framework/Versions/Current/libmozutils.dylib" \
-		"$CONTENTSDIR/MacOS/zotero"
 	for lib in "$CURRENT_FRAMEWORK"/*.dylib "$CURRENT_FRAMEWORK/XUL"
 	do
 		for libChange in `basename "$CURRENT_FRAMEWORK"/*.dylib` "XUL"; do
@@ -328,11 +324,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
-	# Bug 706186 and 722810
-	cp "$APPDIR/xulrunner/mozutils.dll" \
-	   "$APPDIR/xulrunner/msvcr80.dll" \
-	   "$APPDIR/xulrunner/Microsoft.VC80.CRT.manifest" \
-	   "$APPDIR/"
 	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
