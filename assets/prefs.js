@@ -21,6 +21,10 @@ pref("intl.locale.matchOS", true);
 
 // Use basicViewer for opening new DOM windows from content (for TinyMCE)
 pref("browser.chromeURL", "chrome://zotero/content/standalone/basicViewer.xul");
+// We need these to get the save dialog working with contentAreaUtils.js
+pref("browser.download.useDownloadDir", false);
+pref("browser.download.manager.showWhenStarting", false);
+pref("browser.download.folderList", 1);
 
 // Don't show add-on selection dialog
 pref("extensions.shownSelectionUI", true);
