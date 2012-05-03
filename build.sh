@@ -325,6 +325,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
 	
+	# See http://groups.google.com/group/mozilla.dev.platform/browse_thread/thread/865d353ad8d329da/3cae433f456c10ba?lnk=gst&q=xulrunner#3cae433f456c10ba
+	# Remove when we ship XULRunner 14 (https://bugzilla.mozilla.org/show_bug.cgi?id=740919)
+	cp "$WIN32_RUNTIME_PATH/gkmedias.dll" "$APPDIR"
+	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
 	zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
