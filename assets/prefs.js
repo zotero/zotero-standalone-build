@@ -39,6 +39,9 @@ pref("network.protocol-handler.expose.https", true);
 pref("offline.autoDetect", false);
 pref("network.manage-offline-status", false);
 
+// Disable graphics acceleration
+pref("layers.acceleration.disabled", true);
+
 // Without this, we will throw up dialogs if asked to translate strange pages
 pref("browser.xul.error_pages.enabled", true);
 
