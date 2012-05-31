@@ -134,6 +134,9 @@ ShowInstDetails nevershow
 !define MUI_PAGE_CUSTOMFUNCTION_PRE preWelcome
 !insertmacro MUI_PAGE_WELCOME
 
+; Page for per-user or global install
+Page custom preScopeOptions leaveScopeOptions
+
 ; Custom Options Page
 Page custom preOptions leaveOptions
 
@@ -639,6 +642,28 @@ Function preWelcome
   ${EndIf}
 FunctionEnd
 
+Function preScopeOptions
+  StrCpy $PageName "Install Scope Options"
+  ${If} ${FileExists} "$EXEDIR\core\distribution\modern-header.bmp"
+  ${AndIf} $hHeaderBitmap == ""
+    Delete "$PLUGINSDIR\modern-header.bmp"
+    CopyFiles /SILENT "$EXEDIR\core\distribution\modern-header.bmp" \
+      "$PLUGINSDIR\modern-header.bmp"
+    ${ChangeMUIHeaderImage} "$PLUGINSDIR\modern-header.bmp"
+  ${EndIf}
+  ; Share title with other options pages.
+  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" \
+    "$(OPTIONS_PAGE_SUBTITLE)"
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY "scopeoptions.ini"
+FunctionEnd
+
+Function leaveScopeOptions
+  ${MUI_INSTALLOPTIONS_READ} $0 "scopeoptions.ini" "Settings" "State"
+  ${If} $0 != 0
+    Abort
+  ${EndIf}
+FunctionEnd
+
 Function preOptions
   StrCpy $PageName "Options"
   ${If} ${FileExists} "$EXEDIR\core\distribution\modern-header.bmp"
@@ -647,7 +672,9 @@ Function preOptions
     CopyFiles /SILENT "$EXEDIR\core\distribution\modern-header.bmp" "$PLUGINSDIR\modern-header.bmp"
     ${ChangeMUIHeaderImage} "$PLUGINSDIR\modern-header.bmp"
   ${EndIf}
-  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" "$(OPTIONS_PAGE_SUBTITLE)"
+  ; Share title with other options pages.
+  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" \
+    "$(OPTIONS_PAGE_SUBTITLE)"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "options.ini"
 FunctionEnd
 
@@ -855,13 +882,56 @@ Function .onInit
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
 
+  !insertmacro InitInstallOptionsFile "scopeoptions.ini"
   !insertmacro InitInstallOptionsFile "options.ini"
   !insertmacro InitInstallOptionsFile "shortcuts.ini"
   !insertmacro InitInstallOptionsFile "summary.ini"
 
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Settings" NumFields "5"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Type   "label"
+  ; Share summary with other options pages.
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Text   "$(OPTIONS_SUMMARY)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Left   "0"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Top    "0"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Bottom "10"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Type   "RadioButton"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Text   "$(SCOPEOPTIONS_USER_RADIO)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Left   "15"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Top    "25"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Bottom "35"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "0"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Flags  "GROUP"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Type   "RadioButton"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Text   "$(SCOPEOPTIONS_GLOBAL_RADIO)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Left   "15"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Top    "55"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Bottom "65"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "1"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Type   "label"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Text   "$(SCOPEOPTIONS_USER_DESC)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Left   "30"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Top    "37"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Bottom "57"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Type   "label"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Text   "$(SCOPEOPTIONS_GLOBAL_DESC)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Left   "30"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Top    "67"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Bottom "87"
+
   WriteINIStr "$PLUGINSDIR\options.ini" "Settings" NumFields "5"
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Type   "label"
+  ; Share summary with other options pages.
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Text   "$(OPTIONS_SUMMARY)"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Left   "0"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Right  "-1"
