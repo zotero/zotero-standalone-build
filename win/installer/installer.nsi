@@ -31,6 +31,7 @@ Var AddDesktopSC
 Var AddQuickLaunchSC
 Var AddStartMenuSC
 Var InstallType
+Var RequestedInstallScope
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -662,6 +663,12 @@ Function leaveScopeOptions
   ${If} $0 != 0
     Abort
   ${EndIf}
+  ${MUI_INSTALLOPTIONS_READ} $R0 "scopeoptions.ini" "Field 2" "State"
+  StrCmp $R0 "1" +1 +2
+  StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
+  ${MUI_INSTALLOPTIONS_READ} $R0 "scopeoptions.ini" "Field 3" "State"
+  StrCmp $R0 "1" +1 +2
+  StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
 FunctionEnd
 
 Function preOptions
