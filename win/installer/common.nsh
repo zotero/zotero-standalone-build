@@ -4299,26 +4299,25 @@ FunctionEnd
     Function LeaveOptionsCommon
       Push $R9
 
+      ; Set default install scope options
+      SetShellVarContext all
+      StrCpy $INSTDIR "$PROGRAMFILES\${BrandFullName}\"
+      IntCmp $RequestedInstallScope ${INSTALLSCOPE_USER} +1 +3 +3
+      SetShellVarContext current
+      StrCpy $INSTDIR "$LOCALAPPDATA\${BrandFullName}\"
+
 !ifndef NO_INSTDIR_FROM_REG
-      SetShellVarContext all      ; Set SHCTX to HKLM
       ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
-
-      StrCmp "$R9" "false" +1 finish_get_install_dir
-
-      SetShellVarContext current  ; Set SHCTX to HKCU
-      ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
-
-      finish_get_install_dir:
       StrCmp "$R9" "false" +2 +1
       StrCpy $INSTDIR "$R9"
 !endif
 
-      ; If the user doesn't have write access to the installation directory set
-      ; the installation directory to a subdirectory of the user's local
-      ; application directory (e.g. non-roaming).
+      ; Fail if the user does not have write access to the folder. Whether the
+      ; installation is global or per-user is now selectable, so there is no
+      ; reason to automatically fall back.
       ${CanWriteToInstallDir} $R9
       StrCmp "$R9" "false" +1 finish_check_install_dir
-      StrCpy $INSTDIR "$LOCALAPPDATA\${BrandFullName}\"
+      Abort
 
       finish_check_install_dir:
       IfFileExists "$INSTDIR" +3 +1
