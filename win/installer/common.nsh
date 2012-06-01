@@ -5049,17 +5049,10 @@
 !endif
 
       ; If the user doesn't have write access to the installation directory set
-      ; the installation directory to a subdirectory of the All Users application
-      ; directory and if the user can't write to that location set the installation
-      ; directory to a subdirectory of the users local application directory
-      ; (e.g. non-roaming).
+      ; the installation directory to a subdirectory of the user's local
+      ; application directory (e.g. non-roaming).
       ${CanWriteToInstallDir} $R9
       StrCmp "$R9" "false" +1 finish_check_install_dir
-
-      SetShellVarContext all      ; Set SHCTX to All Users
-      StrCpy $INSTDIR "$APPDATA\${BrandFullName}\"
-      ${CanWriteToInstallDir} $R9
-      StrCmp "$R9" "false" +2 +1
       StrCpy $INSTDIR "$LOCALAPPDATA\${BrandFullName}\"
 
       finish_check_install_dir:
