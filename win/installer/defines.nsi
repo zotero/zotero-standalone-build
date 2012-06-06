@@ -73,8 +73,9 @@ VIAddVersionKey "ProductVersion"  "${AppVersion}"
 
 # Install scope defines. These are assigned to the RequestedInstallScope
 # variable.
-!define INSTALLSCOPE_USER   1
-!define INSTALLSCOPE_GLOBAL 2
+!define INSTALLSCOPE_USER    1
+!define INSTALLSCOPE_GLOBAL  2
+!define INSTALLSCOPE_DEFAULT ${INSTALLSCOPE_GLOBAL}
 
 !define INSTALLTYPE_BASIC     1
 !define INSTALLTYPE_CUSTOM    2

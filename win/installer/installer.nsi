@@ -883,6 +883,7 @@ Function .onInit
   StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
   StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
   StrCpy $InstallType ${INSTALLTYPE_DEFAULT}
+  StrCpy $RequestedInstallScope ${INSTALLSCOPE_DEFAULT}
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
@@ -903,22 +904,33 @@ Function .onInit
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Top    "0"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Bottom "10"
 
+  ; The State is defined later
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Type   "RadioButton"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Text   "$(SCOPEOPTIONS_USER_RADIO)"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Left   "15"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Right  "-1"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Top    "25"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Bottom "35"
-  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "0"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Flags  "GROUP"
 
+  ; The State is defined later
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Type   "RadioButton"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Text   "$(SCOPEOPTIONS_GLOBAL_RADIO)"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Left   "15"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Right  "-1"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Top    "55"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Bottom "65"
-  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "1"
+
+
+  ; Define the UI to match what it has already been defined as
+  ; programmatically.
+  ${If} $RequestedInstallScope == ${INSTALLSCOPE_GLOBAL}
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "0"
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "1"
+  ${Else}
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "1"
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "0"
+  ${EndIf}
 
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Type   "label"
   WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Text   "$(SCOPEOPTIONS_USER_DESC)"
