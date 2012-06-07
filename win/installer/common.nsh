@@ -4477,17 +4477,8 @@
 !macroend
 
 
-################################################################################
-# User interface callback helper defines and macros
-
-/* Install type defines */
-!ifndef INSTALLTYPE_BASIC
-  !define INSTALLTYPE_BASIC     1
-!endif
-
-!ifndef INSTALLTYPE_CUSTOM
-  !define INSTALLTYPE_CUSTOM    2
-!endif
+##############################################################################
+# User interface callback helper macros
 
 /**
  * Unloads dll's and releases references when the installer and uninstaller
