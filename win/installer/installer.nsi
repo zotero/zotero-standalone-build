@@ -55,7 +55,6 @@ RequestExecutionLevel user
 !addplugindir ./
 
 Var TmpVal
-Var InstallType
 Var PageName
 
 ; These user preferences are initialized to default values in .onInit. They
@@ -64,6 +63,7 @@ Var PageName
 Var AddDesktopSC
 Var AddQuickLaunchSC
 Var AddStartMenuSC
+Var InstallType
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -924,6 +924,7 @@ Function .onInit
   StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
   StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
   StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
+  StrCpy $InstallType ${INSTALLTYPE_DEFAULT}
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 

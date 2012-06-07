@@ -70,3 +70,4 @@ VIAddVersionKey "ProductVersion"  "${AppVersion}"
 
 !define INSTALLTYPE_BASIC     1
 !define INSTALLTYPE_CUSTOM    2
+!define INSTALLTYPE_DEFAULT   ${INSTALLTYPE_BASIC}
