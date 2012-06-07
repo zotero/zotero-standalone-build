@@ -4610,9 +4610,6 @@
       ${ElevateUAC}
 
       ${If} $R8 != ""
-        ; Default install type
-        StrCpy $InstallType ${INSTALLTYPE_BASIC}
-
         ${Unless} ${Silent}
           ; Manually check for /S in the command line due to Bug 506867
           ClearErrors
