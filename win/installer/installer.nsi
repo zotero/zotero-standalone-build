@@ -186,7 +186,7 @@ Page custom preOptions leaveOptions
 Page custom preShortcuts leaveShortcuts
 
 ; Custom Summary Page
-Page custom preSummary leaveSummary
+Page custom preSummary
 
 ; Install Files Page
 !insertmacro MUI_PAGE_INSTFILES
@@ -207,6 +207,17 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
 
 ; Cleanup operations to perform at the start of the installation.
 Section "-InstallStartCleanup"
+  ; Try to delete the app executable and if we can't delete it try to find the
+  ; app's message window and prompt the user to close the app. This allows
+  ; running an instance that is located in another directory. If for whatever
+  ; reason there is no message window we will just rename the app's files and
+  ; then remove them on restart.
+  ClearErrors
+  ${DeleteFile} "$INSTDIR\${FileMainEXE}"
+  ${If} ${Errors}
+    ${ManualCloseAppPrompt} "${WindowClass}" "$(WARN_MANUALLY_CLOSE_APP_INSTALL)"
+  ${EndIf}
+
   SetDetailsPrint both
   DetailPrint $(STATUS_CLEANUP)
   SetDetailsPrint none
@@ -856,19 +867,6 @@ Function preSummary
   ${MUI_INSTALLOPTIONS_READ} $1 "summary.ini" "Field 2" "HWND"
   SendMessage $1 ${WM_SETTEXT} 0 "STR:$INSTDIR"
   !insertmacro MUI_INSTALLOPTIONS_SHOW
-FunctionEnd
-
-Function leaveSummary
-  ; Try to delete the app executable and if we can't delete it try to find the
-  ; app's message window and prompt the user to close the app. This allows
-  ; running an instance that is located in another directory. If for whatever
-  ; reason there is no message window we will just rename the app's files and
-  ; then remove them on restart.
-  ClearErrors
-  ${DeleteFile} "$INSTDIR\${FileMainEXE}"
-  ${If} ${Errors}
-    ${ManualCloseAppPrompt} "${WindowClass}" "$(WARN_MANUALLY_CLOSE_APP_INSTALL)"
-  ${EndIf}
 FunctionEnd
 
 ; When we add an optional action to the finish page the cancel button is

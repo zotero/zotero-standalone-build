@@ -614,7 +614,7 @@
 
       FindWindow $R7 "$R8"
       ${If} $R7 <> 0 ; integer comparison
-        MessageBox MB_OK|MB_ICONQUESTION "$R9"
+        MessageBox MB_OK|MB_ICONQUESTION "$R9" /SD IDOK
         Abort
       ${EndIf}
 
