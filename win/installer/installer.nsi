@@ -58,8 +58,11 @@ Var TmpVal
 Var InstallType
 Var AddStartMenuSC
 Var AddQuickLaunchSC
-Var AddDesktopSC
 Var PageName
+
+; These user preferences are initialized to default values in .onInit. They should only be changed in the
+; UI, .ini handler, or command-line argument handlers.
+Var AddDesktopSC
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -299,11 +302,6 @@ Section "-Application" APP_IDX
     ${Else}
       StrCpy $AddQuickLaunchSC "1"
     ${EndIf}
-  ${EndIf}
-
-  ; Default for creating Desktop shortcut (1 = create, 0 = don't create)
-  ${If} $AddDesktopSC == ""
-    StrCpy $AddDesktopSC "1"
   ${EndIf}
 
   ${LogHeader} "Adding Registry Entries"
@@ -883,6 +881,12 @@ FunctionEnd
 Function .onInit
   StrCpy $PageName ""
   StrCpy $LANGUAGE 0
+
+  ; Starting user preferences need to be defined in code so that silent
+  ; installations will work correctly. These can later be modified in the .ini
+  ; file and command-line argument handlers.
+  StrCpy $AddDesktopSC "1"
+
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
@@ -952,7 +956,15 @@ Function .onInit
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Top    "20"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Bottom "30"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" State  "1"
+
+  ; Default UI selection synchronized with existing value.
+  Push $0
+  StrCpy $0 "0"
+  IntCmp $AddDesktopSC 1 +1 +2 +2
+  StrCpy $0 "1"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" State  $0
+  Pop $0
+
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Flags  "GROUP"
 
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Type   "checkbox"
