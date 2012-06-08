@@ -872,13 +872,7 @@ Function .onInit
   ; file and command-line argument handlers.
   StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
   StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
-
-  ; Don't install the quick launch shortcut on Windows 7
-  ${If} ${AtLeastWin7}
-    StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DISABLED}"
-  ${Else}
-    StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
-  ${EndIf}
+  StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
