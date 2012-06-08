@@ -59,8 +59,9 @@ Var InstallType
 Var AddQuickLaunchSC
 Var PageName
 
-; These user preferences are initialized to default values in .onInit. They should only be changed in the
-; UI, .ini handler, or command-line argument handlers.
+; These user preferences are initialized to default values in .onInit. They
+; should only be changed in the UI, .ini handler, or command-line argument
+; handlers.
 Var AddDesktopSC
 Var AddStartMenuSC
 
