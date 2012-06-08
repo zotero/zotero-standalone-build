@@ -350,7 +350,7 @@ Section "-Application" APP_IDX
     ; shortcuts set IconsVisible to 1 otherwise to 0.
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
     StrCpy $0 "Software\Clients\StartMenuInternet\$R9\InstallInfo"
-    ${If} $AddDesktopSC == 1
+    ${If} $AddDesktopSC == ${DESKTOP_SHORTCUT_ENABLED}
     ${OrIf} $AddStartMenuSC == 1
       WriteRegDWORD HKLM "$0" "IconsVisible" 1
     ${Else}
@@ -431,7 +431,7 @@ Section "-Application" APP_IDX
     ${EndIf}
   ${EndIf}
 
-  ${If} $AddDesktopSC == 1
+  ${If} $AddDesktopSC == ${DESKTOP_SHORTCUT_ENABLED}
     CreateShortCut "$DESKTOP\${BrandFullName}.lnk" "$INSTDIR\${FileMainEXE}"
     ${If} ${FileExists} "$DESKTOP\${BrandFullName}.lnk"
       ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandFullName}.lnk" \
@@ -885,7 +885,7 @@ Function .onInit
   ; Starting user preferences need to be defined in code so that silent
   ; installations will work correctly. These can later be modified in the .ini
   ; file and command-line argument handlers.
-  StrCpy $AddDesktopSC "1"
+  StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
@@ -959,9 +959,9 @@ Function .onInit
 
   ; Default UI selection synchronized with existing value.
   Push $0
-  StrCpy $0 "0"
-  IntCmp $AddDesktopSC 1 +1 +2 +2
-  StrCpy $0 "1"
+  StrCpy $0 "${DESKTOP_SHORTCUT_DISABLED}"
+  IntCmp $AddDesktopSC ${DESKTOP_SHORTCUT_ENABLED} +1 +2 +2
+  StrCpy $0 "${DESKTOP_SHORTCUT_ENABLED}"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" State  $0
   Pop $0
 
