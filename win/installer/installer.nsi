@@ -345,7 +345,7 @@ Section "-Application" APP_IDX
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
     StrCpy $0 "Software\Clients\StartMenuInternet\$R9\InstallInfo"
     ${If} $AddDesktopSC == ${DESKTOP_SHORTCUT_ENABLED}
-    ${OrIf} $AddStartMenuSC == 1
+    ${OrIf} $AddStartMenuSC == ${START_MENU_SHORTCUT_ENABLED}
       WriteRegDWORD HKLM "$0" "IconsVisible" 1
     ${Else}
       WriteRegDWORD HKLM "$0" "IconsVisible" 0
@@ -411,7 +411,7 @@ Section "-Application" APP_IDX
   ; the Start Menu or Desktop shortcuts from the original unelevated process
   ; since this will either add it for the user if unelevated or All Users if
   ; elevated.
-  ${If} $AddStartMenuSC == 1
+  ${If} $AddStartMenuSC == ${START_MENU_SHORTCUT_ENABLED}
     CreateShortCut "$SMPROGRAMS\${BrandFullName}.lnk" "$INSTDIR\${FileMainEXE}"
     ${If} ${FileExists} "$SMPROGRAMS\${BrandFullName}.lnk"
       ShellLink::SetShortCutWorkingDirectory "$SMPROGRAMS\${BrandFullName}.lnk" \
@@ -880,7 +880,7 @@ Function .onInit
   ; installations will work correctly. These can later be modified in the .ini
   ; file and command-line argument handlers.
   StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
-  StrCpy $AddStartMenuSC "1"
+  StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
@@ -971,9 +971,9 @@ Function .onInit
 
   ; Default UI selection synchronized with existing value.
   Push $0
-  StrCpy $0 "0"
-  IntCmp $AddStartMenuSC 1 +1 +2 +2
-  StrCpy $0 "1"
+  StrCpy $0 "${START_MENU_SHORTCUT_DISABLED"
+  IntCmp $AddStartMenuSC ${START_MENU_SHORTCUT_ENABLED} +1 +2 +2
+  StrCpy $0 "${START_MENU_SHORTCUT_ENABLED}"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State $0
   Pop $0
 
