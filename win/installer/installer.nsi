@@ -56,13 +56,13 @@ RequestExecutionLevel user
 
 Var TmpVal
 Var InstallType
-Var AddStartMenuSC
 Var AddQuickLaunchSC
 Var PageName
 
 ; These user preferences are initialized to default values in .onInit. They should only be changed in the
 ; UI, .ini handler, or command-line argument handlers.
 Var AddDesktopSC
+Var AddStartMenuSC
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -287,12 +287,6 @@ Section "-Application" APP_IDX
   ${LogUninstall} "File: \updates.xml"
 
   ClearErrors
-
-  ; Default for creating Start Menu shortcut
-  ; (1 = create, 0 = don't create)
-  ${If} $AddStartMenuSC == ""
-    StrCpy $AddStartMenuSC "1"
-  ${EndIf}
 
   ; Default for creating Quick Launch shortcut (1 = create, 0 = don't create)
   ${If} $AddQuickLaunchSC == ""
@@ -886,6 +880,7 @@ Function .onInit
   ; installations will work correctly. These can later be modified in the .ini
   ; file and command-line argument handlers.
   StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
+  StrCpy $AddStartMenuSC "1"
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
@@ -973,7 +968,14 @@ Function .onInit
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Top    "40"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Bottom "50"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State  "1"
+
+  ; Default UI selection synchronized with existing value.
+  Push $0
+  StrCpy $0 "0"
+  IntCmp $AddStartMenuSC 1 +1 +2 +2
+  StrCpy $0 "1"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State $0
+  Pop $0
 
   ; Don't offer to install the quick launch shortcut on Windows 7
   ${Unless} ${AtLeastWin7}
