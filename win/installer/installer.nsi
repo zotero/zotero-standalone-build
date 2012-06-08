@@ -432,7 +432,7 @@ Section "-Application" APP_IDX
 
   ; If elevated the Quick Launch shortcut must be added from the unelevated
   ; original process.
-  ${If} $AddQuickLaunchSC == 1
+  ${If} $AddQuickLaunchSC == ${QUICKLAUNCH_SHORTCUT_ENABLED}
     ${Unless} ${AtLeastWin7}
       ClearErrors
       ${GetParameters} $0
@@ -875,9 +875,9 @@ Function .onInit
 
   ; Don't install the quick launch shortcut on Windows 7
   ${If} ${AtLeastWin7}
-    StrCpy $AddQuickLaunchSC "0"
+    StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DISABLED}"
   ${Else}
-    StrCpy $AddQuickLaunchSC "1"
+    StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
   ${EndIf}
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
@@ -969,7 +969,7 @@ Function .onInit
 
   ; Default UI selection synchronized with existing value.
   Push $0
-  StrCpy $0 "${START_MENU_SHORTCUT_DISABLED"
+  StrCpy $0 "${START_MENU_SHORTCUT_DISABLED}"
   IntCmp $AddStartMenuSC ${START_MENU_SHORTCUT_ENABLED} +1 +2 +2
   StrCpy $0 "${START_MENU_SHORTCUT_ENABLED}"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State $0
@@ -986,7 +986,7 @@ Function .onInit
 
     Push $0
     StrCpy $0 "0"
-    IntCmp $AddQuickLaunchSC 1 +1 +2 +2
+    IntCmp $AddQuickLaunchSC ${QUICKLAUNCH_SHORTCUT_ENABLED} +1 +2 +2
     StrCpy $0 "1"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" State $0
     Pop $0
