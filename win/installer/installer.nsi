@@ -133,7 +133,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !include shared.nsh
 
 ; Helper macros for ui callbacks. Insert these after shared.nsh
-!insertmacro CheckCustomCommon
 !insertmacro InstallEndCleanupCommon
 !insertmacro InstallOnInitCommon
 !insertmacro InstallStartCleanupCommon
@@ -734,7 +733,11 @@ FunctionEnd
 
 Function preShortcuts
   StrCpy $PageName "Shortcuts"
-  ${CheckCustomCommon}
+
+  ; Abort if not a custom install
+  IntCmp $InstallType ${INSTALLTYPE_CUSTOM} +2 +1 +1
+  Abort
+
   !insertmacro MUI_HEADER_TEXT "$(SHORTCUTS_PAGE_TITLE)" "$(SHORTCUTS_PAGE_SUBTITLE)"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "shortcuts.ini"
 FunctionEnd
