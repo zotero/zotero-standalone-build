@@ -4490,36 +4490,6 @@
 !endif
 
 /**
- * Checks whether to display the current page (e.g. if not performing a custom
- * install don't display the custom pages).
- */
-!macro CheckCustomCommon
-
-  !ifndef CheckCustomCommon
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define CheckCustomCommon "!insertmacro CheckCustomCommonCall"
-
-    Function CheckCustomCommon
-
-      ; Abort if not a custom install
-      IntCmp $InstallType ${INSTALLTYPE_CUSTOM} +2 +1 +1
-      Abort
-
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro CheckCustomCommonCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call CheckCustomCommon
-  !verbose pop
-!macroend
-
-/**
  * Unloads dll's and releases references when the installer and uninstaller
  * exit.
  */
