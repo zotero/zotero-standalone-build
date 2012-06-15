@@ -5053,68 +5053,6 @@
   !verbose pop
 !macroend
 
-/**
- * Called from the MUI leaveDirectory function
- *
- * @param   _WARN_DISK_SPACE
- *          Message displayed when there isn't enough disk space to perform the
- *          installation.
- * @param   _WARN_WRITE_ACCESS
- *          Message displayed when the installer does not have write access to
- *          $INSTDIR.
- *
- * $R7 = returned value from CheckDiskSpace and CanWriteToInstallDir macros
- * $R8 = _WARN_DISK_SPACE
- * $R9 = _WARN_WRITE_ACCESS
- */
-!macro LeaveDirectoryCommon
-
-  !ifndef LeaveDirectoryCommon
-    !insertmacro CheckDiskSpace
-    !insertmacro CanWriteToInstallDir
-
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define LeaveDirectoryCommon "!insertmacro LeaveDirectoryCommonCall"
-
-    Function LeaveDirectoryCommon
-      Exch $R9
-      Exch 1
-      Exch $R8
-      Push $R7
-
-      ${CanWriteToInstallDir} $R7
-      ${If} $R7 == "false"
-        MessageBox MB_OK|MB_ICONEXCLAMATION "$R9"
-        Abort
-      ${EndIf}
-
-      ${CheckDiskSpace} $R7
-      ${If} $R7 == "false"
-        MessageBox MB_OK|MB_ICONEXCLAMATION "$R8"
-        Abort
-      ${EndIf}
-
-      Pop $R7
-      Exch $R8
-      Exch 1
-      Exch $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro LeaveDirectoryCommonCall _WARN_DISK_SPACE _WARN_WRITE_ACCESS
-  !verbose push
-  Push "${_WARN_DISK_SPACE}"
-  Push "${_WARN_WRITE_ACCESS}"
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call LeaveDirectoryCommon
-  !verbose pop
-!macroend
-
-
 ################################################################################
 # Install Section common macros.
 
