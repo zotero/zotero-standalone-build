@@ -5054,48 +5054,6 @@
 !macroend
 
 /**
- * Called from the MUI preDirectory function to verify there is enough disk
- * space for the installation and the installation directory is writable.
- *
- * $R9 = returned value from CheckDiskSpace and CanWriteToInstallDir macros
- */
-!macro PreDirectoryCommon
-
-  !ifndef PreDirectoryCommon
-    !insertmacro CanWriteToInstallDir
-    !insertmacro CheckDiskSpace
-
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define PreDirectoryCommon "!insertmacro PreDirectoryCommonCall"
-
-    Function PreDirectoryCommon
-      Push $R9
-
-      IntCmp $InstallType ${INSTALLTYPE_CUSTOM} end +1 +1
-      ${CanWriteToInstallDir} $R9
-      StrCmp "$R9" "false" end +1
-      ${CheckDiskSpace} $R9
-      StrCmp "$R9" "false" end +1
-      Abort
-
-      end:
-
-      Pop $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro PreDirectoryCommonCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call PreDirectoryCommon
-  !verbose pop
-!macroend
-
-/**
  * Called from the MUI leaveDirectory function
  *
  * @param   _WARN_DISK_SPACE

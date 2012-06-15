@@ -105,7 +105,9 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro _LoggingCommon
 
 !insertmacro AddHandlerValues
+!insertmacro CanWriteToInstallDir
 !insertmacro ChangeMUIHeaderImage
+!insertmacro CheckDiskSpace
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
@@ -139,7 +141,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro LeaveDirectoryCommon
 !insertmacro LeaveOptionsCommon
 !insertmacro OnEndCommon
-!insertmacro PreDirectoryCommon
 
 Name "${BrandFullName}"
 OutFile "setup.exe"
@@ -721,7 +722,18 @@ FunctionEnd
 
 Function preDirectory
   StrCpy $PageName "Directory"
-  ${PreDirectoryCommon}
+  Push $R9
+
+  IntCmp $InstallType ${INSTALLTYPE_CUSTOM} end +1 +1
+  ${CanWriteToInstallDir} $R9
+  StrCmp "$R9" "false" end +1
+  ${CheckDiskSpace} $R9
+  StrCmp "$R9" "false" end +1
+  Abort
+
+  end:
+
+  Pop $R9
 FunctionEnd
 
 Function leaveDirectory
