@@ -215,6 +215,20 @@ Section "-InstallStartCleanup"
   IfSilent +1 non_silent
     Call CheckExistingInstall
 
+    Push $R9
+    ${CanWriteToInstallDir} $R9
+    ${If} $R9 == "false"
+      ; TODO: write to log file
+      Abort
+    ${EndIf}
+
+    ${CheckDiskSpace} $R9
+    ${If} $R9 == "false"
+      ; TODO: write to log file
+      Abort
+    ${EndIf}
+    Pop $R9
+
   non_silent:
   ; Try to delete the app executable and if we can't delete it try to find the
   ; app's message window and prompt the user to close the app. This allows
@@ -723,6 +737,8 @@ Function preDirectory
   StrCpy $PageName "Directory"
   Push $R9
 
+  ; Skip page if currently drive space and disk access exist for currently
+  ; selected install path.
   IntCmp $InstallType ${INSTALLTYPE_CUSTOM} end +1 +1
   ${CanWriteToInstallDir} $R9
   StrCmp "$R9" "false" end +1
@@ -740,8 +756,9 @@ Function leaveDirectory
     Call CheckExistingInstall
   ${EndIf}
 
+  ; Force user to try again if no drive space or disk access exist for
+  ; currently selected install path.
   Push $R9
-
   ${CanWriteToInstallDir} $R9
   ${If} $R9 == "false"
     MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_WRITE_ACCESS)"
@@ -753,7 +770,6 @@ Function leaveDirectory
     MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_DISK_SPACE)"
     Abort
   ${EndIf}
-
   Pop $R9
 FunctionEnd
 
