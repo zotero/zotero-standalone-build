@@ -213,6 +213,11 @@ Section "-InstallStartCleanup"
   ; I don't know that software upgrades are working correctly, but this
   ; ensures that CheckExistingInstall always gets called.
   IfSilent +1 non_silent
+    ; code from options page that needs to execute
+    ${LeaveOptionsCommon}
+
+    ; code from last page shown (depending on installtype) that needs to
+    ; execute.
     Call CheckExistingInstall
 
     Push $R9
