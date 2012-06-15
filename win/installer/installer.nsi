@@ -138,7 +138,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro InstallEndCleanupCommon
 !insertmacro InstallOnInitCommon
 !insertmacro InstallStartCleanupCommon
-!insertmacro LeaveDirectoryCommon
 !insertmacro LeaveOptionsCommon
 !insertmacro OnEndCommon
 
@@ -740,7 +739,22 @@ Function leaveDirectory
   ${If} $InstallType == ${INSTALLTYPE_BASIC}
     Call CheckExistingInstall
   ${EndIf}
-  ${LeaveDirectoryCommon} "$(WARN_DISK_SPACE)" "$(WARN_WRITE_ACCESS)"
+
+  Push $R9
+
+  ${CanWriteToInstallDir} $R9
+  ${If} $R9 == "false"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_WRITE_ACCESS)"
+    Abort
+  ${EndIf}
+
+  ${CheckDiskSpace} $R9
+  ${If} $R9 == "false"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_DISK_SPACE)"
+    Abort
+  ${EndIf}
+
+  Pop $R9
 FunctionEnd
 
 Function preShortcuts
