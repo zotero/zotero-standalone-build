@@ -211,6 +211,12 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
 
 ; Cleanup operations to perform at the start of the installation.
 Section "-InstallStartCleanup"
+  ; I don't know that software upgrades are working correctly, but this
+  ; ensures that CheckExistingInstall always gets called.
+  IfSilent +1 non_silent
+    Call CheckExistingInstall
+
+  non_silent:
   ; Try to delete the app executable and if we can't delete it try to find the
   ; app's message window and prompt the user to close the app. This allows
   ; running an instance that is located in another directory. If for whatever
@@ -740,7 +746,7 @@ Function leaveShortcuts
   ${EndIf}
   ${MUI_INSTALLOPTIONS_READ} $AddDesktopSC "shortcuts.ini" "Field 2" "State"
   ${MUI_INSTALLOPTIONS_READ} $AddStartMenuSC "shortcuts.ini" "Field 3" "State"
-  ; Don't install the quick launch shortcut on Windows 7
+  ; This field doesn't exist when running on Windows 7 or above.
   ${Unless} ${AtLeastWin7}
     ${MUI_INSTALLOPTIONS_READ} $AddQuickLaunchSC "shortcuts.ini" "Field 4" "State"
   ${EndUnless}
