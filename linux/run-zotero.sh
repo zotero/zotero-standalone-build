@@ -36,9 +36,10 @@
 #
 # ***** END LICENSE BLOCK *****
 cmdname=`basename "$0"`
-MOZ_DIST_BIN=`dirname "$0"`/xulrunner
-MOZ_DEFAULT_NAME="./${cmdname}-bin"
-MOZ_APPRUNNER_NAME="./zotero"
+CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MOZ_DIST_BIN="$CALLDIR"/xulrunner
+MOZ_DEFAULT_NAME="$CALLDIR/${cmdname}-bin"
+MOZ_APPRUNNER_NAME="$CALLDIR/zotero"
 MOZ_PROGRAM=""
 
 exitcode=1
