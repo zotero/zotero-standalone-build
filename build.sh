@@ -338,9 +338,9 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# This used to be bug 722810, but that bug was actually fixed for Gecko 12. Now it's
 	# unfortunately broken again.
-	cp "$APPDIR/xulrunner/mozutils.dll" \
-	   "$APPDIR/xulrunner/msvcr80.dll" \
-	   "$APPDIR/xulrunner/Microsoft.VC80.CRT.manifest" \
+	cp "$WIN32_RUNTIME_PATH/msvcp80.dll" \
+	   "$WIN32_RUNTIME_PATH/msvcr80.dll" \
+	   "$WIN32_RUNTIME_PATH/Microsoft.VC80.CRT.manifest" \
 	   "$APPDIR/"
 	
 	# Add Windows-specific Standalone assets
