@@ -336,6 +336,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# Remove when we ship XULRunner 14 (https://bugzilla.mozilla.org/show_bug.cgi?id=740919)
 	cp "$WIN32_RUNTIME_PATH/gkmedias.dll" "$APPDIR"
 	
+	# This used to be bug 722810, but that bug was actually fixed for Gecko 12. Now it's
+	# unfortunately broken again.
+	cp "$APPDIR/xulrunner/mozutils.dll" \
+	   "$APPDIR/xulrunner/msvcr80.dll" \
+	   "$APPDIR/xulrunner/Microsoft.VC80.CRT.manifest" \
+	   "$APPDIR/"
+	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
 	zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
