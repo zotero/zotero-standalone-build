@@ -195,6 +195,8 @@
 	<true/>
 	<key>CGDisableCoalescedUpdates</key>
 	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.5</string>
 	<key>LSMinimumSystemVersionByArchitecture</key>
