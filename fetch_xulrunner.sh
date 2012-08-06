@@ -50,13 +50,10 @@ mkdir xulrunner
 cd xulrunner
 
 if [ $BUILD_MAC == 1 ]; then
-	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
-	
-	hdiutil detach -quiet /Volumes/XULRunner 2>/dev/null
-	hdiutil attach -quiet xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
-	gunzip -c /Volumes/XULRunner/xulrunner-$GECKO_VERSION.en-US.mac.pkg/Contents/Archive.pax.gz | pax -r
-	hdiutil detach -quiet /Volumes/XULRunner
-	rm xulrunner-$GECKO_VERSION.en-US.mac-pkg.dmg
+	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
+	tar -xjf xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
+	rm xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
+	mv xulrunner XUL.framework
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then

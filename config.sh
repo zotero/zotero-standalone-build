@@ -4,7 +4,7 @@ BUILD_WIN32=1
 BUILD_LINUX=1
 
 # Version of Gecko to build with
-GECKO_VERSION="13.0"
+GECKO_VERSION="14.0.1"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
