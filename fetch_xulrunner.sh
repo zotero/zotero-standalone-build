@@ -53,7 +53,6 @@ if [ $BUILD_MAC == 1 ]; then
 	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
 	tar -xjf xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
 	rm xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
-	mv xulrunner XUL.framework
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then
