@@ -246,12 +246,9 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Merge xulrunner and relevant assets
 	mkdir "$CONTENTSDIR/MacOS"
-	mkdir "$CONTENTSDIR/Frameworks"
-	cp -a "$MAC_RUNTIME_PATH" "$CONTENTSDIR/Frameworks/XUL.framework"
-	CURRENT_FRAMEWORK="$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current"
-	rm "$CURRENT_FRAMEWORK"
-	mv "$CONTENTSDIR/Frameworks/XUL.framework/Versions/"[1-9]* "$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current"
-	cp "$CONTENTSDIR/Frameworks/XUL.framework/Versions/Current/xulrunner" "$CONTENTSDIR/MacOS/zotero"
+	cp -a "$MAC_RUNTIME_PATH/Versions/Current"/* "$CONTENTSDIR/MacOS"
+	mv "$CONTENTSDIR/MacOS/xulrunner" "$CONTENTSDIR/MacOS/zotero-bin"
+	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
 	cp "$BUILDDIR/application.ini" "$CONTENTSDIR/Resources"
 	cp "$CALLDIR/mac/Contents/Info.plist" "$CONTENTSDIR"
 	
@@ -277,19 +274,6 @@ if [ $BUILD_MAC == 1 ]; then
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org/install.rdf"
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
-	# UGLY HACK for XULRunner 9.0 builds, which require modified paths
-	for lib in "$CURRENT_FRAMEWORK"/*.dylib "$CURRENT_FRAMEWORK/XUL"
-	do
-		for libChange in `basename "$CURRENT_FRAMEWORK"/*.dylib` "XUL"; do
-			install_name_tool -change "@executable_path/$libChange" "@loader_path/$libChange" "$lib"
-		done
-	done
-	for lib in "$CURRENT_FRAMEWORK"/components/*.dylib
-	do
-		for libChange in `basename "$CURRENT_FRAMEWORK"/*.dylib` "XUL"; do
-			install_name_tool -change "@executable_path/$libChange" "@loader_path/../$libChange" "$lib"
-		done
-	done
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$CONTENTSDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
@@ -338,9 +322,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# This used to be bug 722810, but that bug was actually fixed for Gecko 12. Now it's
 	# unfortunately broken again.
-	cp "$WIN32_RUNTIME_PATH/msvcp80.dll" \
-	   "$WIN32_RUNTIME_PATH/msvcr80.dll" \
-	   "$WIN32_RUNTIME_PATH/Microsoft.VC80.CRT.manifest" \
+	cp "$WIN32_RUNTIME_PATH/msvcp100.dll" \
+	   "$WIN32_RUNTIME_PATH/msvcr100.dll" \
 	   "$APPDIR/"
 	
 	# Add Windows-specific Standalone assets
