@@ -51,3 +51,23 @@ VIAddVersionKey "FileVersion"     "${AppVersion}"
 VIAddVersionKey "ProductVersion"  "${AppVersion}"
 # Comments is not used but left below commented out for future reference
 # VIAddVersionKey "Comments"        "Comments"
+
+# These are used for keeping track of user preferences. They are set to a
+# default value in the installer's .OnInit callback, and then conditionally
+# modified through the UI or an .ini file.
+
+!define DESKTOP_SHORTCUT_DISABLED 0
+!define DESKTOP_SHORTCUT_ENABLED  1
+!define DESKTOP_SHORTCUT_DEFAULT  ${DESKTOP_SHORTCUT_ENABLED}
+
+!define START_MENU_SHORTCUT_DISABLED 0
+!define START_MENU_SHORTCUT_ENABLED  1
+!define START_MENU_SHORTCUT_DEFAULT  ${START_MENU_SHORTCUT_ENABLED}
+
+!define QUICKLAUNCH_SHORTCUT_DISABLED 0
+!define QUICKLAUNCH_SHORTCUT_ENABLED  1
+!define QUICKLAUNCH_SHORTCUT_DEFAULT  ${QUICKLAUNCH_SHORTCUT_ENABLED}
+
+!define INSTALLTYPE_BASIC     1
+!define INSTALLTYPE_CUSTOM    2
+!define INSTALLTYPE_DEFAULT   ${INSTALLTYPE_BASIC}

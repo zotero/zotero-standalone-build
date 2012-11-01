@@ -614,7 +614,7 @@
 
       FindWindow $R7 "$R8"
       ${If} $R7 <> 0 ; integer comparison
-        MessageBox MB_OK|MB_ICONQUESTION "$R9"
+        MessageBox MB_OK|MB_ICONQUESTION "$R9" /SD IDOK
         Abort
       ${EndIf}
 
@@ -4477,47 +4477,8 @@
 !macroend
 
 
-################################################################################
-# User interface callback helper defines and macros
-
-/* Install type defines */
-!ifndef INSTALLTYPE_BASIC
-  !define INSTALLTYPE_BASIC     1
-!endif
-
-!ifndef INSTALLTYPE_CUSTOM
-  !define INSTALLTYPE_CUSTOM    2
-!endif
-
-/**
- * Checks whether to display the current page (e.g. if not performing a custom
- * install don't display the custom pages).
- */
-!macro CheckCustomCommon
-
-  !ifndef CheckCustomCommon
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define CheckCustomCommon "!insertmacro CheckCustomCommonCall"
-
-    Function CheckCustomCommon
-
-      ; Abort if not a custom install
-      IntCmp $InstallType ${INSTALLTYPE_CUSTOM} +2 +1 +1
-      Abort
-
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro CheckCustomCommonCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call CheckCustomCommon
-  !verbose pop
-!macroend
+##############################################################################
+# User interface callback helper macros
 
 /**
  * Unloads dll's and releases references when the installer and uninstaller
@@ -4649,9 +4610,6 @@
       ${ElevateUAC}
 
       ${If} $R8 != ""
-        ; Default install type
-        StrCpy $InstallType ${INSTALLTYPE_BASIC}
-
         ${Unless} ${Silent}
           ; Manually check for /S in the command line due to Bug 506867
           ClearErrors
@@ -5049,17 +5007,10 @@
 !endif
 
       ; If the user doesn't have write access to the installation directory set
-      ; the installation directory to a subdirectory of the All Users application
-      ; directory and if the user can't write to that location set the installation
-      ; directory to a subdirectory of the users local application directory
-      ; (e.g. non-roaming).
+      ; the installation directory to a subdirectory of the user's local
+      ; application directory (e.g. non-roaming).
       ${CanWriteToInstallDir} $R9
       StrCmp "$R9" "false" +1 finish_check_install_dir
-
-      SetShellVarContext all      ; Set SHCTX to All Users
-      StrCpy $INSTDIR "$APPDATA\${BrandFullName}\"
-      ${CanWriteToInstallDir} $R9
-      StrCmp "$R9" "false" +2 +1
       StrCpy $INSTDIR "$LOCALAPPDATA\${BrandFullName}\"
 
       finish_check_install_dir:
@@ -5089,110 +5040,6 @@
   Call LeaveOptionsCommon
   !verbose pop
 !macroend
-
-/**
- * Called from the MUI preDirectory function to verify there is enough disk
- * space for the installation and the installation directory is writable.
- *
- * $R9 = returned value from CheckDiskSpace and CanWriteToInstallDir macros
- */
-!macro PreDirectoryCommon
-
-  !ifndef PreDirectoryCommon
-    !insertmacro CanWriteToInstallDir
-    !insertmacro CheckDiskSpace
-
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define PreDirectoryCommon "!insertmacro PreDirectoryCommonCall"
-
-    Function PreDirectoryCommon
-      Push $R9
-
-      IntCmp $InstallType ${INSTALLTYPE_CUSTOM} end +1 +1
-      ${CanWriteToInstallDir} $R9
-      StrCmp "$R9" "false" end +1
-      ${CheckDiskSpace} $R9
-      StrCmp "$R9" "false" end +1
-      Abort
-
-      end:
-
-      Pop $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro PreDirectoryCommonCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call PreDirectoryCommon
-  !verbose pop
-!macroend
-
-/**
- * Called from the MUI leaveDirectory function
- *
- * @param   _WARN_DISK_SPACE
- *          Message displayed when there isn't enough disk space to perform the
- *          installation.
- * @param   _WARN_WRITE_ACCESS
- *          Message displayed when the installer does not have write access to
- *          $INSTDIR.
- *
- * $R7 = returned value from CheckDiskSpace and CanWriteToInstallDir macros
- * $R8 = _WARN_DISK_SPACE
- * $R9 = _WARN_WRITE_ACCESS
- */
-!macro LeaveDirectoryCommon
-
-  !ifndef LeaveDirectoryCommon
-    !insertmacro CheckDiskSpace
-    !insertmacro CanWriteToInstallDir
-
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define LeaveDirectoryCommon "!insertmacro LeaveDirectoryCommonCall"
-
-    Function LeaveDirectoryCommon
-      Exch $R9
-      Exch 1
-      Exch $R8
-      Push $R7
-
-      ${CanWriteToInstallDir} $R7
-      ${If} $R7 == "false"
-        MessageBox MB_OK|MB_ICONEXCLAMATION "$R9"
-        Abort
-      ${EndIf}
-
-      ${CheckDiskSpace} $R7
-      ${If} $R7 == "false"
-        MessageBox MB_OK|MB_ICONEXCLAMATION "$R8"
-        Abort
-      ${EndIf}
-
-      Pop $R7
-      Exch $R8
-      Exch 1
-      Exch $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro LeaveDirectoryCommonCall _WARN_DISK_SPACE _WARN_WRITE_ACCESS
-  !verbose push
-  Push "${_WARN_DISK_SPACE}"
-  Push "${_WARN_WRITE_ACCESS}"
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call LeaveDirectoryCommon
-  !verbose pop
-!macroend
-
 
 ################################################################################
 # Install Section common macros.
