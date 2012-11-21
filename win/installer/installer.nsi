@@ -55,11 +55,15 @@ RequestExecutionLevel user
 !addplugindir ./
 
 Var TmpVal
-Var InstallType
-Var AddStartMenuSC
-Var AddQuickLaunchSC
-Var AddDesktopSC
 Var PageName
+
+; These user preferences are initialized to default values in .onInit. They
+; should only be changed in the UI, .ini handler, or command-line argument
+; handlers.
+Var AddDesktopSC
+Var AddQuickLaunchSC
+Var AddStartMenuSC
+Var InstallType
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -101,7 +105,9 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro _LoggingCommon
 
 !insertmacro AddHandlerValues
+!insertmacro CanWriteToInstallDir
 !insertmacro ChangeMUIHeaderImage
+!insertmacro CheckDiskSpace
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
@@ -129,14 +135,11 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !include shared.nsh
 
 ; Helper macros for ui callbacks. Insert these after shared.nsh
-!insertmacro CheckCustomCommon
 !insertmacro InstallEndCleanupCommon
 !insertmacro InstallOnInitCommon
 !insertmacro InstallStartCleanupCommon
-!insertmacro LeaveDirectoryCommon
 !insertmacro LeaveOptionsCommon
 !insertmacro OnEndCommon
-!insertmacro PreDirectoryCommon
 
 Name "${BrandFullName}"
 OutFile "setup.exe"
@@ -186,7 +189,7 @@ Page custom preOptions leaveOptions
 Page custom preShortcuts leaveShortcuts
 
 ; Custom Summary Page
-Page custom preSummary leaveSummary
+Page custom preSummary
 
 ; Install Files Page
 !insertmacro MUI_PAGE_INSTFILES
@@ -207,6 +210,42 @@ ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
 
 ; Cleanup operations to perform at the start of the installation.
 Section "-InstallStartCleanup"
+  ; I don't know that software upgrades are working correctly, but this
+  ; ensures that CheckExistingInstall always gets called.
+  IfSilent +1 non_silent
+    ; code from options page that needs to execute
+    ${LeaveOptionsCommon}
+
+    ; code from last page shown (depending on installtype) that needs to
+    ; execute.
+    Call CheckExistingInstall
+
+    Push $R9
+    ${CanWriteToInstallDir} $R9
+    ${If} $R9 == "false"
+      ; TODO: write to log file
+      Abort
+    ${EndIf}
+
+    ${CheckDiskSpace} $R9
+    ${If} $R9 == "false"
+      ; TODO: write to log file
+      Abort
+    ${EndIf}
+    Pop $R9
+
+  non_silent:
+  ; Try to delete the app executable and if we can't delete it try to find the
+  ; app's message window and prompt the user to close the app. This allows
+  ; running an instance that is located in another directory. If for whatever
+  ; reason there is no message window we will just rename the app's files and
+  ; then remove them on restart.
+  ClearErrors
+  ${DeleteFile} "$INSTDIR\${FileMainEXE}"
+  ${If} ${Errors}
+    ${ManualCloseAppPrompt} "${WindowClass}" "$(WARN_MANUALLY_CLOSE_APP_INSTALL)"
+  ${EndIf}
+
   SetDetailsPrint both
   DetailPrint $(STATUS_CLEANUP)
   SetDetailsPrint none
@@ -274,27 +313,6 @@ Section "-Application" APP_IDX
 
   ClearErrors
 
-  ; Default for creating Start Menu shortcut
-  ; (1 = create, 0 = don't create)
-  ${If} $AddStartMenuSC == ""
-    StrCpy $AddStartMenuSC "1"
-  ${EndIf}
-
-  ; Default for creating Quick Launch shortcut (1 = create, 0 = don't create)
-  ${If} $AddQuickLaunchSC == ""
-    ; Don't install the quick launch shortcut on Windows 7
-    ${If} ${AtLeastWin7}
-      StrCpy $AddQuickLaunchSC "0"
-    ${Else}
-      StrCpy $AddQuickLaunchSC "1"
-    ${EndIf}
-  ${EndIf}
-
-  ; Default for creating Desktop shortcut (1 = create, 0 = don't create)
-  ${If} $AddDesktopSC == ""
-    StrCpy $AddDesktopSC "1"
-  ${EndIf}
-
   ${LogHeader} "Adding Registry Entries"
   SetShellVarContext current  ; Set SHCTX to HKCU
   ${RegCleanMain} "Software\Zotero"
@@ -341,8 +359,8 @@ Section "-Application" APP_IDX
     ; shortcuts set IconsVisible to 1 otherwise to 0.
     ${StrFilter} "${FileMainEXE}" "+" "" "" $R9
     StrCpy $0 "Software\Clients\StartMenuInternet\$R9\InstallInfo"
-    ${If} $AddDesktopSC == 1
-    ${OrIf} $AddStartMenuSC == 1
+    ${If} $AddDesktopSC == ${DESKTOP_SHORTCUT_ENABLED}
+    ${OrIf} $AddStartMenuSC == ${START_MENU_SHORTCUT_ENABLED}
       WriteRegDWORD HKLM "$0" "IconsVisible" 1
     ${Else}
       WriteRegDWORD HKLM "$0" "IconsVisible" 0
@@ -408,7 +426,7 @@ Section "-Application" APP_IDX
   ; the Start Menu or Desktop shortcuts from the original unelevated process
   ; since this will either add it for the user if unelevated or All Users if
   ; elevated.
-  ${If} $AddStartMenuSC == 1
+  ${If} $AddStartMenuSC == ${START_MENU_SHORTCUT_ENABLED}
     CreateShortCut "$SMPROGRAMS\${BrandFullName}.lnk" "$INSTDIR\${FileMainEXE}"
     ${If} ${FileExists} "$SMPROGRAMS\${BrandFullName}.lnk"
       ShellLink::SetShortCutWorkingDirectory "$SMPROGRAMS\${BrandFullName}.lnk" \
@@ -422,7 +440,7 @@ Section "-Application" APP_IDX
     ${EndIf}
   ${EndIf}
 
-  ${If} $AddDesktopSC == 1
+  ${If} $AddDesktopSC == ${DESKTOP_SHORTCUT_ENABLED}
     CreateShortCut "$DESKTOP\${BrandFullName}.lnk" "$INSTDIR\${FileMainEXE}"
     ${If} ${FileExists} "$DESKTOP\${BrandFullName}.lnk"
       ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandFullName}.lnk" \
@@ -438,7 +456,7 @@ Section "-Application" APP_IDX
 
   ; If elevated the Quick Launch shortcut must be added from the unelevated
   ; original process.
-  ${If} $AddQuickLaunchSC == 1
+  ${If} $AddQuickLaunchSC == ${QUICKLAUNCH_SHORTCUT_ENABLED}
     ${Unless} ${AtLeastWin7}
       ClearErrors
       ${GetParameters} $0
@@ -722,19 +740,51 @@ FunctionEnd
 
 Function preDirectory
   StrCpy $PageName "Directory"
-  ${PreDirectoryCommon}
+  Push $R9
+
+  ; Skip page if currently drive space and disk access exist for currently
+  ; selected install path.
+  IntCmp $InstallType ${INSTALLTYPE_CUSTOM} end +1 +1
+  ${CanWriteToInstallDir} $R9
+  StrCmp "$R9" "false" end +1
+  ${CheckDiskSpace} $R9
+  StrCmp "$R9" "false" end +1
+  Abort
+
+  end:
+
+  Pop $R9
 FunctionEnd
 
 Function leaveDirectory
   ${If} $InstallType == ${INSTALLTYPE_BASIC}
     Call CheckExistingInstall
   ${EndIf}
-  ${LeaveDirectoryCommon} "$(WARN_DISK_SPACE)" "$(WARN_WRITE_ACCESS)"
+
+  ; Force user to try again if no drive space or disk access exist for
+  ; currently selected install path.
+  Push $R9
+  ${CanWriteToInstallDir} $R9
+  ${If} $R9 == "false"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_WRITE_ACCESS)"
+    Abort
+  ${EndIf}
+
+  ${CheckDiskSpace} $R9
+  ${If} $R9 == "false"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(WARN_DISK_SPACE)"
+    Abort
+  ${EndIf}
+  Pop $R9
 FunctionEnd
 
 Function preShortcuts
   StrCpy $PageName "Shortcuts"
-  ${CheckCustomCommon}
+
+  ; Abort if not a custom install
+  IntCmp $InstallType ${INSTALLTYPE_CUSTOM} +2 +1 +1
+  Abort
+
   !insertmacro MUI_HEADER_TEXT "$(SHORTCUTS_PAGE_TITLE)" "$(SHORTCUTS_PAGE_SUBTITLE)"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "shortcuts.ini"
 FunctionEnd
@@ -746,7 +796,7 @@ Function leaveShortcuts
   ${EndIf}
   ${MUI_INSTALLOPTIONS_READ} $AddDesktopSC "shortcuts.ini" "Field 2" "State"
   ${MUI_INSTALLOPTIONS_READ} $AddStartMenuSC "shortcuts.ini" "Field 3" "State"
-  ; Don't install the quick launch shortcut on Windows 7
+  ; This field doesn't exist when running on Windows 7 or above.
   ${Unless} ${AtLeastWin7}
     ${MUI_INSTALLOPTIONS_READ} $AddQuickLaunchSC "shortcuts.ini" "Field 4" "State"
   ${EndUnless}
@@ -858,19 +908,6 @@ Function preSummary
   !insertmacro MUI_INSTALLOPTIONS_SHOW
 FunctionEnd
 
-Function leaveSummary
-  ; Try to delete the app executable and if we can't delete it try to find the
-  ; app's message window and prompt the user to close the app. This allows
-  ; running an instance that is located in another directory. If for whatever
-  ; reason there is no message window we will just rename the app's files and
-  ; then remove them on restart.
-  ClearErrors
-  ${DeleteFile} "$INSTDIR\${FileMainEXE}"
-  ${If} ${Errors}
-    ${ManualCloseAppPrompt} "${WindowClass}" "$(WARN_MANUALLY_CLOSE_APP_INSTALL)"
-  ${EndIf}
-FunctionEnd
-
 ; When we add an optional action to the finish page the cancel button is
 ; enabled. This disables it and leaves the finish button as the only choice.
 Function preFinish
@@ -885,6 +922,15 @@ FunctionEnd
 Function .onInit
   StrCpy $PageName ""
   StrCpy $LANGUAGE 0
+
+  ; Starting user preferences need to be defined in code so that silent
+  ; installations will work correctly. These can later be modified in the .ini
+  ; file and command-line argument handlers.
+  StrCpy $AddDesktopSC "${DESKTOP_SHORTCUT_DEFAULT}"
+  StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
+  StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
+  StrCpy $InstallType ${INSTALLTYPE_DEFAULT}
+
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
@@ -954,7 +1000,15 @@ Function .onInit
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Top    "20"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Bottom "30"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" State  "1"
+
+  ; Default UI selection synchronized with existing value.
+  Push $0
+  StrCpy $0 "${DESKTOP_SHORTCUT_DISABLED}"
+  IntCmp $AddDesktopSC ${DESKTOP_SHORTCUT_ENABLED} +1 +2 +2
+  StrCpy $0 "${DESKTOP_SHORTCUT_ENABLED}"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" State  $0
+  Pop $0
+
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Flags  "GROUP"
 
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Type   "checkbox"
@@ -963,7 +1017,14 @@ Function .onInit
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Top    "40"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Bottom "50"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State  "1"
+
+  ; Default UI selection synchronized with existing value.
+  Push $0
+  StrCpy $0 "${START_MENU_SHORTCUT_DISABLED}"
+  IntCmp $AddStartMenuSC ${START_MENU_SHORTCUT_ENABLED} +1 +2 +2
+  StrCpy $0 "${START_MENU_SHORTCUT_ENABLED}"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" State $0
+  Pop $0
 
   ; Don't offer to install the quick launch shortcut on Windows 7
   ${Unless} ${AtLeastWin7}
@@ -973,7 +1034,13 @@ Function .onInit
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Right  "-1"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Top    "60"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Bottom "70"
-    WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" State  "1"
+
+    Push $0
+    StrCpy $0 "0"
+    IntCmp $AddQuickLaunchSC ${QUICKLAUNCH_SHORTCUT_ENABLED} +1 +2 +2
+    StrCpy $0 "1"
+    WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" State $0
+    Pop $0
   ${EndUnless}
 
   ; There must always be a core directory.
