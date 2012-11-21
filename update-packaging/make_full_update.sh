@@ -75,6 +75,12 @@ num_files=${#files[*]}
 
 for ((i=0; $i<$num_files; i=$i+1)); do
   f="${files[$i]}"
+  
+  # removed-files is excluded by make_incremental_updates.py so it is excluded
+  # here for consistency.
+  if [ `basename $f` = "removed-files" ]; then
+    continue 1
+  fi
 
   make_add_instruction "$f" >> $updatemanifestv1
 

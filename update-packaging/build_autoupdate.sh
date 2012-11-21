@@ -1,6 +1,6 @@
 #!/bin/bash
 FROM=3.0.8
-TO=3.0.9
+TO=3.0.10
 USE_LOCAL_TO=1
 CALLDIR=`pwd`
 DISTDIR=$CALLDIR/../dist
@@ -57,7 +57,7 @@ for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 	else
 		dir="Zotero_$build"
 	fi
-	cp "$CALLDIR/removed-files" "$STAGEDIR/$TO/$dir"
+	cp "$CALLDIR/removed-files_$build" "$STAGEDIR/$TO/$dir/removed-files"
 	touch "$STAGEDIR/$TO/$dir/precomplete"
 	"$CALLDIR/make_incremental_update.sh" "$DISTDIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGEDIR/$FROM/$dir" "$STAGEDIR/$TO/$dir"
 	"$CALLDIR/make_full_update.sh" "$DISTDIR/Zotero-${TO}-full_$build.mar" "$STAGEDIR/$TO/$dir"
