@@ -77,11 +77,12 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro ChangeMUIHeaderImage
 !insertmacro CheckDiskSpace
 !insertmacro CheckForFilesInUse
+!insertmacro CheckIfRegistryKeyExists
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
 !insertmacro CreateRegKey
-!insertmacro GetPathFromString
 !insertmacro GetParent
+!insertmacro GetPathFromString
 !insertmacro IsHandlerForInstallDir
 !insertmacro LogDesktopShortcut
 !insertmacro LogQuickLaunchShortcut
@@ -92,11 +93,10 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro RegCleanUninstall
 !insertmacro SetAppLSPCategories
 !insertmacro SetBrandNameVars
-!insertmacro UpdateShortcutAppModelIDs
 !insertmacro UnloadUAC
-!insertmacro WriteRegStr2
+!insertmacro UpdateShortcutAppModelIDs
 !insertmacro WriteRegDWORD2
-!insertmacro CheckIfRegistryKeyExists
+!insertmacro WriteRegStr2
 
 !include shared.nsh
 

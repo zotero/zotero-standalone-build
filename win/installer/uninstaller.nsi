@@ -56,6 +56,7 @@ VIAddVersionKey "FileDescription" "${BrandShortName} Helper"
 VIAddVersionKey "OriginalFilename" "helper.exe"
 
 !insertmacro AddHandlerValues
+!insertmacro CheckIfRegistryKeyExists
 !insertmacro CleanVirtualStore
 !insertmacro ElevateUAC
 !insertmacro GetLongPath
@@ -73,7 +74,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro UnloadUAC
 !insertmacro WriteRegDWORD2
 !insertmacro WriteRegStr2
-!insertmacro CheckIfRegistryKeyExists
 
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.CheckForFilesInUse
@@ -88,8 +88,8 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.RegCleanAppHandler
 !insertmacro un.RegCleanFileHandler
 !insertmacro un.RegCleanMain
-!insertmacro un.RegCleanUninstall
 !insertmacro un.RegCleanProtocolHandler
+!insertmacro un.RegCleanUninstall
 !insertmacro un.RemoveQuotesFromPath
 !insertmacro un.SetAppLSPCategories
 !insertmacro un.SetBrandNameVars
