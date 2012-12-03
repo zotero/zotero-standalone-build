@@ -247,8 +247,12 @@ if [ $BUILD_MAC == 1 ]; then
 	# Merge xulrunner and relevant assets
 	mkdir "$CONTENTSDIR/MacOS"
 	cp -a "$MAC_RUNTIME_PATH/Versions/Current"/* "$CONTENTSDIR/MacOS"
+	# Mozilla no longer builds xulrunner-stub on OS X
 	mv "$CONTENTSDIR/MacOS/xulrunner" "$CONTENTSDIR/MacOS/zotero-bin"
 	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
+	# Hack to get the updater to work
+	mv "$CONTENTSDIR/MacOS/updater.app/Contents/MacOS/updater" "$CONTENTSDIR/MacOS/updater.app/Contents/MacOS/updater-bin"
+	cp "$CALLDIR/mac/updater" "$CONTENTSDIR/MacOS/updater.app/Contents/MacOS/updater"
 	cp "$BUILDDIR/application.ini" "$CONTENTSDIR/Resources"
 	cp "$CALLDIR/mac/Contents/Info.plist" "$CONTENTSDIR"
 	
