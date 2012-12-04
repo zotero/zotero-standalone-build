@@ -27,8 +27,6 @@ RequestExecutionLevel user
 ; prevents compiling of the reg write logging.
 !define NO_LOG
 
-Var TmpVal
-
 ; Other included files may depend upon these includes!
 ; The following includes are provided by NSIS.
 !include FileFunc.nsh
