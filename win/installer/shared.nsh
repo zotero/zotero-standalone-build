@@ -293,38 +293,51 @@
 !macro SetUninstallKeys
   StrCpy $0 "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
 
+  StrCpy $2 ""
+  ClearErrors
   WriteRegStr HKLM "$0" "${BrandShortName}InstallerTest" "Write Test"
   ${If} ${Errors}
-    StrCpy $1 "HKCU"
-    SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
+    ; If the uninstall keys already exist in HKLM don't create them in HKCU
+    ClearErrors
+    ReadRegStr $2 "HKLM" $0 "DisplayName"
+    ${If} $2 == ""
+      ; Otherwise we don't have any keys for this product in HKLM so proceeed
+      ; to create them in HKCU.  Better handling for this will be done in:
+      ; Bug 711044 - Better handling for 2 uninstall icons
+      StrCpy $1 "HKCU"
+      SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
+    ${EndIf}
+    ClearErrors
   ${Else}
     StrCpy $1 "HKLM"
     SetShellVarContext all     ; Set SHCTX to all users (e.g. HKLM)
     DeleteRegValue HKLM "$0" "${BrandShortName}InstallerTest"
   ${EndIf}
 
-  ${GetLongPath} "$INSTDIR" $8
+  ${If} $2 == ""
+    ${GetLongPath} "$INSTDIR" $8
 
-  ; Write the uninstall registry keys
-  ${WriteRegStr2} $1 "$0" "Comments" "${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})" 0
-  ${WriteRegStr2} $1 "$0" "DisplayIcon" "$8\${FileMainEXE},0" 0
-  ${WriteRegStr2} $1 "$0" "DisplayName" "${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})" 0
-  ${WriteRegStr2} $1 "$0" "DisplayVersion" "${AppVersion}" 0
-  ${WriteRegStr2} $1 "$0" "InstallLocation" "$8" 0
-  ${WriteRegStr2} $1 "$0" "Publisher" "Zotero" 0
-  ${WriteRegStr2} $1 "$0" "UninstallString" "$8\uninstall\helper.exe" 0
-  ${WriteRegStr2} $1 "$0" "URLInfoAbout" "${URLInfoAbout}" 0
-  ${WriteRegStr2} $1 "$0" "URLUpdateInfo" "${URLUpdateInfo}" 0
-  ${WriteRegDWORD2} $1 "$0" "NoModify" 1 0
-  ${WriteRegDWORD2} $1 "$0" "NoRepair" 1 0
+    ; Write the uninstall registry keys
+    ${WriteRegStr2} $1 "$0" "Comments" "${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})" 0
+    ${WriteRegStr2} $1 "$0" "DisplayIcon" "$8\${FileMainEXE},0" 0
+    ${WriteRegStr2} $1 "$0" "DisplayName" "${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})" 0
+    ${WriteRegStr2} $1 "$0" "DisplayVersion" "${AppVersion}" 0
+    ${WriteRegStr2} $1 "$0" "InstallLocation" "$8" 0
+    ${WriteRegStr2} $1 "$0" "Publisher" "Zotero" 0
+    ${WriteRegStr2} $1 "$0" "UninstallString" "$8\uninstall\helper.exe" 0
+    ${WriteRegStr2} $1 "$0" "URLInfoAbout" "${URLInfoAbout}" 0
+    ${WriteRegStr2} $1 "$0" "URLUpdateInfo" "${URLUpdateInfo}" 0
+    ${WriteRegDWORD2} $1 "$0" "NoModify" 1 0
+    ${WriteRegDWORD2} $1 "$0" "NoRepair" 1 0
 
-  ${GetSize} "$8" "/S=0K" $R2 $R3 $R4
-  ${WriteRegDWORD2} $1 "$0" "EstimatedSize" $R2 0
+    ${GetSize} "$8" "/S=0K" $R2 $R3 $R4
+    ${WriteRegDWORD2} $1 "$0" "EstimatedSize" $R2 0
 
-  ${If} "$TmpVal" == "HKLM"
-    SetShellVarContext all     ; Set SHCTX to all users (e.g. HKLM)
-  ${Else}
-    SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
+    ${If} "$TmpVal" == "HKLM"
+      SetShellVarContext all     ; Set SHCTX to all users (e.g. HKLM)
+    ${Else}
+      SetShellVarContext current  ; Set SHCTX to the current user (e.g. HKCU)
+    ${EndIf}
   ${EndIf}
 !macroend
 !define SetUninstallKeys "!insertmacro SetUninstallKeys"

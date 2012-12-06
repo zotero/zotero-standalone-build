@@ -386,7 +386,7 @@ Section "-Application" APP_IDX
   ${Unless} ${Errors}
     GetFunctionAddress $0 FixShortcutAppModelIDs
     UAC::ExecCodeSegment $0
-  ${EndIf}
+  ${EndUnless}
 
   ; UAC only allows elevating to an Admin account so there is no need to add
   ; the Start Menu or Desktop shortcuts from the original unelevated process
@@ -910,7 +910,7 @@ Function .onInit
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Type   "RadioButton"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Text   "$(OPTION_STANDARD_RADIO)"
-  WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Left   "15"
+  WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Left   "0"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Right  "-1"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Top    "25"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 2" Bottom "35"
@@ -919,7 +919,7 @@ Function .onInit
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Type   "RadioButton"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Text   "$(OPTION_CUSTOM_RADIO)"
-  WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Left   "15"
+  WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Left   "0"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Right  "-1"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Top    "55"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 3" Bottom "65"
@@ -927,14 +927,14 @@ Function .onInit
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Type   "label"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Text   "$(OPTION_STANDARD_DESC)"
-  WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Left   "30"
+  WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Left   "15"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Right  "-1"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Top    "37"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 4" Bottom "57"
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Type   "label"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Text   "$(OPTION_CUSTOM_DESC)"
-  WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Left   "30"
+  WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Left   "15"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Right  "-1"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Top    "67"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 5" Bottom "87"
@@ -956,7 +956,7 @@ Function .onInit
 
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Type   "checkbox"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Text   "$(ICONS_DESKTOP)"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Left   "15"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Left   "0"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Top    "20"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 2" Bottom "30"
@@ -973,7 +973,7 @@ Function .onInit
 
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Type   "checkbox"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Text   "$(ICONS_STARTMENU)"
-  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Left   "15"
+  WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Left   "0"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Right  "-1"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Top    "40"
   WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 3" Bottom "50"
@@ -990,7 +990,7 @@ Function .onInit
   ${Unless} ${AtLeastWin7}
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Type   "checkbox"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Text   "$(ICONS_QUICKLAUNCH)"
-    WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Left   "15"
+    WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Left   "0"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Right  "-1"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Top    "60"
     WriteINIStr "$PLUGINSDIR\shortcuts.ini" "Field 4" Bottom "70"
