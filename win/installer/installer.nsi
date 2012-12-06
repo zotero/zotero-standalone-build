@@ -820,18 +820,6 @@ Function preSummary
     ${If} $TmpVal == "HKLM"
       SetShellVarContext all ; Set SHCTX to all users
     ${EndIf}
-    ; If Firefox isn't the http handler for this user show the option to set
-    ; Firefox as the default browser.
-    #${If} "$R9" != "true"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Settings" NumFields "4"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Type   "checkbox"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Text   "$(SUMMARY_TAKE_DEFAULTS)"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Left   "0"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Right  "-1"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" State  "1"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Top    "32"
-    #  WriteINIStr "$PLUGINSDIR\summary.ini" "Field 4" Bottom "53"
-    #${EndIf}
   ${EndUnless}
 
   ${If} "$TmpVal" == "true"
