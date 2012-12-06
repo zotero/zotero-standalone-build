@@ -115,12 +115,10 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro GetPathFromString
 !insertmacro GetParent
 !insertmacro IsHandlerForInstallDir
-!insertmacro IsPinnedToTaskBar
 !insertmacro LogDesktopShortcut
 !insertmacro LogQuickLaunchShortcut
 !insertmacro LogStartMenuShortcut
 !insertmacro ManualCloseAppPrompt
-!insertmacro PinnedToStartMenuLnkCount
 !insertmacro RegCleanAppHandler
 !insertmacro RegCleanMain
 !insertmacro RegCleanUninstall
@@ -481,12 +479,6 @@ Section "-InstallEndCleanup"
   SetDetailsPrint both
   DetailPrint "$(STATUS_CLEANUP)"
   SetDetailsPrint none
-
-  ; Adds a pinned Task Bar shortcut (see MigrateTaskBarShortcut for details).
-  ${MigrateTaskBarShortcut}
-
-  ${GetShortcutsLogPath} $0
-  WriteIniStr "$0" "TASKBAR" "Migrated" "true"
 
   ; Refresh desktop icons
   System::Call "shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)"
