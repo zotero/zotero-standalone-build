@@ -449,7 +449,7 @@ Section "-InstallEndCleanup"
   SetDetailsPrint none
 
   ; Refresh desktop icons
-  System::Call "shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)"
+  System::Call "shell32::SHChangeNotify(i ${SHCNE_ASSOCCHANGED}, i ${SHCNF_DWORDFLUSH}, i 0, i 0)"
 
   ${InstallEndCleanupCommon}
 
