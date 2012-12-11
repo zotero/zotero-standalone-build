@@ -570,21 +570,10 @@ Function .onInit
   ; Update this user's shortcuts with the latest app user model id.
   ClearErrors
   ${GetOptions} "$R0" "/UpdateShortcutAppUserModelIds" $R2
-  IfErrors hideshortcuts +1
+  IfErrors showshortcuts +1
   ${UpdateShortcutAppModelIDs}  "$INSTDIR\${FileMainEXE}" "${AppUserModelID}" $R2
   StrCmp "$R2" "true" finish +1 ; true indicates that shortcuts have been updated
   Quit ; Nothing initialized so no need to call OnEndCommon
-
-  ; Require elevation if the user can elevate
-  hideshortcuts:
-  ClearErrors
-  ${GetOptions} "$R0" "/HideShortcuts" $R2
-  IfErrors showshortcuts +1
-!ifndef NONADMIN_ELEVATE
-  ${ElevateUAC}
-!endif
-  ${HideShortcuts}
-  GoTo finish
 
   ; Require elevation if the user can elevate
   showshortcuts:

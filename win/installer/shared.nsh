@@ -51,66 +51,6 @@
 !macroend
 !define SetAsDefaultAppGlobal "!insertmacro SetAsDefaultAppGlobal"
 
-; Removes shortcuts for this installation. This should also remove the
-; application from Open With for the file types the application handles
-; (bug 370480).
-!macro HideShortcuts
-  ${StrFilter} "${FileMainEXE}" "+" "" "" $0
-  StrCpy $R1 "Software\Clients\StartMenuInternet\$0\InstallInfo"
-  WriteRegDWORD HKLM "$R1" "IconsVisible" 0
-
-  SetShellVarContext all  ; Set $DESKTOP to All Users
-  ${Unless} ${FileExists} "$DESKTOP\${BrandFullName}.lnk"
-    SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
-  ${EndUnless}
-
-  ${If} ${FileExists} "$DESKTOP\${BrandFullName}.lnk"
-    ShellLink::GetShortCutArgs "$DESKTOP\${BrandFullName}.lnk"
-    Pop $0
-    ${If} "$0" == ""
-      ShellLink::GetShortCutTarget "$DESKTOP\${BrandFullName}.lnk"
-      Pop $0
-      ${GetLongPath} "$0" $0
-      ${If} "$0" == "$INSTDIR\${FileMainEXE}"
-        Delete "$DESKTOP\${BrandFullName}.lnk"
-      ${EndIf}
-    ${EndIf}
-  ${EndIf}
-
-  SetShellVarContext all  ; Set $SMPROGRAMS to All Users
-  ${Unless} ${FileExists} "$SMPROGRAMS\${BrandFullName}.lnk"
-    SetShellVarContext current  ; Set $SMPROGRAMS to the current user's Start
-                                ; Menu Programs directory
-  ${EndUnless}
-
-  ${If} ${FileExists} "$SMPROGRAMS\${BrandFullName}.lnk"
-    ShellLink::GetShortCutArgs "$SMPROGRAMS\${BrandFullName}.lnk"
-    Pop $0
-    ${If} "$0" == ""
-      ShellLink::GetShortCutTarget "$SMPROGRAMS\${BrandFullName}.lnk"
-      Pop $0
-      ${GetLongPath} "$0" $0
-      ${If} "$0" == "$INSTDIR\${FileMainEXE}"
-        Delete "$SMPROGRAMS\${BrandFullName}.lnk"
-      ${EndIf}
-    ${EndIf}
-  ${EndIf}
-
-  ${If} ${FileExists} "$QUICKLAUNCH\${BrandFullName}.lnk"
-    ShellLink::GetShortCutArgs "$QUICKLAUNCH\${BrandFullName}.lnk"
-    Pop $0
-    ${If} "$0" == ""
-      ShellLink::GetShortCutTarget "$QUICKLAUNCH\${BrandFullName}.lnk"
-      Pop $0
-      ${GetLongPath} "$0" $0
-      ${If} "$0" == "$INSTDIR\${FileMainEXE}"
-        Delete "$QUICKLAUNCH\${BrandFullName}.lnk"
-      ${EndIf}
-    ${EndIf}
-  ${EndIf}
-!macroend
-!define HideShortcuts "!insertmacro HideShortcuts"
-
 ; Adds shortcuts for this installation. This should also add the application
 ; to Open With for the file types the application handles (bug 370480).
 !macro ShowShortcuts
