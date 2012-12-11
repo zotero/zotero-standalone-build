@@ -97,7 +97,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro OnEndCommon
 
 !insertmacro un.OnEndCommon
-!insertmacro un.UninstallUnOnInitCommon
 
 Name "${BrandFullName}"
 OutFile "helper.exe"
@@ -650,7 +649,24 @@ FunctionEnd
 Function un.onInit
   StrCpy $LANGUAGE 0
 
-  ${un.UninstallUnOnInitCommon}
+  ${un.GetParent} "$INSTDIR" $INSTDIR
+  ${un.GetLongPath} "$INSTDIR" $INSTDIR
+  ${Unless} ${FileExists} "$INSTDIR\${FileMainEXE}"
+  Abort
+  ${EndUnless}
+
+  !ifdef HAVE_64BIT_OS
+  SetRegView 64
+  !endif
+
+  ; Prevents breaking apps that don't use SetBrandNameVars
+  !ifdef un.SetBrandNameVars
+  ${un.SetBrandNameVars} "$INSTDIR\distribution\setup.ini"
+  !endif
+
+  ; Initialize $hHeaderBitmap to prevent redundant changing of the bitmap if
+  ; the user clicks the back button
+  StrCpy $hHeaderBitmap ""
 
   !insertmacro InitInstallOptionsFile "unconfirm.ini"
 FunctionEnd
