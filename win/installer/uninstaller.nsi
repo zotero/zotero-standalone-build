@@ -68,7 +68,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro SetBrandNameVars
 !insertmacro UpdateShortcutAppModelIDs
 !insertmacro UpdateUninstallLog
-!insertmacro UnloadUAC
 !insertmacro WriteRegDWORD2
 !insertmacro WriteRegStr2
 
@@ -608,9 +607,6 @@ Function .onInit
   IfFileExists "$INSTDIR\uninstall\uninstall.log" +2 +1
   Quit ; Nothing initialized so no need to call OnEndCommon
 
-  ; Require elevation if the user can elevate
-  ${ElevateUAC}
-
   ; If we made it this far then this installer is being used as an uninstaller.
   WriteUninstaller "$EXEDIR\uninstaller.exe"
 
@@ -640,7 +636,6 @@ Function .onInit
   ; so it won't be in use so it can delete itself.
   ExecWait $R1
   ${DeleteFile} "$EXEDIR\uninstaller.exe"
-  ${UnloadUAC}
   SetErrorLevel 0
   Quit ; Nothing initialized so no need to call OnEndCommon
 FunctionEnd
