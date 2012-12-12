@@ -47,10 +47,6 @@
 !macroend
 !define PostUpdate "!insertmacro PostUpdate"
 
-!macro SetAsDefaultAppGlobal
-!macroend
-!define SetAsDefaultAppGlobal "!insertmacro SetAsDefaultAppGlobal"
-
 ; Adds zotero:// protocol handler and makes Zotero open exported bib files
 !macro SetHandlers
   ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
@@ -358,9 +354,5 @@ FunctionEnd
 ; The !ifdef NO_LOG prevents warnings when compiling the installer.nsi due to
 ; this function only being used by the uninstaller.nsi.
 !ifdef NO_LOG
-
-Function SetAsDefaultAppUser
-FunctionEnd
-!define SetAsDefaultAppUser "Call SetAsDefaultAppUser"
 
 !endif

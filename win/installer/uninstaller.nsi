@@ -570,28 +570,10 @@ Function .onInit
   ; Update this user's shortcuts with the latest app user model id.
   ClearErrors
   ${GetOptions} "$R0" "/UpdateShortcutAppUserModelIds" $R2
-  IfErrors defaultappuser +1
+  IfErrors postupdate +1
   ${UpdateShortcutAppModelIDs}  "$INSTDIR\${FileMainEXE}" "${AppUserModelID}" $R2
   StrCmp "$R2" "true" finish +1 ; true indicates that shortcuts have been updated
   Quit ; Nothing initialized so no need to call OnEndCommon
-
-  ; Require elevation if the the StartMenuInternet registry keys require
-  ; updating and the user can elevate
-  defaultappuser:
-  ClearErrors
-  ${GetOptions} "$R0" "/SetAsDefaultAppUser" $R2
-  IfErrors defaultappglobal +1
-  ${SetAsDefaultAppUser}
-  GoTo finish
-
-  ; Require elevation if the user can elevate
-  defaultappglobal:
-  ClearErrors
-  ${GetOptions} "$R0" "/SetAsDefaultAppGlobal" $R2
-  IfErrors postupdate +1
-  ${ElevateUAC}
-  ${SetAsDefaultAppGlobal}
-  GoTo finish
 
   ; Do not attempt to elevate. The application launching this executable is
   ; responsible for elevation if it is required.
