@@ -43,7 +43,7 @@
 # ARCH is used when it is necessary to differentiate the x64 registry keys from
 # the x86 registry keys (e.g. the uninstall registry key).
 !define ARCH "x86"
-!define MinSupportedVer "Microsoft Windows 2000"
+!define MinSupportedVer "Microsoft Windows XP SP2"
 
 # File details shared by both the installer and uninstaller
 VIProductVersion "1.0.0.0"
