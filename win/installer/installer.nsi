@@ -77,7 +77,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro ChangeMUIHeaderImage
 !insertmacro CheckDiskSpace
 !insertmacro CheckForFilesInUse
-!insertmacro CheckIfRegistryKeyExists
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
 !insertmacro CreateRegKey
@@ -88,7 +87,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro LogQuickLaunchShortcut
 !insertmacro LogStartMenuShortcut
 !insertmacro ManualCloseAppPrompt
-!insertmacro RegCleanAppHandler
 !insertmacro RegCleanMain
 !insertmacro RegCleanUninstall
 !insertmacro SetAppLSPCategories

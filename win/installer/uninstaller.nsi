@@ -56,7 +56,6 @@ VIAddVersionKey "FileDescription" "${BrandShortName} Helper"
 VIAddVersionKey "OriginalFilename" "helper.exe"
 
 !insertmacro AddHandlerValues
-!insertmacro CheckIfRegistryKeyExists
 !insertmacro CleanVirtualStore
 !insertmacro ElevateUAC
 !insertmacro GetLongPath
@@ -65,7 +64,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro LogDesktopShortcut
 !insertmacro LogQuickLaunchShortcut
 !insertmacro LogStartMenuShortcut
-!insertmacro RegCleanAppHandler
 !insertmacro RegCleanMain
 !insertmacro RegCleanUninstall
 !insertmacro SetAppLSPCategories
