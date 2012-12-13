@@ -1334,7 +1334,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}GetSecondInstallPath
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
@@ -1354,7 +1353,9 @@ Var Trash
       Push $R4
       Push $R3
 
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R3
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R3
 
       StrCpy $R4 0       ; set the counter for the loop to 0
       StrCpy $R8 "$R9"   ; Registry key path to search
@@ -1371,7 +1372,9 @@ Var Trash
       ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R5
 
       IfFileExists "$R5" +1 loop
-      ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+      Push $R5
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R5
       ${${_MOZFUNC_UN}GetParent} "$R5" $R6
       StrCmp "$R6" "$R3" loop +1
       StrCmp "$R6\${FileMainEXE}" "$R5" +1 loop
@@ -1450,7 +1453,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}GetSingleInstallPath
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
@@ -1493,7 +1495,9 @@ Var Trash
 
       cleanup:
       StrCmp $R9 "false" end +1
-      ${${_MOZFUNC_UN}GetLongPath} "$R9" $R9
+      Push $R9
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R9
       ${${_MOZFUNC_UN}GetParent} "$R9" $R9
 
       end:
@@ -2014,116 +2018,76 @@ Var Trash
  * $R8 = storage for _IN_PATH
  * $R9 = _IN_PATH _OUT_PATH
  */
-!macro GetLongPath
+!macro GetLongPath UN
+Function ${UN}GetLongPath
+  Exch $R9
+  Push $R8
+  Push $R7
+  Push $R6
+  Push $R5
+  Push $R4
 
-  !ifndef ${_MOZFUNC_UN}GetLongPath
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define ${_MOZFUNC_UN}GetLongPath "!insertmacro ${_MOZFUNC_UN}GetLongPathCall"
+  ClearErrors
 
-    Function ${_MOZFUNC_UN}GetLongPath
-      Exch $R9
-      Push $R8
-      Push $R7
-      Push $R6
-      Push $R5
-      Push $R4
+  GetFullPathName $R8 "$R9"
+  IfErrors end_GetLongPath +1 ; If the path doesn't exist return an empty string.
 
-      ClearErrors
+  System::Call 'kernel32::GetLongPathNameW(w R8, w .R7, i 1024)i .R6'
+  StrCmp "$R7" "" +4 +1 ; Empty string when GetLongPathNameW is not present.
+  StrCmp $R6 0 +3 +1    ; Should never equal 0 since the path exists.
+  StrCpy $R9 "$R7"
+  GoTo end_GetLongPath
 
-      GetFullPathName $R8 "$R9"
-      IfErrors end_GetLongPath +1 ; If the path doesn't exist return an empty string.
+  ; Do it the hard way.
+  StrCpy $R4 0     ; Stores the position in the string of the last \ found.
+  StrCpy $R6 -1    ; Set the counter to -1 so it will start at 0.
 
-      System::Call 'kernel32::GetLongPathNameW(w R8, w .R7, i 1024)i .R6'
-      StrCmp "$R7" "" +4 +1 ; Empty string when GetLongPathNameW is not present.
-      StrCmp $R6 0 +3 +1    ; Should never equal 0 since the path exists.
-      StrCpy $R9 "$R7"
-      GoTo end_GetLongPath
+  loop_GetLongPath:
+  IntOp $R6 $R6 + 1      ; Increment the counter.
+  StrCpy $R7 $R8 1 $R6   ; Starting from the counter copy the next char.
+  StrCmp $R7 "" +2 +1    ; Are there no more chars?
+  StrCmp $R7 "\" +1 -3   ; Is it a \?
 
-      ; Do it the hard way.
-      StrCpy $R4 0     ; Stores the position in the string of the last \ found.
-      StrCpy $R6 -1    ; Set the counter to -1 so it will start at 0.
+  ; Copy chars starting from the previously found \ to the counter.
+  StrCpy $R5 $R8 $R6 $R4
 
-      loop_GetLongPath:
-      IntOp $R6 $R6 + 1      ; Increment the counter.
-      StrCpy $R7 $R8 1 $R6   ; Starting from the counter copy the next char.
-      StrCmp $R7 "" +2 +1    ; Are there no more chars?
-      StrCmp $R7 "\" +1 -3   ; Is it a \?
+  ; If this is the first \ found we want to swap R9 with R5 so a \ will
+  ; be appended to the drive letter and colon (e.g. C: will become C:\).
+  StrCmp $R4 0 +1 +3
+  StrCpy $R9 $R5
+  StrCpy $R5 ""
 
-      ; Copy chars starting from the previously found \ to the counter.
-      StrCpy $R5 $R8 $R6 $R4
+  GetFullPathName $R9 "$R9\$R5"
 
-      ; If this is the first \ found we want to swap R9 with R5 so a \ will
-      ; be appended to the drive letter and colon (e.g. C: will become C:\).
-      StrCmp $R4 0 +1 +3
-      StrCpy $R9 $R5
-      StrCpy $R5 ""
+  StrCmp $R7 "" end_GetLongPath +1 ; Are there no more chars?
 
-      GetFullPathName $R9 "$R9\$R5"
+  ; Store the counter for the current \ and prefix it for StrCpy operations.
+  StrCpy $R4 "+$R6"
+  IntOp $R6 $R6 + 1      ; Increment the counter so we skip over the \.
+  StrCpy $R8 $R8 "" $R6  ; Copy chars starting from the counter to the end.
+  StrCpy $R6 -1          ; Reset the counter to -1 so it will start over at 0.
+  GoTo loop_GetLongPath
 
-      StrCmp $R7 "" end_GetLongPath +1 ; Are there no more chars?
+  end_GetLongPath:
+  ; If there is a trailing slash remove it
+  StrCmp $R9 "" +4 +1
+  StrCpy $R8 "$R9" "" -1
+  StrCmp $R8 "\" +1 +2
+  StrCpy $R9 "$R9" -1
 
-      ; Store the counter for the current \ and prefix it for StrCpy operations.
-      StrCpy $R4 "+$R6"
-      IntOp $R6 $R6 + 1      ; Increment the counter so we skip over the \.
-      StrCpy $R8 $R8 "" $R6  ; Copy chars starting from the counter to the end.
-      StrCpy $R6 -1          ; Reset the counter to -1 so it will start over at 0.
-      GoTo loop_GetLongPath
+  ClearErrors
 
-      end_GetLongPath:
-      ; If there is a trailing slash remove it
-      StrCmp $R9 "" +4 +1
-      StrCpy $R8 "$R9" "" -1
-      StrCmp $R8 "\" +1 +2
-      StrCpy $R9 "$R9" -1
-
-      ClearErrors
-
-      Pop $R4
-      Pop $R5
-      Pop $R6
-      Pop $R7
-      Pop $R8
-      Exch $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
+  Pop $R4
+  Pop $R5
+  Pop $R6
+  Pop $R7
+  Pop $R8
+  Exch $R9
+FunctionEnd
 !macroend
 
-!macro GetLongPathCall _IN_PATH _OUT_PATH
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Push "${_IN_PATH}"
-  Call GetLongPath
-  Pop ${_OUT_PATH}
-  !verbose pop
-!macroend
-
-!macro un.GetLongPathCall _IN_PATH _OUT_PATH
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Push "${_IN_PATH}"
-  Call un.GetLongPath
-  Pop ${_OUT_PATH}
-  !verbose pop
-!macroend
-
-!macro un.GetLongPath
-  !ifndef un.GetLongPath
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN "un."
-
-    !insertmacro GetLongPath
-
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN
-    !verbose pop
-  !endif
-!macroend
-
+!insertmacro GetLongPath ""
+!insertmacro GetLongPath "un."
 
 ################################################################################
 # Macros for cleaning up the registry and file system
@@ -2160,7 +2124,6 @@ Var Trash
   !ifndef ${_MOZFUNC_UN}RegCleanMain
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
@@ -2182,7 +2145,10 @@ Var Trash
       Push $R1
       Push $R0
 
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R1
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R1
+
       StrCpy $R6 0  ; set the counter for the outer loop to 0
 
       ${If} ${RunningX64}
@@ -2216,7 +2182,9 @@ Var Trash
 
       ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R8
       ${${_MOZFUNC_UN}GetParent} "$R8" $R2
-      ${${_MOZFUNC_UN}GetLongPath} "$R2" $R2
+      Push $R2
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R2
       IfFileExists "$R2" +1 innerloop
       StrCmp "$R2" "$R1" +1 innerloop
 
@@ -2231,7 +2199,9 @@ Var Trash
       outercontinue:
       ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R8
       ${${_MOZFUNC_UN}GetParent} "$R8" $R2
-      ${${_MOZFUNC_UN}GetLongPath} "$R2" $R2
+      Push $R2
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R2
       IfFileExists "$R2" +1 outerloop
       StrCmp "$R2" "$R1" +1 outerloop
 
@@ -2331,7 +2301,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}RegCleanUninstall
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
@@ -2350,7 +2319,9 @@ Var Trash
       Push $R4
       Push $R3
 
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R4
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R4
       StrCpy $R6 "Software\Microsoft\Windows\CurrentVersion\Uninstall"
       StrCpy $R7 ""
       StrCpy $R8 0
@@ -2375,7 +2346,9 @@ Var Trash
       ReadRegStr $R5 SHCTX "$R6\$R7" "InstallLocation"
       IfErrors loop
       ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R9
-      ${${_MOZFUNC_UN}GetLongPath} "$R9" $R9
+      Push $R9
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R9
       StrCmp "$R9" "$R4" +1 loop
       ClearErrors
       DeleteRegKey SHCTX "$R6\$R7"
@@ -2459,7 +2432,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}RegCleanAppHandler
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !insertmacro ${_MOZFUNC_UN_TMP}GetPathFromString
     !undef _MOZFUNC_UN
@@ -2484,8 +2456,12 @@ Var Trash
       DeleteRegKey HKCU "Software\Classes\$R9"
       GoTo next
 
-      ${${_MOZFUNC_UN}GetLongPath} "$R8" $R8
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R7
+      Push $R8
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R8
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R7
       StrCmp "$R7" "$R8" +1 next
       DeleteRegKey HKCU "Software\Classes\$R9"
 
@@ -2498,8 +2474,12 @@ Var Trash
       DeleteRegKey HKLM "Software\Classes\$R9"
       GoTo end
 
-      ${${_MOZFUNC_UN}GetLongPath} "$R8" $R8
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R7
+      Push $R8
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R8
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R7
       StrCmp "$R7" "$R8" +1 end
       DeleteRegKey HKLM "Software\Classes\$R9"
 
@@ -2560,7 +2540,6 @@ Var Trash
 !macro un.RegCleanProtocolHandler
 
   !ifndef un.RegCleanProtocolHandler
-    !insertmacro un.GetLongPath
     !insertmacro un.GetParent
     !insertmacro un.GetPathFromString
 
@@ -2574,22 +2553,30 @@ Var Trash
       Push $R7
 
       ReadRegStr $R8 HKCU "Software\Classes\$R9\shell\open\command" ""
-      ${un.GetLongPath} "$INSTDIR" $R7
+      Push $INSTDIR
+      Call un.GetLongPath
+      Pop $R7
 
       StrCmp "$R8" "" next +1
       ${un.GetPathFromString} "$R8" $R8
       ${un.GetParent} "$R8" $R8
-      ${un.GetLongPath} "$R8" $R8
+      Push $R8
+      Call un.GetLongPath
+      Pop $R8
       StrCmp "$R7" "$R8" +1 next
       DeleteRegKey HKCU "Software\Classes\$R9"
 
       next:
       ReadRegStr $R8 HKLM "Software\Classes\$R9\shell\open\command" ""
       StrCmp "$R8" "" end +1
-      ${un.GetLongPath} "$INSTDIR" $R7
+      Push $INSTDIR
+      Call un.GetLongPath
+      Pop $R7
       ${un.GetPathFromString} "$R8" $R8
       ${un.GetParent} "$R8" $R8
-      ${un.GetLongPath} "$R8" $R8
+      Push $R8
+      Call un.GetLongPath
+      Pop $R8
       StrCmp "$R7" "$R8" +1 end
       DeleteRegValue HKLM "Software\Classes\$R9\DefaultIcon" ""
       DeleteRegValue HKLM "Software\Classes\$R9\shell\open" ""
@@ -2635,7 +2622,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}RegCleanFileHandler
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !insertmacro ${_MOZFUNC_UN_TMP}GetPathFromString
     !undef _MOZFUNC_UN
@@ -2723,7 +2709,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}IsHandlerForInstallDir
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !insertmacro ${_MOZFUNC_UN_TMP}GetPathFromString
     !undef _MOZFUNC_UN
@@ -2746,7 +2731,9 @@ Var Trash
       ${If} $R7 != ""
         ${GetPathFromString} "$R7" $R7
         ${GetParent} "$R7" $R7
-        ${GetLongPath} "$R7" $R7
+        Push $R7
+        Call GetLongPath
+        Pop $R7
         ${If} $R7 == $INSTDIR
           StrCpy $R9 "true"
         ${EndIf}
@@ -2814,7 +2801,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}CleanUpdatesDir
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -2832,9 +2818,13 @@ Var Trash
       Push $R4
 
       StrCmp $R9 "" end +1 ; The relative path to the app's profiles is required
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R8
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R8
       StrCmp $R8 "" end +1
-      ${${_MOZFUNC_UN}GetLongPath} "$PROGRAMFILES" $R7
+      Push $PROGRAMFILES
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R7
       StrCmp $R7 "" end +1
 
       StrLen $R6 "$R8"
@@ -2853,7 +2843,9 @@ Var Trash
       ; Concatenate the path to $LOCALAPPDATA the relative profile path and the
       ; relative path to $INSTDIR from $PROGRAMFILES
       StrCpy $R4 "$LOCALAPPDATA\$R9$R4"
-      ${${_MOZFUNC_UN}GetLongPath} "$R4" $R4
+      Push $R4
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R4
       StrCmp $R4 "" end +1
 
       IfFileExists "$R4\updates" +1 end
@@ -3066,7 +3058,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}DeleteShortcuts
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
@@ -3097,7 +3088,9 @@ Var Trash
             ${If} ${FileExists} "$R7\TaskBar\$R8"
               ShellLink::GetShortCutTarget "$R7\TaskBar\$R8"
               Pop $R5
-              ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+              Push $R5
+              Call ${_MOZFUNC_UN}GetLongPath
+              Pop $R5
               ${If} "$R5" == "$INSTDIR\${FileMainEXE}"
                 ApplicationID::UninstallPinnedItem "$R7\TaskBar\$R8"
                 Pop $R5
@@ -3119,7 +3112,9 @@ Var Trash
             ${If} ${FileExists} "$R7\StartMenu\$R8"
               ShellLink::GetShortCutTarget "$R7\StartMenu\$R8"
               Pop $R5
-              ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+              Push $R5
+              Call ${_MOZFUNC_UN}GetLongPath
+              Pop $R5
               ${If} "$R5" == "$INSTDIR\${FileMainEXE}"
                   ApplicationID::UninstallPinnedItem "$R7\StartMenu\$R8"
                   Pop $R5
@@ -3138,7 +3133,9 @@ Var Trash
       ; Don't call ApplicationID::UninstallPinnedItem since pinned items for
       ; this application were removed above and removing them below will remove
       ; the association of side by side installations.
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR\uninstall\${SHORTCUTS_LOG}" $R9
+      Push "$INSTDIR\uninstall\${SHORTCUTS_LOG}"
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R9
       ${If} ${FileExists} "$R9"
         ; Delete Start Menu shortcuts for this application
         StrCpy $R4 -1
@@ -3153,7 +3150,9 @@ Var Trash
           ${If} ${FileExists} "$SMPROGRAMS\$R8"
             ShellLink::GetShortCutTarget "$SMPROGRAMS\$R8"
             Pop $R5
-            ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+            Push $R5
+            Call ${_MOZFUNC_UN}GetLongPath
+            Pop $R5
             ${If} "$INSTDIR\${FileMainEXE}" == "$R5"
               Delete "$SMPROGRAMS\$R8"
             ${EndIf}
@@ -3173,7 +3172,9 @@ Var Trash
           ${If} ${FileExists} "$QUICKLAUNCH\$R8"
             ShellLink::GetShortCutTarget "$QUICKLAUNCH\$R8"
             Pop $R5
-            ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+            Push $R5
+            Call ${_MOZFUNC_UN}GetLongPath
+            Pop $R5
             ${If} "$INSTDIR\${FileMainEXE}" == "$R5"
               Delete "$QUICKLAUNCH\$R8"
             ${EndIf}
@@ -3193,19 +3194,25 @@ Var Trash
           ${If} ${FileExists} "$DESKTOP\$R8"
             ShellLink::GetShortCutTarget "$DESKTOP\$R8"
             Pop $R5
-            ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+            Push $R5
+            Call ${_MOZFUNC_UN}GetLongPath
+            Pop $R5
             ${If} "$INSTDIR\${FileMainEXE}" == "$R5"
               Delete "$DESKTOP\$R8"
             ${EndIf}
           ${EndIf}
         ${Loop}
 
-        ${${_MOZFUNC_UN}GetLongPath} "$SMPROGRAMS" $R6
+        Push $SMPROGRAMS
+        Call ${_MOZFUNC_UN}GetLongPath
+        Pop $R6
 
         ; Delete Start Menu Programs shortcuts for this application
         ClearErrors
         ReadINIStr $R7 "$R9" "SMPROGRAMS" "RelativePathToDir"
-        ${${_MOZFUNC_UN}GetLongPath} "$R6\$R7" $R7
+        Push "$R6\$R7"
+        Call ${_MOZFUNC_UN}GetLongPath
+        Pop $R7
         ${Unless} "$R7" == ""
           StrCpy $R4 -1
           ${Do}
@@ -3219,7 +3226,9 @@ Var Trash
             ${If} ${FileExists} "$R7\$R8"
               ShellLink::GetShortCutTarget "$R7\$R8"
               Pop $R5
-              ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
+              Push $R5
+              Call ${_MOZFUNC_UN}GetLongPath
+              Pop $R5
               ${If} "$INSTDIR\${FileMainEXE}" == "$R5"
                 Delete "$R7\$R8"
               ${EndIf}
@@ -3943,7 +3952,9 @@ Var Trash
       StrCmp "$R4" "\" end_FindSMProgramsDirRelPath +1
 
       SetShellVarContext all
-      ${GetLongPath} "$SMPROGRAMS" $R4
+      Push $SMPROGRAMS
+      Call GetLongPath
+      Pop $R4
       StrLen $R2 "$R4"
       StrCpy $R1 "$R9" $R2
       StrCmp "$R1" "$R4" +1 end_FindSMProgramsDirRelPath
@@ -4420,7 +4431,6 @@ Var Trash
 
   !ifndef LeaveOptionsCommon
     !insertmacro CanWriteToInstallDir
-    !insertmacro GetLongPath
 
 !ifndef NO_INSTDIR_FROM_REG
     !insertmacro GetSingleInstallPath
@@ -4460,7 +4470,9 @@ Var Trash
       Return
 
       ; Always display the long path if the path already exists.
-      ${GetLongPath} "$INSTDIR" $INSTDIR
+      Push $INSTDIR
+      Call GetLongPath
+      Pop $INSTDIR
 
       ; The call to GetLongPath returns a long path without a trailing
       ; back-slash. Append a \ to the path to prevent the directory
@@ -5389,7 +5401,6 @@ Var Trash
 
   !ifndef ${_MOZFUNC_UN}SetAppLSPCategories
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -5409,7 +5420,9 @@ Var Trash
       Push $R6
       Push $R5
 
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR\${FileMainEXE}" $R8
+      Push "$INSTDIR\${FileMainEXE}"
+      Call ${_MOZFUNC_UN}GetLongPath
+      Pop $R8
       StrLen $R7 "$R8"
 
       ; Remove existing categories by setting the permitted categories to
@@ -5491,7 +5504,6 @@ Var Trash
 !macro PinnedToTaskBarLnkCount
 
   !ifndef PinnedToTaskBarLnkCount
-    !insertmacro GetLongPath
 
     !verbose push
     !verbose ${_MOZFUNC_VERBOSE}
@@ -5558,8 +5570,6 @@ Var Trash
 !macro UpdateShortcutAppModelIDs
 
   !ifndef UpdateShortcutAppModelIDs
-    !insertmacro GetLongPath
-
     !verbose push
     !verbose ${_MOZFUNC_VERBOSE}
     !define UpdateShortcutAppModelIDs "!insertmacro UpdateShortcutAppModelIDsCall"
@@ -5587,7 +5597,9 @@ Var Trash
 
       ${If} ${AtLeastWin7}
         ; installed shortcuts
-        ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR\uninstall\${SHORTCUTS_LOG}" $R6
+        Push  "$INSTDIR\uninstall\${SHORTCUTS_LOG}"
+        Call ${_MOZFUNC_UN}GetLongPath
+        Pop $R6
         ${If} ${FileExists} "$R6"
           ; Update the Start Menu shortcuts' App ID for this application
           StrCpy $R2 -1
@@ -5602,7 +5614,9 @@ Var Trash
             ${If} ${FileExists} "$SMPROGRAMS\$R5"
               ShellLink::GetShortCutTarget "$SMPROGRAMS\$$R5"
               Pop $R4
-              ${GetLongPath} "$R4" $R4
+              Push $R4
+              Call GetLongPath
+              Pop $R4
               ${If} "$R4" == "$R9" ; link path == install path
                 ApplicationID::Set "$SMPROGRAMS\$R5" "$R8"
                 Pop $R4
@@ -5623,7 +5637,9 @@ Var Trash
             ${If} ${FileExists} "$QUICKLAUNCH\$R5"
               ShellLink::GetShortCutTarget "$QUICKLAUNCH\$R5"
               Pop $R4
-              ${GetLongPath} "$R4" $R4
+              Push $R4
+              Call GetLongPath
+              Pop $R4
               ${If} "$R4" == "$R9" ; link path == install path
                 ApplicationID::Set "$QUICKLAUNCH\$R5" "$R8"
                 Pop $R4
@@ -5635,7 +5651,9 @@ Var Trash
           ClearErrors
           ReadINIStr $R7 "$R6" "SMPROGRAMS" "RelativePathToDir"
           ${Unless} ${Errors}
-            ${${_MOZFUNC_UN}GetLongPath} "$SMPROGRAMS\$R7" $R7
+            Push "$SMPROGRAMS\$R7"
+            Call ${_MOZFUNC_UN}GetLongPath
+            Pop $R7
             ${Unless} "$R7" == ""
               StrCpy $R2 -1
               ${Do}
@@ -5649,7 +5667,9 @@ Var Trash
                 ${If} ${FileExists} "$R7\$R5"
                   ShellLink::GetShortCutTarget "$R7\$R5"
                   Pop $R4
-                  ${GetLongPath} "$R4" $R4
+                  Push "$R4"
+                  Call GetLongPath
+                  Pop $R4
                   ${If} "$R4" == "$R9" ; link path == install path
                     ApplicationID::Set "$R7\$R5" "$R8"
                     Pop $R4

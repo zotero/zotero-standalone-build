@@ -45,7 +45,9 @@
 
 ; Adds zotero:// protocol handler and makes Zotero open exported bib files
 !macro SetHandlers
-  ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
+  Push "$INSTDIR\${FileMainEXE}"
+  Call GetLongPath
+  Pop $8
   
   ${AddHandlerValues} "Software\Classes\zotero" "$\"$8$\" -url $\"%1$\"" \
       "$8,1" "Zotero Protocol" "true" ""
@@ -125,7 +127,9 @@
 
 ; Add Software\Zotero\ registry entries (uses SHCTX).
 !macro SetAppKeys
-  ${GetLongPath} "$INSTDIR" $8
+  Push $INSTDIR
+  Call GetLongPath
+  Pop $8
   StrCpy $0 "Software\Zotero\${BrandFullNameInternal}\${AppVersion} (${AB_CD})\Main"
   ${WriteRegStr2} $TmpVal "$0" "Install Directory" "$8" 0
   ${WriteRegStr2} $TmpVal "$0" "PathToExe" "$8\${FileMainEXE}" 0
@@ -179,7 +183,9 @@
   ${EndIf}
 
   ${If} $2 == ""
-    ${GetLongPath} "$INSTDIR" $8
+    Push $INSTDIR
+    Call GetLongPath
+    Pop $8
 
     ; Write the uninstall registry keys
     ${WriteRegStr2} $1 "$0" "Comments" "${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})" 0
@@ -239,7 +245,9 @@
 ; install location (uses SHCTX).
 !macro UpdateProtocolHandlers
   ; Store the command to open the app with an url in a register for easy access.
-  ${GetLongPath} "$INSTDIR\${FileMainEXE}" $8
+  Push "$INSTDIR\${FileMainEXE}"
+  Call GetLongPath
+  Pop $8
 
   ; Only set the file and protocol handlers if the existing one under HKCR is
   ; for this install location.
@@ -263,11 +271,15 @@
     ; Delete Start Menu Programs shortcuts, directory if it is empty, and
     ; parent directories if they are empty up to but not including the start
     ; menu directory.
-    ${GetLongPath} "$SMPROGRAMS" $1
+    Push $SMPROGRAMS
+    Call GetLongPath
+    Pop $1
     ClearErrors
     ReadINIStr $2 "$0" "SMPROGRAMS" "RelativePathToDir"
     ${Unless} ${Errors}
-      ${GetLongPath} "$1\$2" $2
+      Push "$1\$2"
+      Call GetLongPath
+      Pop $2
       ${If} "$2" != ""
         ; Delete shortucts in the Start Menu Programs directory.
         StrCpy $3 0
