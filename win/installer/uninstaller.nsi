@@ -55,7 +55,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 
 !insertmacro AddHandlerValues
 !insertmacro ElevateUAC
-!insertmacro GetLongPath
 !insertmacro GetOptions
 !insertmacro GetParameters
 !insertmacro GetPathFromString
@@ -78,7 +77,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.CleanUpdatesDir
 !insertmacro un.DeleteRelativeProfiles
 !insertmacro un.DeleteShortcuts
-!insertmacro un.GetLongPath
 !insertmacro un.GetSecondInstallPath
 !insertmacro un.ManualCloseAppPrompt
 !insertmacro un.ParseUninstallLog
@@ -527,7 +525,9 @@ Function .onInit
   Quit ; Nothing initialized so no need to call OnEndCommon
 
   ${GetParent} "$EXEDIR" $INSTDIR
-  ${GetLongPath} "$INSTDIR" $INSTDIR
+  Push $INSTDIR
+  Call GetLongPath
+  Pop $INSTDIR
   IfFileExists "$INSTDIR\${FileMainEXE}" +2 +1
   Quit ; Nothing initialized so no need to call OnEndCommon
 
@@ -650,7 +650,9 @@ Function un.onInit
   StrCpy $LANGUAGE 0
 
   ${un.GetParent} "$INSTDIR" $INSTDIR
-  ${un.GetLongPath} "$INSTDIR" $INSTDIR
+  Push $INSTDIR
+  Call un.GetLongPath
+  Pop $INSTDIR
   ${Unless} ${FileExists} "$INSTDIR\${FileMainEXE}"
   Abort
   ${EndUnless}
