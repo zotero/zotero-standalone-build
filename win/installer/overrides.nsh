@@ -39,57 +39,6 @@
   !insertmacro __MOZ__WinVer_DefineOSTests 8
 !endif
 
-!ifndef CallArtificialFunction
-; The CallArtificialFunction and CallArtificialFunction2 macros are from
-; Util.nsh in NSIS v2.46-Unicode and have not been modified. They are needed
-; by TextCompareNoDetail when compiling an installer / uninstaller with NSIS
-; v2.33-Unicode.
-; See <NSIS v2.46-Unicode App Dir >/include/Util.nsh for more information.
-
-# see WinVer.nsh and *Func.nsh for usage examples
-!macro CallArtificialFunction NAME
-  !ifndef __UNINSTALL__
-    !define CallArtificialFunction_TYPE inst
-  !else
-    !define CallArtificialFunction_TYPE uninst
-  !endif
-  Call :.${NAME}${CallArtificialFunction_TYPE}
-  !ifndef ${NAME}${CallArtificialFunction_TYPE}_DEFINED
-    Goto ${NAME}${CallArtificialFunction_TYPE}_DONE
-    !define ${NAME}${CallArtificialFunction_TYPE}_DEFINED
-    .${NAME}${CallArtificialFunction_TYPE}:
-      !insertmacro ${NAME}
-    Return
-    ${NAME}${CallArtificialFunction_TYPE}_DONE:
-  !endif
-  !undef CallArtificialFunction_TYPE
-!macroend
-!define CallArtificialFunction `!insertmacro CallArtificialFunction`
-
-# for usage of artificial functions inside artificial functions
-# macro recursion is prohibited
-!macro CallArtificialFunction2 NAME
-  !ifndef __UNINSTALL__
-    !define CallArtificialFunction2_TYPE inst
-  !else
-    !define CallArtificialFunction2_TYPE uninst
-  !endif
-  Call :.${NAME}${CallArtificialFunction2_TYPE}
-  !ifndef ${NAME}${CallArtificialFunction2_TYPE}_DEFINED
-    Goto ${NAME}${CallArtificialFunction2_TYPE}_DONE
-    !define ${NAME}${CallArtificialFunction2_TYPE}_DEFINED
-    .${NAME}${CallArtificialFunction2_TYPE}:
-      !insertmacro ${NAME}
-    Return
-    ${NAME}${CallArtificialFunction2_TYPE}_DONE:
-  !endif
-  !undef CallArtificialFunction2_TYPE
-!macroend
-!define CallArtificialFunction2 `!insertmacro CallArtificialFunction2`
-
-!endif
-
-
 !verbose push
 !verbose 3
 !ifndef _OVERRIDE_VERBOSE
