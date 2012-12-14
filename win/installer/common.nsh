@@ -2330,15 +2330,8 @@ FunctionEnd
  * view. This macro uses SHCTX to determine the registry hive so you must call
  * SetShellVarContext first.
  *
- * $R3 = on x64 systems set to 'false' at the beginning of the macro when
- *       enumerating the x86 registry view and set to 'true' when enumerating
- *       the x64 registry view.
- * $R4 = stores the long path to $INSTDIR
- * $R5 = return value from ReadRegStr
- * $R6 = string for the base reg key (e.g. Software\Microsoft\Windows\CurrentVersion\Uninstall)
- * $R7 = return value from EnumRegKey
- * $R8 = counter for EnumRegKey
- * $R9 = return value from the stack from the RemoveQuotesFromPath and GetLongPath macros
+ * input:
+ *   INSTDIR = used by IterateUninstallKeys to determine what needs to be deleted.
  */
 !macro RegCleanUninstall
 
@@ -2353,78 +2346,29 @@ FunctionEnd
     !define ${_MOZFUNC_UN}RegCleanUninstall "!insertmacro ${_MOZFUNC_UN}RegCleanUninstallCall"
 
     Function ${_MOZFUNC_UN}RegCleanUninstall
-      Push $R9
-      Push $R8
-      Push $R7
-      Push $R6
-      Push $R5
-      Push $R4
-      Push $R3
+      Push $1
+      Push $0
 
-      Push $INSTDIR
-      Call ${_MOZFUNC_UN}GetLongPath
-      Pop $R4
-      StrCpy $R6 "Software\Microsoft\Windows\CurrentVersion\Uninstall"
-      StrCpy $R7 ""
-      StrCpy $R8 0
-
-      ${If} ${RunningX64}
-        StrCpy $R3 "false"
-        ; Set the registry to the 32 bit registry for 64 bit installations or to
-        ; the 64 bit registry for 32 bit installations at the beginning so it can
-        ; easily be set back to the correct registry view when finished.
-        !ifdef HAVE_64BIT_OS
-          SetRegView 32
-        !else
-          SetRegView 64
-        !endif
-      ${EndIf}
+      StrCpy $0 "0"
 
       loop:
-      EnumRegKey $R7 SHCTX $R6 $R8
-      StrCmp $R7 "" end +1
-      IntOp $R8 $R8 + 1 ; Increment the counter
-      ClearErrors
-      ReadRegStr $R5 SHCTX "$R6\$R7" "InstallLocation"
+      Push $0
+      Push $INSTDIR
+      Call ${_MOZFUNC_UN}IterateUninstallKeys
+      ; The error flag means no key was found.
+      IfErrors done
+      Pop $1
+      Pop $0
+      DeleteRegKey SHCTX "$1"
       IfErrors loop
-      Push $R5
-      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
-      Pop $R9
-      Push $R9
-      Call ${_MOZFUNC_UN}GetLongPath
-      Pop $R9
-      StrCmp "$R9" "$R4" +1 loop
-      ClearErrors
-      DeleteRegKey SHCTX "$R6\$R7"
-      IfErrors loop +1
-      IntOp $R8 $R8 - 1 ; Decrement the counter on successful deletion
-      GoTo loop
+      IntOp $0 $0 - 1 ; Decrement the counter on successful deletion
+      Goto loop
+      done:
+      Pop $Trash
+      Pop $Trash
 
-      end:
-      ${If} ${RunningX64}
-      ${AndIf} "$R3" == "false"
-        ; Set the registry to the correct view.
-        !ifdef HAVE_64BIT_OS
-          SetRegView 64
-        !else
-          SetRegView 32
-        !endif
-
-        StrCpy $R7 ""
-        StrCpy $R8 0
-        StrCpy $R3 "true"
-        GoTo loop
-      ${EndIf}
-
-      ClearErrors
-
-      Pop $R3
-      Pop $R4
-      Pop $R5
-      Pop $R6
-      Pop $R7
-      Pop $R8
-      Pop $R9
+      Pop $0
+      Pop $1
     FunctionEnd
 
     !verbose pop
