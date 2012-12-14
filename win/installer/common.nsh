@@ -2248,6 +2248,83 @@ FunctionEnd
 !macroend
 
 /**
+ * Searches for registry keys under \Software\Windows\CurrentVersion\Uninstall
+ * that reference this install location in both the 32 bit and 64 bit registry
+ * view. This macro uses SHCTX to determine the registry hive so you must call
+ * SetShellVarContext first.
+ *
+ * inputs:
+ *   @0 = This determines which keys form a match. It will be overwritten on return.
+ *   @1 = counter. Set to 0 on first call
+ * outputs:
+ *   @0 = Set to registry key on every return.
+ *   @1 = counter. Gets set so that you can call function again for another
+ *        search result. Sets to 0 when all keys are exhausted.
+ *   error flag: This flag will be set when no results were found
+ * internal:
+ *   $R4 = stores the long path to $INSTDIR
+ *   $R5 = return value from ReadRegStr
+ *   $R6 = string for the base reg key
+ *   $R7 = return value from EnumRegKey
+ *   $R8 = Boolean value. True means a result has been found
+ *   $R9 = return value from the stack from the RemoveQuotesFromPath and
+           GetLongPath macros
+ */
+!macro IterateUninstallKeys UN
+Function ${UN}IterateUninstallKeys
+  Exch $0
+  Exch 1
+  Exch $1
+  Push $R9
+  Push $R8
+  Push $R7
+  Push $R6
+  Push $R5
+  Push $R4
+
+  Push $0
+  Call ${UN}GetLongPath
+  Pop $R4
+  StrCpy $R6 "Software\Microsoft\Windows\CurrentVersion\Uninstall"
+  StrCpy $R7 ""
+  StrCpy $R8 "False"
+
+  loop:
+  EnumRegKey $R7 SHCTX $R6 $1
+  StrCmp $R7 "" end +1
+  IntOp $1 $1 + 1 ; Increment the counter
+  ClearErrors
+  ReadRegStr $R5 SHCTX "$R6\$R7" "InstallLocation"
+  IfErrors loop
+  Push $R5
+  Call ${UN}RemoveQuotesFromPath
+  Call ${UN}GetLongPath
+  Pop $R9
+  StrCmp "$R9" "$R4" +1 loop
+  StrCpy $R8 "True"
+
+  end:
+  ClearErrors
+  StrCmp $R8 "False" 0 +2
+  SetErrors
+  StrCpy $0 "$R6\$R7"
+
+  Pop $R4
+  Pop $R5
+  Pop $R6
+  Pop $R7
+  Pop $R8
+  Pop $R9
+  Exch $1
+  Exch 1
+  Exch $0
+FunctionEnd
+!macroend
+
+!insertmacro IterateUninstallKeys ""
+!insertMacro IterateUninstallKeys "un."
+
+/**
  * Removes all registry keys from \Software\Windows\CurrentVersion\Uninstall
  * that reference this install location in both the 32 bit and 64 bit registry
  * view. This macro uses SHCTX to determine the registry hive so you must call
