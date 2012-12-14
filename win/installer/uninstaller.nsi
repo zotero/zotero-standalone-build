@@ -77,6 +77,7 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.CleanUpdatesDir
 !insertmacro un.DeleteRelativeProfiles
 !insertmacro un.DeleteShortcuts
+!insertmacro un.ElevateUAC
 !insertmacro un.GetSecondInstallPath
 !insertmacro un.ManualCloseAppPrompt
 !insertmacro un.ParseUninstallLog
@@ -166,6 +167,23 @@ Section "Uninstall"
   SetDetailsPrint textonly
   DetailPrint $(STATUS_UNINSTALL_MAIN)
   SetDetailsPrint none
+
+  ; Check whether Zotero was installed under HKLM. If it was we will need to elevate.
+  SetShellVarContext all
+  Push "0"
+  Push $INSTDIR
+  Call un.IterateUninstallKeys
+  ; The error flag means no key was found. In that case set to user uninstall.
+  ; When a key is found in HKLM leave shell context to all and trigger
+  ; elevation prompt.
+  IfErrors 0 elevate
+  SetShellVarContext current
+  Goto elevation_complete
+  elevate:
+  ${un.ElevateUAC}
+  elevation_complete:
+  Pop $Trash
+  Pop $Trash
 
   ; Delete the app exe to prevent launching the app while we are uninstalling.
   ClearErrors
