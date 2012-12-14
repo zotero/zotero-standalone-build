@@ -203,27 +203,14 @@ Section "Uninstall"
     RmDir "$APPDATA\Zotero"
   ${EndIf}
 
-  SetShellVarContext current  ; Set SHCTX to HKCU
-  ${un.RegCleanMain} "Software\Zotero"
-  ${un.RegCleanUninstall}
-  ${un.DeleteShortcuts}
-
   ; Unregister resources associated with Win7 taskbar jump lists.
   ApplicationID::UninstallJumpLists "${AppUserModelID}"
 
   ClearErrors
-  WriteRegStr HKLM "Software\Zotero" "${BrandShortName}InstallerTest" "Write Test"
-  ${If} ${Errors}
-    StrCpy $TmpVal "HKCU" ; used primarily for logging
-  ${Else}
-    SetShellVarContext all  ; Set SHCTX to HKLM
-    DeleteRegValue HKLM "Software\Zotero" "${BrandShortName}InstallerTest"
-    StrCpy $TmpVal "HKLM" ; used primarily for logging
-    ${un.RegCleanMain} "Software\Zotero"
-    ${un.RegCleanUninstall}
-    ${un.DeleteShortcuts}
-    ${un.SetAppLSPCategories}
-  ${EndIf}
+  ${un.RegCleanMain} "Software\Zotero"
+  ${un.RegCleanUninstall}
+  ${un.DeleteShortcuts}
+  ${un.SetAppLSPCategories}
   
   ${un.RegCleanProtocolHandler} "zotero"
   ${un.RegCleanAppHandler} "ZoteroRIS"
@@ -249,30 +236,23 @@ Section "Uninstall"
     ${un.RegCleanFileHandler}  ".csl"    "ZoteroCSL"
   ${EndIf}
 
-  SetShellVarContext all  ; Set SHCTX to HKLM
   ${un.GetSecondInstallPath} "Software\Zotero" $R9
-  ${If} $R9 == "false"
-    SetShellVarContext current  ; Set SHCTX to HKCU
-    ${un.GetSecondInstallPath} "Software\Zotero" $R9
-  ${EndIf}
 
   StrCpy $0 "Software\Microsoft\Windows\CurrentVersion\App Paths\${FileMainEXE}"
   ${If} $R9 == "false"
-    DeleteRegKey HKLM "$0"
-    DeleteRegKey HKCU "$0"
+    DeleteRegKey SHCTX "$0"
     StrCpy $0 "Software\Classes\MIME\Database\Content Type\application/x-xpinstall;app=firefox"
-    DeleteRegKey HKLM "$0"
-    DeleteRegKey HKCU "$0"
+    DeleteRegKey SHCTX "$0"
   ${Else}
-    ReadRegStr $R1 HKLM "$0" ""
+    ReadRegStr $R1 SHCTX "$0" ""
     Push $R1
     Call un.RemoveQuotesFromPath
     Pop $R1
     ${un.GetParent} "$R1" $R1
     ${If} "$INSTDIR" == "$R1"
-      WriteRegStr HKLM "$0" "" "$R9"
+      WriteRegStr SHCTX "$0" "" "$R9"
       ${un.GetParent} "$R9" $R1
-      WriteRegStr HKLM "$0" "Path" "$R1"
+      WriteRegStr SHCTX "$0" "Path" "$R1"
     ${EndIf}
   ${EndIf}
 
