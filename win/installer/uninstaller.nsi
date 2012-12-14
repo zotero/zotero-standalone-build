@@ -85,7 +85,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.RegCleanMain
 !insertmacro un.RegCleanProtocolHandler
 !insertmacro un.RegCleanUninstall
-!insertmacro un.RemoveQuotesFromPath
 !insertmacro un.SetAppLSPCategories
 !insertmacro un.SetBrandNameVars
 
@@ -248,7 +247,9 @@ Section "Uninstall"
     DeleteRegKey HKCU "$0"
   ${Else}
     ReadRegStr $R1 HKLM "$0" ""
-    ${un.RemoveQuotesFromPath} "$R1" $R1
+    Push $R1
+    Call un.RemoveQuotesFromPath
+    Pop $R1
     ${un.GetParent} "$R1" $R1
     ${If} "$INSTDIR" == "$R1"
       WriteRegStr HKLM "$0" "" "$R9"

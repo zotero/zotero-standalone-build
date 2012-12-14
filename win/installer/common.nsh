@@ -1335,7 +1335,6 @@ Var Trash
   !ifndef ${_MOZFUNC_UN}GetSecondInstallPath
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
-    !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -1369,7 +1368,9 @@ Var Trash
       ReadRegStr $R5 SHCTX "$R8\$R7\bin" "PathToExe"
       IfErrors loop
 
-      ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R5
+      Push $R5
+      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
+      Pop $R5
 
       IfFileExists "$R5" +1 loop
       Push $R5
@@ -1454,7 +1455,6 @@ Var Trash
   !ifndef ${_MOZFUNC_UN}GetSingleInstallPath
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
-    !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -1483,7 +1483,9 @@ Var Trash
       ClearErrors
       ReadRegStr $R7 SHCTX "$R8\$R6\Main" "PathToExe"
       IfErrors loop
-      ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R7" $R7
+      Push $R7
+      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
+      Pop $R7
       GetFullPathName $R7 "$R7"
       IfErrors loop
 
@@ -1934,67 +1936,28 @@ Var Trash
  * $R8 = storage for _IN_PATH
  * $R9 = _IN_PATH and _OUT_PATH
  */
-!macro RemoveQuotesFromPath
+!macro RemoveQuotesFromPath UN
+Function ${UN}RemoveQuotesFromPath
+  Exch $R9
+  Push $R8
+  Push $R7
 
-  !ifndef ${_MOZFUNC_UN}RemoveQuotesFromPath
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define ${_MOZFUNC_UN}RemoveQuotesFromPath "!insertmacro ${_MOZFUNC_UN}RemoveQuotesFromPathCall"
+  StrCpy $R7 "$R9" 1
+  StrCmp $R7 "$\"" +1 +2
+  StrCpy $R9 "$R9" "" 1
 
-    Function ${_MOZFUNC_UN}RemoveQuotesFromPath
-      Exch $R9
-      Push $R8
-      Push $R7
+  StrCpy $R7 "$R9" "" -1
+  StrCmp $R7 "$\"" +1 +2
+  StrCpy $R9 "$R9" -1
 
-      StrCpy $R7 "$R9" 1
-      StrCmp $R7 "$\"" +1 +2
-      StrCpy $R9 "$R9" "" 1
-
-      StrCpy $R7 "$R9" "" -1
-      StrCmp $R7 "$\"" +1 +2
-      StrCpy $R9 "$R9" -1
-
-      Pop $R7
-      Pop $R8
-      Exch $R9
-    FunctionEnd
-
-    !verbose pop
-  !endif
+  Pop $R7
+  Pop $R8
+  Exch $R9
+FunctionEnd
 !macroend
 
-!macro RemoveQuotesFromPathCall _IN_PATH _OUT_PATH
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Push "${_IN_PATH}"
-  Call RemoveQuotesFromPath
-  Pop ${_OUT_PATH}
-  !verbose pop
-!macroend
-
-!macro un.RemoveQuotesFromPathCall _IN_PATH _OUT_PATH
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Push "${_IN_PATH}"
-  Call un.RemoveQuotesFromPath
-  Pop ${_OUT_PATH}
-  !verbose pop
-!macroend
-
-!macro un.RemoveQuotesFromPath
-  !ifndef un.RemoveQuotesFromPath
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN "un."
-
-    !insertmacro RemoveQuotesFromPath
-
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN
-    !verbose pop
-  !endif
-!macroend
+!insertmacro RemoveQuotesFromPath ""
+!insertmacro RemoveQuotesFromPath "un."
 
 /**
  * Returns the long path for an existing file or directory. GetLongPathNameW
@@ -2124,7 +2087,6 @@ FunctionEnd
   !ifndef ${_MOZFUNC_UN}RegCleanMain
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
     !insertmacro ${_MOZFUNC_UN_TMP}GetParent
-    !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -2180,7 +2142,9 @@ FunctionEnd
       ReadRegStr $R5 SHCTX "$R9\$R3\$R4\Main" "PathToExe"
       IfErrors innerloop
 
-      ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R8
+      Push $R5
+      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
+      Pop $R8
       ${${_MOZFUNC_UN}GetParent} "$R8" $R2
       Push $R2
       Call ${_MOZFUNC_UN}GetLongPath
@@ -2197,7 +2161,9 @@ FunctionEnd
       IfErrors innerloop outerdecrement
 
       outercontinue:
-      ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R8
+      Push $R5
+      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
+      Pop $R8
       ${${_MOZFUNC_UN}GetParent} "$R8" $R2
       Push $R2
       Call ${_MOZFUNC_UN}GetLongPath
@@ -2301,7 +2267,6 @@ FunctionEnd
 
   !ifndef ${_MOZFUNC_UN}RegCleanUninstall
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}RemoveQuotesFromPath
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP
@@ -2345,7 +2310,9 @@ FunctionEnd
       ClearErrors
       ReadRegStr $R5 SHCTX "$R6\$R7" "InstallLocation"
       IfErrors loop
-      ${${_MOZFUNC_UN}RemoveQuotesFromPath} "$R5" $R9
+      Push $R5
+      Call ${_MOZFUNC_UN}RemoveQuotesFromPath
+      Pop $R9
       Push $R9
       Call ${_MOZFUNC_UN}GetLongPath
       Pop $R9
