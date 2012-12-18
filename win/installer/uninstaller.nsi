@@ -74,7 +74,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.CheckForFilesInUse
 !insertmacro un.CleanUpdatesDir
-!insertmacro un.DeleteRelativeProfiles
 !insertmacro un.DeleteShortcuts
 !insertmacro un.ElevateUAC
 !insertmacro un.GetSecondInstallPath
@@ -198,7 +197,8 @@ Section "Uninstall"
 
   ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
   ${If} "$0" == "1"
-    ${un.DeleteRelativeProfiles} "Zotero\Zotero"
+    Push "Zotero\Zotero"
+    Call un.DeleteRelativeProfiles
     RmDir "$APPDATA\Zotero"
   ${EndIf}
 
@@ -673,4 +673,60 @@ FunctionEnd
 
 Function un.onGUIEnd
   ${un.OnEndCommon}
+FunctionEnd
+
+/**
+ * Deletes all relative profiles specified in an application's profiles.ini and
+ * performs various other cleanup.
+ *
+ * @param   _REL_PROFILE_PATH
+ *          The relative path to the profile directory.
+ *
+ * $R6 = value of IsRelative read from profiles.ini
+ * $R7 = value of Path to profile read from profiles.ini
+ * $R8 = counter for reading profiles (e.g. Profile0, Profile1, etc.)
+ * $R9 = _REL_PROFILE_PATH
+ */
+Function un.DeleteRelativeProfiles
+  Exch $R9
+  Push $R8
+  Push $R7
+  Push $R6
+
+  SetShellVarContext current
+  StrCpy $R8 -1
+
+  loop:
+  IntOp $R8 $R8 + 1  ; Increment the counter.
+  ReadINIStr $R7 "$APPDATA\$R9\profiles.ini" "Profile$R8" "Path"
+  IfErrors end +1
+
+  ; Only remove relative profiles
+  ReadINIStr $R6 "$APPDATA\$R9\profiles.ini" "Profile$R8" "IsRelative"
+  StrCmp "$R6" "1" +1 loop
+
+  ; Relative paths in profiles.ini use / as a separator
+  ${un.WordReplace} "$R7" "/" "\" "+" $R7
+
+  IfFileExists "$LOCALAPPDATA\$R9\$R7" +1 +2
+  RmDir /r "$LOCALAPPDATA\$R9\$R7"
+  IfFileExists "$APPDATA\$R9\$R7" +1 +2
+  RmDir /r "$APPDATA\$R9\$R7"
+  GoTo loop
+
+  end:
+  ; Remove profiles directory under LOCALAPPDATA (e.g. cache, etc.) since
+  ; they are at times abandoned.
+  RmDir /r "$LOCALAPPDATA\$R9\Profiles"
+  RmDir /r "$APPDATA\$R9\Crash Reports"
+  Delete "$APPDATA\$R9\profiles.ini"
+  Delete "$APPDATA\$R9\console.log"
+  Delete "$APPDATA\$R9\pluginreg.dat"
+  RmDir "$APPDATA\$R9\Profiles"
+  RmDir "$APPDATA\$R9"
+
+  Pop $R6
+  Pop $R7
+  Pop $R8
+  Pop $R9
 FunctionEnd
