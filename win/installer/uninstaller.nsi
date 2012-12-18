@@ -166,6 +166,15 @@ Section "Uninstall"
   DetailPrint $(STATUS_UNINSTALL_MAIN)
   SetDetailsPrint none
 
+  ; Handle a few uninstall tasks for the current user even if this ends up being
+  ; a system-wide uninstall.
+  ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
+  ${If} "$0" == "1"
+    Push "Zotero\Zotero"
+    Call un.DeleteRelativeProfiles
+    RmDir "$APPDATA\Zotero"
+  ${EndIf}
+
   ; Check whether Zotero was installed under HKLM. If it was we will need to elevate.
   SetShellVarContext all
   Push "0"
@@ -193,13 +202,6 @@ Section "Uninstall"
     Sleep 5000
     ${DeleteFile} "$INSTDIR\${FileMainEXE}"
     ClearErrors
-  ${EndIf}
-
-  ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
-  ${If} "$0" == "1"
-    Push "Zotero\Zotero"
-    Call un.DeleteRelativeProfiles
-    RmDir "$APPDATA\Zotero"
   ${EndIf}
 
   ; Unregister resources associated with Win7 taskbar jump lists.
