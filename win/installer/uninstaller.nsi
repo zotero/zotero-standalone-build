@@ -170,6 +170,7 @@ Section "Uninstall"
   ; a system-wide uninstall.
   ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
   ${If} "$0" == "1"
+    SetShellVarContext current
     Push "Zotero\Zotero"
     Call un.DeleteRelativeProfiles
     RmDir "$APPDATA\Zotero"
@@ -697,7 +698,6 @@ Function un.DeleteRelativeProfiles
   Push $R7
   Push $R6
 
-  SetShellVarContext current
   StrCpy $R8 -1
 
   loop:
