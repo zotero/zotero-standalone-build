@@ -675,18 +675,20 @@ Function un.onGUIEnd
   ${un.OnEndCommon}
 FunctionEnd
 
-/**
- * Deletes all relative profiles specified in an application's profiles.ini and
- * performs various other cleanup.
- *
- * @param   _REL_PROFILE_PATH
- *          The relative path to the profile directory.
- *
- * $R6 = value of IsRelative read from profiles.ini
- * $R7 = value of Path to profile read from profiles.ini
- * $R8 = counter for reading profiles (e.g. Profile0, Profile1, etc.)
- * $R9 = _REL_PROFILE_PATH
- */
+; Deletes all relative profiles specified in an application's profiles.ini and
+; performs various other cleanup.
+
+; The SetShellVarContext setting should be set to current before calling this
+; function.
+
+; @0  =   _REL_PROFILE_PATH
+;         The relative path to the profile directory.
+
+; $R6 = value of IsRelative read from profiles.ini
+; $R7 = value of Path to profile read from profiles.ini
+; $R8 = counter for reading profiles (e.g. Profile0, Profile1, etc.)
+; $R9 = _REL_PROFILE_PATH
+
 Function un.DeleteRelativeProfiles
   Exch $R9
   Push $R8
