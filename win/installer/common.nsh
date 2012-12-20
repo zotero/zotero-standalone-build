@@ -2416,6 +2416,10 @@
 
       outerdecrement:
       IntOp $R6 $R6 - 1 ; decrement the outer loop's counter when the key is deleted successfully.
+      ; Attempt to delete Software/Zotero. There is nothing we can do if the
+      ; user lacks permissions to delete this key.
+      DeleteRegKey /ifempty SHCTX "$R9"
+      ClearErrors
       GoTo outerloop
 
       end:
