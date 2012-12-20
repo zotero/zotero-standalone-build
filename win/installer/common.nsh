@@ -1,41 +1,6 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is the Mozilla Installer code.
-#
-# The Initial Developer of the Original Code is Mozilla Foundation
-# Portions created by the Initial Developer are Copyright (C) 2006
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#  Robert Strong <robert.bugzilla@gmail.com>
-#  Ehsan Akhgari <ehsan.akhgari@gmail.com>
-#  Amir Szekely <kichik@gmail.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 ################################################################################
 # Helper defines and macros for toolkit applications
@@ -113,26 +78,19 @@
   !include /NONFATAL WinVer.nsh
 !endif
 
-; Add Windows 7 / 2008 support for versions of WinVer.nsh that don't support
-; them. This can be removed after bug 571381 is fixed.
-!ifndef WINVER_7
-  !define WINVER_7 0x601
-
-  !macro __MOZ__WinVer_DefineOSTests Test
-    !insertmacro __WinVer_DefineOSTest ${Test} 7
-  !macroend
-
-  !insertmacro __MOZ__WinVer_DefineOSTests AtLeast
-  !insertmacro __MOZ__WinVer_DefineOSTests Is
-  !insertmacro __MOZ__WinVer_DefineOSTests AtMost
-!endif
-
 !include x64.nsh
 
 ; NSIS provided macros that we have overridden.
 !include overrides.nsh
 
 !define SHORTCUTS_LOG "shortcuts_log.ini"
+
+; !define SHCNF_DWORD     0x0003
+; !define SHCNF_FLUSH     0x1000
+!define SHCNF_DWORDFLUSH  0x1003
+!ifndef SHCNE_ASSOCCHANGED
+  !define SHCNE_ASSOCCHANGED 0x08000000
+!endif
 
 
 ################################################################################
@@ -1193,7 +1151,9 @@
  * @param   _VALOPEN
  *          The path and args to launch the application.
  * @param   _VALICON
- *          The path to an exe that contains an icon and the icon resource id.
+ *          The path to the binary that contains the icon group for the default icon
+ *          followed by a comma and either the icon group's resource index or the icon
+ *          group's resource id prefixed with a minus sign
  * @param   _DISPNAME
  *          The display name for the handler. If emtpy no value will be set.
  * @param   _ISPROTOCOL
@@ -1237,10 +1197,9 @@
       WriteRegStr SHCTX "$R4" "" "$R7"
       WriteRegStr SHCTX "$R4" "FriendlyTypeName" "$R7"
 
-      StrCmp "$R8" "true" +1 +8
+      StrCmp "$R8" "true" +1 +2
       WriteRegStr SHCTX "$R4" "URL Protocol" ""
       StrCpy $R3 ""
-      ClearErrors
       ReadRegDWord $R3 SHCTX "$R4" "EditFlags"
       StrCmp $R3 "" +1 +3  ; Only add EditFlags if a value doesn't exist
       DeleteRegValue SHCTX "$R4" "EditFlags"
@@ -1336,7 +1295,9 @@
  * @param   _VALOPEN
  *          The path and args to launch the application.
  * @param   _VALICON
- *          The path to an exe that contains an icon and the icon resource id.
+ *          The path to the binary that contains the icon group for the default icon
+ *          followed by a comma and either the icon group's resource index or the icon
+ *          group's resource id prefixed with a minus sign
  * @param   _DISPNAME
  *          The display name for the handler. If emtpy no value will be set.
  * @param   _ISPROTOCOL
@@ -1389,10 +1350,9 @@
       WriteRegStr SHCTX "$R0\$R2" "" "$R5"
       WriteRegStr SHCTX "$R0\$R2" "FriendlyTypeName" "$R5"
 
-      StrCmp "$R6" "true" +1 +8
+      StrCmp "$R6" "true" +1 +2
       WriteRegStr SHCTX "$R0\$R2" "URL Protocol" ""
       StrCpy $R1 ""
-      ClearErrors
       ReadRegDWord $R1 SHCTX "$R0\$R2" "EditFlags"
       StrCmp $R1 "" +1 +3  ; Only add EditFlags if a value doesn't exist
       DeleteRegValue SHCTX "$R0\$R2" "EditFlags"
@@ -2804,6 +2764,7 @@
       StrCmp "$R7" "$R8" +1 end
       DeleteRegValue HKLM "Software\Classes\$R9\DefaultIcon" ""
       DeleteRegValue HKLM "Software\Classes\$R9\shell\open" ""
+      DeleteRegValue HKLM "Software\Classes\$R9\shell\open\command" ""
       DeleteRegValue HKLM "Software\Classes\$R9\shell\ddeexec" ""
       DeleteRegValue HKLM "Software\Classes\$R9\shell\ddeexec\Application" ""
       DeleteRegValue HKLM "Software\Classes\$R9\shell\ddeexec\Topic" ""
@@ -4552,7 +4513,8 @@
  * $R6 = general string values, return value from GetTempFileName, return
  *       value from the GetSize macro
  * $R7 = full path to the configuration ini file
- * $R8 = return value from the GetParameters macro
+ * $R8 = used for OS Version and Service Pack detection and the return value
+ *       from the GetParameters macro
  * $R9 = _WARN_UNSUPPORTED_MSG
  */
 !macro InstallOnInitCommon
@@ -4584,12 +4546,23 @@
 
         SetRegView 64
       !else
-        ${Unless} ${AtLeastWin2000}
-          ; XXX-rstrong - some systems fail the AtLeastWin2000 test for an
-          ; unknown reason. To work around this also check if the Windows NT
-          ; registry Key exists and if it does if the first char in
-          ; CurrentVersion is equal to 3 (Windows NT 3.5 and 3.5.1) or 4
-          ; (Windows NT 4).
+        StrCpy $R8 "0"
+        ${If} ${AtMostWin2000}
+          StrCpy $R8 "1"
+        ${EndIf}
+
+        ${If} ${IsWinXP}
+        ${AndIf} ${AtMostServicePack} 1
+          StrCpy $R8 "1"
+        ${EndIf}
+
+        ${If} $R8 == "1"
+          ; XXX-rstrong - some systems failed the AtLeastWin2000 test that we
+          ; used to use for an unknown reason and likely fail the AtMostWin2000
+          ; and possibly the IsWinXP test as well. To work around this also
+          ; check if the Windows NT registry Key exists and if it does if the
+          ; first char in CurrentVersion is equal to 3 (Windows NT 3.5 and
+          ; 3.5.1), to 4 (Windows NT 4) or 5 (Windows 2000 and Windows XP).
           StrCpy $R8 ""
           ClearErrors
           ReadRegStr $R8 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" "CurrentVersion"
@@ -4597,6 +4570,7 @@
           ${If} ${Errors}
           ${OrIf} "$R8" == "3"
           ${OrIf} "$R8" == "4"
+          ${OrIf} "$R8" == "5"
             MessageBox MB_OK|MB_ICONSTOP "$R9" IDOK
             ; Nothing initialized so no need to call OnEndCommon
             Quit
@@ -4866,7 +4840,7 @@
 
       finish:
       ${UnloadUAC}
-      System::Call "shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)"
+      System::Call "shell32::SHChangeNotify(i ${SHCNE_ASSOCCHANGED}, i 0, i 0, i 0)"
       Quit ; Nothing initialized so no need to call OnEndCommon
 
       continue:
@@ -5445,16 +5419,18 @@
       ${LogMsg} "App Version: $R8"
       ${LogMsg} "GRE Version: $R9"
 
-      ${If} ${IsWin2000}
-        ${LogMsg} "OS Name    : Windows 2000"
-      ${ElseIf} ${IsWinXP}
+      ${If} ${IsWinXP}
         ${LogMsg} "OS Name    : Windows XP"
       ${ElseIf} ${IsWin2003}
         ${LogMsg} "OS Name    : Windows 2003"
       ${ElseIf} ${IsWinVista}
         ${LogMsg} "OS Name    : Windows Vista"
-      ${ElseIf} ${AtLeastWinVista} ; Workaround for NSIS 2.33 WinVer.nsh not knowing Win7
-        ${LogMsg} "OS Name    : Windows 7 or above"
+      ${ElseIf} ${IsWin7}
+        ${LogMsg} "OS Name    : Windows 7"
+      ${ElseIf} ${IsWin8}
+        ${LogMsg} "OS Name    : Windows 8"
+      ${ElseIf} ${AtLeastWin8}
+        ${LogMsg} "OS Name    : Above Windows 8"
       ${Else}
         ${LogMsg} "OS Name    : Unable to detect"
       ${EndIf}
