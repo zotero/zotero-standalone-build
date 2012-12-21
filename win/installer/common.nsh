@@ -2793,116 +2793,6 @@
 !macroend
 
 /**
- * Removes the application's VirtualStore directory if present when the
- * installation directory is a sub-directory of the program files directory.
- *
- * $R4 = $PROGRAMFILES/$PROGRAMFILES64 for CleanVirtualStore_Internal
- * $R5 = various path values.
- * $R6 = length of the long path to $PROGRAMFILES32 or $PROGRAMFILES64
- * $R7 = long path to $PROGRAMFILES32 or $PROGRAMFILES64
- * $R8 = length of the long path to $INSTDIR
- * $R9 = long path to $INSTDIR
- */
-!macro CleanVirtualStore
-
-  !ifndef ${_MOZFUNC_UN}CleanVirtualStore
-    !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
-    !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
-    !undef _MOZFUNC_UN_TMP
-
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !define ${_MOZFUNC_UN}CleanVirtualStore "!insertmacro ${_MOZFUNC_UN}CleanVirtualStoreCall"
-
-    Function ${_MOZFUNC_UN}CleanVirtualStore
-      Push $R9
-      Push $R8
-      Push $R7
-      Push $R6
-      Push $R5
-      Push $R4
-
-      ${${_MOZFUNC_UN}GetLongPath} "$INSTDIR" $R9
-      ${If} "$R9" != ""
-        StrLen $R8 "$R9"
-
-        StrCpy $R4 $PROGRAMFILES32
-        Call ${_MOZFUNC_UN}CleanVirtualStore_Internal
-
-        ${If} ${RunningX64}
-          StrCpy $R4 $PROGRAMFILES64
-          Call ${_MOZFUNC_UN}CleanVirtualStore_Internal
-        ${EndIf}
-
-      ${EndIf}
-
-      ClearErrors
-
-      Pop $R4
-      Pop $R5
-      Pop $R6
-      Pop $R7
-      Pop $R8
-      Pop $R9
-    FunctionEnd
-
-    Function ${_MOZFUNC_UN}CleanVirtualStore_Internal
-      ${${_MOZFUNC_UN}GetLongPath} "" $R7
-      ${If} "$R7" != ""
-        StrLen $R6 "$R7"
-        ${If} $R8 < $R6
-          ; Copy from the start of $INSTDIR the length of $PROGRAMFILES64
-          StrCpy $R5 "$R9" $R6
-          ${If} "$R5" == "$R7"
-            ; Remove the drive letter and colon from the $INSTDIR long path
-            StrCpy $R5 "$R9" "" 2
-            StrCpy $R5 "$LOCALAPPDATA\VirtualStore$R5"
-            ${${_MOZFUNC_UN}GetLongPath} "$R5" $R5
-            ${If} "$R5" != ""
-            ${AndIf} ${FileExists} "$R5"
-              RmDir /r "$R5"
-            ${EndIf}
-          ${EndIf}
-        ${EndIf}
-      ${EndIf}
-    FunctionEnd
-
-    !verbose pop
-  !endif
-!macroend
-
-!macro CleanVirtualStoreCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call CleanVirtualStore
-  !verbose pop
-!macroend
-
-!macro un.CleanVirtualStoreCall
-  !verbose push
-  !verbose ${_MOZFUNC_VERBOSE}
-  Call un.CleanVirtualStore
-  !verbose pop
-!macroend
-
-!macro un.CleanVirtualStore
-  !ifndef un.CleanVirtualStore
-    !verbose push
-    !verbose ${_MOZFUNC_VERBOSE}
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN "un."
-
-    !insertmacro CleanVirtualStore
-
-    !undef _MOZFUNC_UN
-    !define _MOZFUNC_UN
-    !verbose pop
-  !endif
-!macroend
-
-/**
  * If present removes the updates directory located in the profile's local
  * directory for this installation.
  *
@@ -4850,7 +4740,6 @@
 !macro InstallStartCleanupCommon
 
   !ifndef InstallStartCleanupCommon
-    !insertmacro CleanVirtualStore
     !insertmacro EndUninstallLog
     !insertmacro OnInstallUninstall
 
@@ -4890,10 +4779,6 @@
       ${If} ${FileExists} "$INSTDIR\tobedeleted"
         RmDir /r "$INSTDIR\tobedeleted"
       ${EndIf}
-
-      ; Remove files that may be left behind by the application in the
-      ; VirtualStore directory.
-      ${CleanVirtualStore}
     FunctionEnd
 
     !verbose pop
