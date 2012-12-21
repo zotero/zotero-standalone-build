@@ -79,7 +79,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
-!insertmacro CreateRegKey
 !insertmacro GetParent
 !insertmacro GetPathFromString
 !insertmacro IsHandlerForInstallDir
