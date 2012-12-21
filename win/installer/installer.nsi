@@ -79,24 +79,21 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
-!insertmacro CreateRegKey
-!insertmacro GetPathFromString
 !insertmacro GetParent
+!insertmacro GetPathFromString
 !insertmacro IsHandlerForInstallDir
 !insertmacro LogDesktopShortcut
 !insertmacro LogQuickLaunchShortcut
 !insertmacro LogStartMenuShortcut
 !insertmacro ManualCloseAppPrompt
-!insertmacro RegCleanAppHandler
 !insertmacro RegCleanMain
 !insertmacro RegCleanUninstall
 !insertmacro SetAppLSPCategories
 !insertmacro SetBrandNameVars
-!insertmacro UpdateShortcutAppModelIDs
 !insertmacro UnloadUAC
-!insertmacro WriteRegStr2
+!insertmacro UpdateShortcutAppModelIDs
 !insertmacro WriteRegDWORD2
-!insertmacro CheckIfRegistryKeyExists
+!insertmacro WriteRegStr2
 
 !include shared.nsh
 
