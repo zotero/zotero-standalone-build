@@ -64,7 +64,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro LogDesktopShortcut
 !insertmacro LogQuickLaunchShortcut
 !insertmacro LogStartMenuShortcut
-!insertmacro RegCleanAppHandler
 !insertmacro RegCleanMain
 !insertmacro RegCleanUninstall
 !insertmacro SetAppLSPCategories
@@ -73,7 +72,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro UnloadUAC
 !insertmacro WriteRegDWORD2
 !insertmacro WriteRegStr2
-!insertmacro CheckIfRegistryKeyExists
 
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.CheckForFilesInUse
@@ -88,8 +86,8 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.RegCleanAppHandler
 !insertmacro un.RegCleanFileHandler
 !insertmacro un.RegCleanMain
-!insertmacro un.RegCleanUninstall
 !insertmacro un.RegCleanProtocolHandler
+!insertmacro un.RegCleanUninstall
 !insertmacro un.RemoveQuotesFromPath
 !insertmacro un.SetAppLSPCategories
 !insertmacro un.SetBrandNameVars
