@@ -40,10 +40,6 @@
   ${SetAppKeys}
   ${FixClassKeys}
   ${SetUninstallKeys}
-
-  ; Remove files that may be left behind by the application in the
-  ; VirtualStore directory.
-  ${CleanVirtualStore}
 !macroend
 !define PostUpdate "!insertmacro PostUpdate"
 
