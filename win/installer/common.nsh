@@ -5803,7 +5803,7 @@
       Pop $R6
       Pop $R7
       Pop $R8
-      Exch $R9
+      Pop $R9
     FunctionEnd
 
     !verbose pop
