@@ -1927,14 +1927,14 @@ Var Trash
 /**
  * Removes the quotes from each end of a string if present.
  *
- * @param   _IN_PATH
- *          The string containing the path.
- * @param   _OUT_PATH
- *          The register to store the long path.
- *
- * $R7 = storage for single character comparison
- * $R8 = storage for _IN_PATH
- * $R9 = _IN_PATH and _OUT_PATH
+ * inputs:
+ *   @0 = _IN_PATH - The string containing the path.
+ * outputs:
+ *   @0 = _OUT_PATH - The register to store the long path.
+ * internal:
+ *   $R7 = storage for single character comparison
+ *   $R8 = storage for _IN_PATH
+ *   $R9 = _IN_PATH and _OUT_PATH
  */
 !macro RemoveQuotesFromPath UN
 Function ${UN}RemoveQuotesFromPath
