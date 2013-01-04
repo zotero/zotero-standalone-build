@@ -56,7 +56,6 @@ VIAddVersionKey "FileDescription" "${BrandShortName} Helper"
 VIAddVersionKey "OriginalFilename" "helper.exe"
 
 !insertmacro AddHandlerValues
-!insertmacro CleanVirtualStore
 !insertmacro ElevateUAC
 !insertmacro GetLongPath
 !insertmacro GetPathFromString
@@ -76,7 +75,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.CheckForFilesInUse
 !insertmacro un.CleanUpdatesDir
-!insertmacro un.CleanVirtualStore
 !insertmacro un.DeleteRelativeProfiles
 !insertmacro un.DeleteShortcuts
 !insertmacro un.GetLongPath
@@ -279,10 +277,6 @@ Section "Uninstall"
 
   ; Remove the updates directory for Vista and above
   ${un.CleanUpdatesDir} "Zotero\Standalone"
-
-  ; Remove files that may be left behind by the application in the
-  ; VirtualStore directory.
-  ${un.CleanVirtualStore}
 
   ; Parse the uninstall log to unregister dll's and remove all installed
   ; files / directories this install is responsible for.
