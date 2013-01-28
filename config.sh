@@ -25,7 +25,8 @@ UPX='C:\Program Files (x86)\upx\upx.exe'
 EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 
 # Paths for Windows installer build only necessary for signed binaries
-SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
+#SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
+SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
 # If version is not specified on the command line, version is this prefix followed by the revision
