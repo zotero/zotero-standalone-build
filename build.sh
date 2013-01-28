@@ -137,9 +137,10 @@ else
 	echo "Building from bundled submodule"
 	
 	# Copy Zotero directory
+	cd "$CALLDIR/modules/zotero"
+	REV=`git log -n 1 --pretty='format:%h'`
 	cp -RH "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
 	cd "$BUILDDIR/zotero"
-	REV=`git log -n 1 --pretty='format:%h'`
 	
 	if [ -z "$VERSION" ]; then
 		VERSION="$DEFAULT_VERSION_PREFIX$REV"
