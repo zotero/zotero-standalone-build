@@ -341,7 +341,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Remove unnecessary dlls
 	rm "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/components/zoteroWinWordIntegration.dll"
-	rm -rf "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"components-!($GECKO_VERSION)
+	rm -rf "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"components-!($GECKO_SHORT_VERSION)
 	
 	# Delete extraneous files
 	rm "$APPDIR/xulrunner/js.exe" "$APPDIR/xulrunner/redit.exe"
