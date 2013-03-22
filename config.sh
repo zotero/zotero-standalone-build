@@ -4,8 +4,8 @@ BUILD_WIN32=1
 BUILD_LINUX=1
 
 # Version of Gecko to build with
-GECKO_VERSION="20.0b1"
-GECKO_SHORT_VERSION="19.0"
+GECKO_VERSION="20.0b6"
+GECKO_SHORT_VERSION="20.0"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="`pwd`/xulrunner/XUL.framework"
