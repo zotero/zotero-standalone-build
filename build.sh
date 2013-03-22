@@ -248,11 +248,8 @@ if [ $BUILD_MAC == 1 ]; then
 	# Merge xulrunner and relevant assets
 	mkdir "$CONTENTSDIR/MacOS"
 	cp -a "$MAC_RUNTIME_PATH/Versions/Current"/* "$CONTENTSDIR/MacOS"
-	# Use xulrunner executable from XULRunner 18 on i386; see https://bugzilla.mozilla.org/show_bug.cgi?id=843428
-	# This should be tested with every XULRunner update to ensure the old executable still works
-	# The thin executable included here was created with lipo xulrunner -thin i386 -output xulrunner-18-i386
-	lipo "$CONTENTSDIR/MacOS/xulrunner" -replace i386 "$CALLDIR/mac/xulrunner-18-i386" -output "$CONTENTSDIR/MacOS/zotero-bin"
-	rm "$CONTENTSDIR/MacOS/xulrunner"
+	# Mozilla no longer builds xulrunner-stub on OS X
+	mv "$CONTENTSDIR/MacOS/xulrunner" "$CONTENTSDIR/MacOS/zotero-bin"
 	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
 	# Hack to get the updater to work
 	mv "$CONTENTSDIR/MacOS/updater.app/Contents/MacOS/updater" "$CONTENTSDIR/MacOS/updater.app/Contents/MacOS/updater-bin"
