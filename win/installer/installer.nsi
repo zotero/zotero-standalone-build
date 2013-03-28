@@ -22,7 +22,6 @@ RequestExecutionLevel user
 
 !addplugindir ./
 
-Var TmpVal
 Var PageName
 
 ; These user preferences are initialized to default values in .onInit. They
