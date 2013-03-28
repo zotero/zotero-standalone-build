@@ -27,8 +27,6 @@ RequestExecutionLevel user
 ; prevents compiling of the reg write logging.
 !define NO_LOG
 
-Var TmpVal
-
 ; Other included files may depend upon these includes!
 ; The following includes are provided by NSIS.
 !include FileFunc.nsh
@@ -57,7 +55,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 
 !insertmacro AddHandlerValues
 !insertmacro ElevateUAC
-!insertmacro GetLongPath
 !insertmacro GetOptions
 !insertmacro GetParameters
 !insertmacro GetPathFromString
@@ -71,16 +68,14 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro SetBrandNameVars
 !insertmacro UpdateShortcutAppModelIDs
 !insertmacro UpdateUninstallLog
-!insertmacro UnloadUAC
 !insertmacro WriteRegDWORD2
 !insertmacro WriteRegStr2
 
 !insertmacro un.ChangeMUIHeaderImage
 !insertmacro un.CheckForFilesInUse
 !insertmacro un.CleanUpdatesDir
-!insertmacro un.DeleteRelativeProfiles
 !insertmacro un.DeleteShortcuts
-!insertmacro un.GetLongPath
+!insertmacro un.ElevateUAC
 !insertmacro un.GetSecondInstallPath
 !insertmacro un.ManualCloseAppPrompt
 !insertmacro un.ParseUninstallLog
@@ -89,7 +84,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.RegCleanMain
 !insertmacro un.RegCleanProtocolHandler
 !insertmacro un.RegCleanUninstall
-!insertmacro un.RemoveQuotesFromPath
 !insertmacro un.SetAppLSPCategories
 !insertmacro un.SetBrandNameVars
 
@@ -99,7 +93,6 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro OnEndCommon
 
 !insertmacro un.OnEndCommon
-!insertmacro un.UninstallUnOnInitCommon
 
 Name "${BrandFullName}"
 OutFile "helper.exe"
@@ -173,6 +166,33 @@ Section "Uninstall"
   DetailPrint $(STATUS_UNINSTALL_MAIN)
   SetDetailsPrint none
 
+  ; Handle a few uninstall tasks for the current user even if this ends up being
+  ; a system-wide uninstall.
+  ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
+  ${If} "$0" == "1"
+    SetShellVarContext current
+    Push "Zotero\Zotero"
+    Call un.DeleteRelativeProfiles
+    RmDir "$APPDATA\Zotero"
+  ${EndIf}
+
+  ; Check whether Zotero was installed under HKLM. If it was we will need to elevate.
+  SetShellVarContext all
+  Push "0"
+  Push $INSTDIR
+  Call un.IterateUninstallKeys
+  ; The error flag means no key was found. In that case set to user uninstall.
+  ; When a key is found in HKLM leave shell context to all and trigger
+  ; elevation prompt.
+  IfErrors 0 elevate
+  SetShellVarContext current
+  Goto elevation_complete
+  elevate:
+  ${un.ElevateUAC}
+  elevation_complete:
+  Pop $Trash
+  Pop $Trash
+
   ; Delete the app exe to prevent launching the app while we are uninstalling.
   ClearErrors
   ${DeleteFile} "$INSTDIR\${FileMainEXE}"
@@ -185,33 +205,14 @@ Section "Uninstall"
     ClearErrors
   ${EndIf}
 
-  ${MUI_INSTALLOPTIONS_READ} $0 "unconfirm.ini" "Field 3" "State"
-  ${If} "$0" == "1"
-    ${un.DeleteRelativeProfiles} "Zotero\Zotero"
-    RmDir "$APPDATA\Zotero"
-  ${EndIf}
-
-  SetShellVarContext current  ; Set SHCTX to HKCU
-  ${un.RegCleanMain} "Software\Zotero"
-  ${un.RegCleanUninstall}
-  ${un.DeleteShortcuts}
-
   ; Unregister resources associated with Win7 taskbar jump lists.
   ApplicationID::UninstallJumpLists "${AppUserModelID}"
 
   ClearErrors
-  WriteRegStr HKLM "Software\Zotero" "${BrandShortName}InstallerTest" "Write Test"
-  ${If} ${Errors}
-    StrCpy $TmpVal "HKCU" ; used primarily for logging
-  ${Else}
-    SetShellVarContext all  ; Set SHCTX to HKLM
-    DeleteRegValue HKLM "Software\Zotero" "${BrandShortName}InstallerTest"
-    StrCpy $TmpVal "HKLM" ; used primarily for logging
-    ${un.RegCleanMain} "Software\Zotero"
-    ${un.RegCleanUninstall}
-    ${un.DeleteShortcuts}
-    ${un.SetAppLSPCategories}
-  ${EndIf}
+  ${un.RegCleanMain} "Software\Zotero"
+  ${un.RegCleanUninstall}
+  ${un.DeleteShortcuts}
+  ${un.SetAppLSPCategories}
   
   ${un.RegCleanProtocolHandler} "zotero"
   ${un.RegCleanAppHandler} "ZoteroRIS"
@@ -237,28 +238,23 @@ Section "Uninstall"
     ${un.RegCleanFileHandler}  ".csl"    "ZoteroCSL"
   ${EndIf}
 
-  SetShellVarContext all  ; Set SHCTX to HKLM
   ${un.GetSecondInstallPath} "Software\Zotero" $R9
-  ${If} $R9 == "false"
-    SetShellVarContext current  ; Set SHCTX to HKCU
-    ${un.GetSecondInstallPath} "Software\Zotero" $R9
-  ${EndIf}
 
   StrCpy $0 "Software\Microsoft\Windows\CurrentVersion\App Paths\${FileMainEXE}"
   ${If} $R9 == "false"
-    DeleteRegKey HKLM "$0"
-    DeleteRegKey HKCU "$0"
+    DeleteRegKey SHCTX "$0"
     StrCpy $0 "Software\Classes\MIME\Database\Content Type\application/x-xpinstall;app=firefox"
-    DeleteRegKey HKLM "$0"
-    DeleteRegKey HKCU "$0"
+    DeleteRegKey SHCTX "$0"
   ${Else}
-    ReadRegStr $R1 HKLM "$0" ""
-    ${un.RemoveQuotesFromPath} "$R1" $R1
+    ReadRegStr $R1 SHCTX "$0" ""
+    Push $R1
+    Call un.RemoveQuotesFromPath
+    Pop $R1
     ${un.GetParent} "$R1" $R1
     ${If} "$INSTDIR" == "$R1"
-      WriteRegStr HKLM "$0" "" "$R9"
+      WriteRegStr SHCTX "$0" "" "$R9"
       ${un.GetParent} "$R9" $R1
-      WriteRegStr HKLM "$0" "Path" "$R1"
+      WriteRegStr SHCTX "$0" "Path" "$R1"
     ${EndIf}
   ${EndIf}
 
@@ -530,7 +526,9 @@ Function .onInit
   Quit ; Nothing initialized so no need to call OnEndCommon
 
   ${GetParent} "$EXEDIR" $INSTDIR
-  ${GetLongPath} "$INSTDIR" $INSTDIR
+  Push $INSTDIR
+  Call GetLongPath
+  Pop $INSTDIR
   IfFileExists "$INSTDIR\${FileMainEXE}" +2 +1
   Quit ; Nothing initialized so no need to call OnEndCommon
 
@@ -612,9 +610,6 @@ Function .onInit
   IfFileExists "$INSTDIR\uninstall\uninstall.log" +2 +1
   Quit ; Nothing initialized so no need to call OnEndCommon
 
-  ; Require elevation if the user can elevate
-  ${ElevateUAC}
-
   ; If we made it this far then this installer is being used as an uninstaller.
   WriteUninstaller "$EXEDIR\uninstaller.exe"
 
@@ -644,7 +639,6 @@ Function .onInit
   ; so it won't be in use so it can delete itself.
   ExecWait $R1
   ${DeleteFile} "$EXEDIR\uninstaller.exe"
-  ${UnloadUAC}
   SetErrorLevel 0
   Quit ; Nothing initialized so no need to call OnEndCommon
 FunctionEnd
@@ -652,7 +646,26 @@ FunctionEnd
 Function un.onInit
   StrCpy $LANGUAGE 0
 
-  ${un.UninstallUnOnInitCommon}
+  ${un.GetParent} "$INSTDIR" $INSTDIR
+  Push $INSTDIR
+  Call un.GetLongPath
+  Pop $INSTDIR
+  ${Unless} ${FileExists} "$INSTDIR\${FileMainEXE}"
+  Abort
+  ${EndUnless}
+
+  !ifdef HAVE_64BIT_OS
+  SetRegView 64
+  !endif
+
+  ; Prevents breaking apps that don't use SetBrandNameVars
+  !ifdef un.SetBrandNameVars
+  ${un.SetBrandNameVars} "$INSTDIR\distribution\setup.ini"
+  !endif
+
+  ; Initialize $hHeaderBitmap to prevent redundant changing of the bitmap if
+  ; the user clicks the back button
+  StrCpy $hHeaderBitmap ""
 
   !insertmacro InitInstallOptionsFile "unconfirm.ini"
 FunctionEnd
@@ -663,4 +676,61 @@ FunctionEnd
 
 Function un.onGUIEnd
   ${un.OnEndCommon}
+FunctionEnd
+
+; Deletes all relative profiles specified in an application's profiles.ini and
+; performs various other cleanup.
+
+; The SetShellVarContext setting should be set to current before calling this
+; function.
+
+; @0  =   _REL_PROFILE_PATH
+;         The relative path to the profile directory.
+
+; $R6 = value of IsRelative read from profiles.ini
+; $R7 = value of Path to profile read from profiles.ini
+; $R8 = counter for reading profiles (e.g. Profile0, Profile1, etc.)
+; $R9 = _REL_PROFILE_PATH
+
+Function un.DeleteRelativeProfiles
+  Exch $R9
+  Push $R8
+  Push $R7
+  Push $R6
+
+  StrCpy $R8 -1
+
+  loop:
+  IntOp $R8 $R8 + 1  ; Increment the counter.
+  ReadINIStr $R7 "$APPDATA\$R9\profiles.ini" "Profile$R8" "Path"
+  IfErrors end +1
+
+  ; Only remove relative profiles
+  ReadINIStr $R6 "$APPDATA\$R9\profiles.ini" "Profile$R8" "IsRelative"
+  StrCmp "$R6" "1" +1 loop
+
+  ; Relative paths in profiles.ini use / as a separator
+  ${un.WordReplace} "$R7" "/" "\" "+" $R7
+
+  IfFileExists "$LOCALAPPDATA\$R9\$R7" +1 +2
+  RmDir /r "$LOCALAPPDATA\$R9\$R7"
+  IfFileExists "$APPDATA\$R9\$R7" +1 +2
+  RmDir /r "$APPDATA\$R9\$R7"
+  GoTo loop
+
+  end:
+  ; Remove profiles directory under LOCALAPPDATA (e.g. cache, etc.) since
+  ; they are at times abandoned.
+  RmDir /r "$LOCALAPPDATA\$R9\Profiles"
+  RmDir /r "$APPDATA\$R9\Crash Reports"
+  Delete "$APPDATA\$R9\profiles.ini"
+  Delete "$APPDATA\$R9\console.log"
+  Delete "$APPDATA\$R9\pluginreg.dat"
+  RmDir "$APPDATA\$R9\Profiles"
+  RmDir "$APPDATA\$R9"
+
+  Pop $R6
+  Pop $R7
+  Pop $R8
+  Pop $R9
 FunctionEnd
