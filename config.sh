@@ -4,7 +4,7 @@ BUILD_WIN32=1
 BUILD_LINUX=1
 
 # Version of Gecko to build with
-GECKO_VERSION="20.0b6"
+GECKO_VERSION="20.0"
 GECKO_SHORT_VERSION="20.0"
 
 # Paths to Gecko runtimes
