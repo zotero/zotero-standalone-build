@@ -662,12 +662,20 @@ Function leaveScopeOptions
   ${If} $0 != 0
     Abort
   ${EndIf}
+
+  Push $R0
+  Push $R1
   ${MUI_INSTALLOPTIONS_READ} $R0 "scopeoptions.ini" "Field 2" "State"
-  StrCmp $R0 "1" +1 +2
-  StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
-  ${MUI_INSTALLOPTIONS_READ} $R0 "scopeoptions.ini" "Field 3" "State"
-  StrCmp $R0 "1" +1 +2
-  StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+  ${MUI_INSTALLOPTIONS_READ} $R1 "scopeoptions.ini" "Field 3" "State"
+  ${If} $R0 == "1"
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
+  ${ElseIf} $R1 == "1"
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+  ${Else}
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_DEFAULT}
+  ${EndIf}
+  Pop $R1
+  Pop $R0
 FunctionEnd
 
 Function preOptions
