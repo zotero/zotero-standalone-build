@@ -96,11 +96,7 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 
 Name "${BrandFullName}"
 OutFile "helper.exe"
-!ifdef HAVE_64BIT_OS
-  InstallDir "$PROGRAMFILES64\${BrandFullName}\"
-!else
-  InstallDir "$PROGRAMFILES32\${BrandFullName}\"
-!endif
+InstallDir "$PROGRAMFILES\${BrandFullName}\"
 ShowUnInstDetails nevershow
 
 ################################################################################
@@ -551,10 +547,6 @@ Function .onInit
   Reboot
   Quit ; Nothing initialized so no need to call OnEndCommon
 
-  !ifdef HAVE_64BIT_OS
-    SetRegView 64
-  !endif
-
   ${GetParameters} $R0
 
   StrCmp "$R0" "" continue +1
@@ -653,10 +645,6 @@ Function un.onInit
   ${Unless} ${FileExists} "$INSTDIR\${FileMainEXE}"
   Abort
   ${EndUnless}
-
-  !ifdef HAVE_64BIT_OS
-  SetRegView 64
-  !endif
 
   ; Prevents breaking apps that don't use SetBrandNameVars
   !ifdef un.SetBrandNameVars

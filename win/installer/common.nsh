@@ -958,12 +958,7 @@ Var Trash
 !macroend
 
 !define KEY_SET_VALUE 0x0002
-!define KEY_WOW64_64KEY 0x0100
-!ifndef HAVE_64BIT_OS
-  !define CREATE_KEY_SAM ${KEY_SET_VALUE}
-!else
-  !define CREATE_KEY_SAM ${KEY_SET_VALUE}|${KEY_WOW64_64KEY}
-!endif
+!define CREATE_KEY_SAM ${KEY_SET_VALUE}
 
 ################################################################################
 # Macros for adding file and protocol handlers
@@ -2115,14 +2110,10 @@ FunctionEnd
 
       ${If} ${RunningX64}
         StrCpy $R0 "false"
-        ; Set the registry to the 32 bit registry for 64 bit installations or to
-        ; the 64 bit registry for 32 bit installations at the beginning so it can
-        ; easily be set back to the correct registry view when finished.
-        !ifdef HAVE_64BIT_OS
-          SetRegView 32
-        !else
-          SetRegView 64
-        !endif
+        ; Set the registry to the 64 bit registry for 32 bit installations at
+        ; the beginning so it can easily be set back to the correct registry
+        ; view when finished.
+        SetRegView 64
       ${EndIf}
 
       outerloop:
@@ -2187,11 +2178,7 @@ FunctionEnd
       ${If} ${RunningX64}
       ${AndIf} "$R0" == "false"
         ; Set the registry to the correct view.
-        !ifdef HAVE_64BIT_OS
-          SetRegView 64
-        !else
-          SetRegView 32
-        !endif
+        SetRegView 32
 
         StrCpy $R6 0  ; set the counter for the outer loop to 0
         StrCpy $R0 "true"
@@ -4150,16 +4137,6 @@ FunctionEnd
       Push $R6
       Push $R5
 
-      !ifdef HAVE_64BIT_OS
-        ${Unless} ${RunningX64}
-        ${OrUnless} ${AtLeastWinVista}
-          MessageBox MB_OK|MB_ICONSTOP "$R9" IDOK
-          ; Nothing initialized so no need to call OnEndCommon
-          Quit
-        ${EndUnless}
-
-        SetRegView 64
-      !else
         StrCpy $R8 "0"
         ${If} ${AtMostWin2000}
           StrCpy $R8 "1"
@@ -4190,7 +4167,6 @@ FunctionEnd
             Quit
           ${EndIf}
         ${EndUnless}
-      !endif
 
       ${GetParameters} $R8
 
@@ -4224,11 +4200,7 @@ FunctionEnd
             SetSilent silent
             ReadINIStr $R8 $R7 "Install" "InstallDirectoryName"
             ${If} $R8 != ""
-              !ifdef HAVE_64BIT_OS
-                StrCpy $INSTDIR "$PROGRAMFILES64\$R8"
-              !else
-                StrCpy $INSTDIR "$PROGRAMFILES32\$R8"
-              !endif
+              StrCpy $INSTDIR "$PROGRAMFILES\$R8"
             ${Else}
               ReadINIStr $R8 $R7 "Install" "InstallDirectoryPath"
               ${If} $R8 != ""
@@ -4792,12 +4764,6 @@ FunctionEnd
       ${Else}
         ${LogMsg} "OS Name    : Unable to detect"
       ${EndIf}
-
-      !ifdef HAVE_64BIT_OS
-        ${LogMsg} "Target CPU : x64"
-      !else
-        ${LogMsg} "Target CPU : x86"
-      !endif
 
       Pop $9
       Pop $R0
