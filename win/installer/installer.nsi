@@ -636,6 +636,21 @@ BrandingText " "
 # Page pre, show, and leave functions
 
 Function preWelcome
+  ; Skip this page if we are running the "inner" process.
+  Push $R9
+  Push $0
+  ${GetParameters} $R9
+  ${If} $R9 != ""
+    ClearErrors
+    ${GetOptions} "$R9" "/UAC:" $0
+
+    ${Unless} ${Errors}
+       Abort
+    ${EndUnless}
+  ${EndIf}
+  Pop $0
+  Pop $R9
+
   StrCpy $PageName "Welcome"
   ${If} ${FileExists} "$EXEDIR\core\distribution\modern-wizard.bmp"
     Delete "$PLUGINSDIR\modern-wizard.bmp"
