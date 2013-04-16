@@ -79,6 +79,7 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
+!insertmacro ElevateUAC
 !insertmacro GetParent
 !insertmacro GetPathFromString
 !insertmacro IsHandlerForInstallDir
@@ -643,6 +644,19 @@ Function preWelcome
 FunctionEnd
 
 Function preScopeOptions
+  ; The UAC plugin's author, Anders, says that an installer run elevated
+  ; should always write to global locations. In this case we'll make the scope
+  ; choice for the user.
+  Push $0
+  UAC::IsAdmin
+  ${If} $0 = 1
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+    Pop $0
+    Abort
+  ${Else}
+    Pop $0
+  ${EndIf}
+
   StrCpy $PageName "Install Scope Options"
   ${If} ${FileExists} "$EXEDIR\core\distribution\modern-header.bmp"
   ${AndIf} $hHeaderBitmap == ""
@@ -676,6 +690,13 @@ Function leaveScopeOptions
   ${EndIf}
   Pop $R1
   Pop $R0
+
+  ; A global install should restart with admin priviledges. On the second run
+  ; this page will skip because of a check made in preScopeOptions.
+  ${If} $RequestedInstallScope == ${INSTALLSCOPE_GLOBAL}
+    HideWindow
+    ${ElevateUAC}
+  ${EndIf}
 FunctionEnd
 
 Function preOptions

@@ -4121,7 +4121,6 @@ FunctionEnd
 !macro InstallOnInitCommon
 
   !ifndef InstallOnInitCommon
-    !insertmacro ElevateUAC
     !insertmacro GetOptions
     !insertmacro GetParameters
     !insertmacro GetSize
@@ -4169,9 +4168,6 @@ FunctionEnd
         ${EndUnless}
 
       ${GetParameters} $R8
-
-      ; Require elevation if the user can elevate
-      ${ElevateUAC}
 
       ${If} $R8 != ""
         ${Unless} ${Silent}
