@@ -929,6 +929,19 @@ Function .onInit
   StrCpy $InstallType ${INSTALLTYPE_DEFAULT}
   StrCpy $RequestedInstallScope ${INSTALLSCOPE_DEFAULT}
 
+  ; Silent installers perform a global or per-user installation based on
+  ; whether they are run elevated.
+  ${If} ${Silent}
+    Push $0
+    UAC::IsAdmin
+    ${If} $0 = 1
+      StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+    ${Else}
+      StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
+    ${EndIf}
+    Pop $0
+  ${EndIf}
+
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
