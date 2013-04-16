@@ -19,6 +19,8 @@
 				<string>application/x-research-info-systems</string>
 				<string>application/x-endnote-refer</string>
 				<string>text/x-research-info-systems</string>
+				<string>text/x-bibtex</string>
+				<string>application/x-bibtex</string>
 				<string>text/application/x-research-info-systems</string>
 				<string>text/ris</string>
 				<string>ris</string>
