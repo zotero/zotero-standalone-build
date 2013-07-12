@@ -163,10 +163,6 @@ else
 	if [ $? -eq 1 ]; then
 		exit;
 	fi
-	zip -0 -r -q ../zotero.jar .
-	rm -rf "$BUILDDIR/zotero/chrome/"*
-	mv ../zotero.jar .
-	cd ..
 	
 	# Build translators.zip
 	echo "Building translators.zip"
@@ -199,6 +195,11 @@ else
 		cd ..
 		rm -rf styles
 	fi
+
+	# Build zotero.jar
+	cd "$BUILDDIR/zotero"
+	zip -r -q zotero.jar chrome deleted.txt resource styles.zip translators.index translators.zip
+	rm -rf "chrome/"* install.rdf deleted.txt resource styles.zip translators.index translators.zip
 	
 	# Adjust chrome.manifest
 	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
@@ -207,7 +208,7 @@ else
 	# Copy updater.ini
 	cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
 	
-	perl -pi -e 's/chrome\//jar:chrome\/zotero.jar\!\//g' "$BUILDDIR/zotero/chrome.manifest"
+	perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILDDIR/zotero/chrome.manifest"
 fi
 
 # Adjust connector pref
