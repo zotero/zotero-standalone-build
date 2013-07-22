@@ -341,7 +341,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
 	# Remove unnecessary dlls
-	rm "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/components/zoteroWinWordIntegration.dll"
 	rm -rf "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"components-!($GECKO_SHORT_VERSION)
 	
 	# Delete extraneous files
