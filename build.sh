@@ -341,7 +341,12 @@ if [ $BUILD_WIN32 == 1 ]; then
 	perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 	
 	# Remove unnecessary dlls
-	rm -rf "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"components-!($GECKO_SHORT_VERSION)
+	INTEGRATIONDIR="$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"
+	rm -rf "$INTEGRATIONDIR/"components-!($GECKO_SHORT_VERSION)
+
+	# Fix chrome.manifest
+	perl -pi -e 's/^binary-component.*(?:\n|$)//sg' "$INTEGRATIONDIR/chrome.manifest"
+	echo "binary-component components-$GECKO_SHORT_VERSION/zoteroWinWordIntegration.dll" >> "$INTEGRATIONDIR/chrome.manifest"
 	
 	# Delete extraneous files
 	rm "$APPDIR/xulrunner/js.exe" "$APPDIR/xulrunner/redit.exe"
