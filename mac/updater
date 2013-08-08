@@ -1,3 +1,0 @@
-#!/bin/bash
-CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-"$CALLDIR/updater-bin" "$1" "$2/../.." "${@:3}"
