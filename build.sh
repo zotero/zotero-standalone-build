@@ -268,7 +268,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Add Mac-specific Standalone assets
 	cd "$CALLDIR/assets/mac"
-	zip -0 -r -q "$CONTENTSDIR/Resources/chrome/zotero.jar" *
+	zip -r -q "$CONTENTSDIR/Resources/zotero.jar" *
 	
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
