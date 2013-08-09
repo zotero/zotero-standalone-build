@@ -1244,3 +1244,5 @@ Contents/Resources/resource/schema/userdata.sql
 Contents/Resources/resource/schema/triggers.sql
 Contents/Resources/resource/schema/system.sql
 Contents/Resources/resource/
+Contents/Resources/chrome/zotero.jar
+Contents/MacOS/updater.app/Contents/MacOS/updater-bin
