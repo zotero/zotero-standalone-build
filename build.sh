@@ -328,7 +328,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
-	zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
+	zip -r -q "$APPDIR/zotero.jar" *
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
@@ -438,7 +438,7 @@ if [ $BUILD_LINUX == 1 ]; then
 	
 		# Add Unix-specific Standalone assets
 		cd "$CALLDIR/assets/unix"
-		zip -0 -r -q "$APPDIR/chrome/zotero.jar" *
+		zip -0 -r -q "$APPDIR/zotero.jar" *
 		
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
