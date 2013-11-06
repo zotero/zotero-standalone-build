@@ -13,9 +13,6 @@ pref("network.prefetch-next", false);
 // Let operations run as long as necessary
 pref("dom.max_chrome_script_run_time", 0);
 
-// Enable JaegerMonkey
-pref("javascript.options.methodjit.chrome", true);
-
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
