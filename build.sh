@@ -378,7 +378,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
-				for dll in "$APPDIR/"*.dll; do
+				for dll in "$APPDIR/"*.dll "$APPDIR/xulrunner/"*.dll; do
 					"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
 						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
 				done
