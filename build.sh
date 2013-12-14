@@ -374,10 +374,14 @@ if [ $BUILD_WIN32 == 1 ]; then
 			mkdir "$APPDIR/uninstall"
 			mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
 			
-			# Sign zotero.exe, updater, and uninstaller
+			# Sign zotero.exe, dlls, updater, and uninstaller
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
+				for dll in "$APPDIR/"*.dll; do
+					"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
+						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
+				done
 				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Updater" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
 				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Uninstaller" \
