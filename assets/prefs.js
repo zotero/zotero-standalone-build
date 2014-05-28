@@ -72,6 +72,9 @@ pref("extensions.update.url", "https://versioncheck.addons.mozilla.org/update/Ve
 pref("extensions.update.interval", 86400);
 pref("extensions.update.autoUpdateDefault", true);
 
+// Don't try to load the "Get Add-ons" tab on first load of Add-ons window
+pref("extensions.ui.lastCategory", "addons://list/extension");
+
 /** The below is imported from https://developer.mozilla.org/en/XULRunner/Application_Update **/
 // Whether or not app updates are enabled
 pref("app.update.enabled", true);
