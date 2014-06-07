@@ -286,7 +286,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Sign
 	if [ $SIGN == 1 ]; then
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" \
+		/usr/bin/codesign --force --sign "$DEVELOPER_ID" --resource-rules "$CALLDIR/mac/CodeResources" \
 			--requirements "$CODESIGN_REQUIREMENTS" \
 			"$APPDIR"
 	fi
