@@ -72,13 +72,15 @@ if [ $BUILD_WIN32 == 1 ]; then
 
 	# Extract XUL bundle from Firefox
 	curl -O "https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/30.0/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
-	if which 7z >/dev/null; then
+	if which 7z >/dev/null 2>&1; then
 		Z7=7z
 	elif [ -x "$EXE7ZIP" ]; then
 		Z7="`cygpath -u "$EXE7ZIP"`"
 	fi
-	"$Z7" e "Firefox%20Setup%20$GECKO_VERSION.exe" core/xul.dll
-	mv xul.dll xulrunner_win32
+	cd xulrunner_win32
+	rm *.dll *.chk
+	"$Z7" e "../Firefox%20Setup%20$GECKO_VERSION.exe" core/*.dll core/*.chk
+	cd ..
 	rm "Firefox%20Setup%20$GECKO_VERSION.exe"
 fi
 
