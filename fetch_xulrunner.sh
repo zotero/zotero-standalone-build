@@ -75,7 +75,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	if which 7z >/dev/null; then
 		Z7=7z
 	elif [ -x "$EXE7ZIP" ]; then
-		Z7="$EXE7ZIP"
+		Z7="`cygpath -u "$EXE7ZIP"`"
 	fi
 	"$Z7" e "Firefox%20Setup%20$GECKO_VERSION.exe" core/xul.dll
 	mv xul.dll xulrunner_win32
