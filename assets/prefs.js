@@ -146,3 +146,6 @@ pref("app.update.incompatible.mode", 0);
 
 // update channel for this build
 pref("app.update.channel", "default");
+
+// This should probably not be a preference that's used in toolkit....
+pref("browser.preferences.instantApply", false);

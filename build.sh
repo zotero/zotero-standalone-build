@@ -246,17 +246,17 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r "$CALLDIR/mac/Contents" "$APPDIR"
 	CONTENTSDIR="$APPDIR/Contents"
 	
-	# Merge xulrunner and relevant assets
+	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
-	cp -a "$MAC_RUNTIME_PATH/Versions/Current"/* "$CONTENTSDIR/MacOS"
-	# Mozilla no longer builds xulrunner-stub on OS X
-	mv "$CONTENTSDIR/MacOS/xulrunner" "$CONTENTSDIR/MacOS/zotero-bin"
+	cp -r "$MAC_RUNTIME_PATH/Contents/MacOS/"!(firefox-bin) "$CONTENTSDIR/MacOS"
+	cp -r "$MAC_RUNTIME_PATH/Contents/Resources/"!(application.ini|updater.ini|update-settings.ini|browser|precomplete|removed-files|webapprt*|*.icns|defaults|*.lproj) "$CONTENTSDIR/Resources"
+
+	# Use our own launcher
+	mv "$CONTENTSDIR/MacOS/firefox" "$CONTENTSDIR/MacOS/zotero-bin"
 	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
 	cp "$BUILDDIR/application.ini" "$CONTENTSDIR/Resources"
-	cp "$CALLDIR/mac/Contents/Info.plist" "$CONTENTSDIR"
 	
 	# Modify Info.plist
-	cp "$CALLDIR/mac/Contents/Info.plist" "$CONTENTSDIR/Info.plist"
 	perl -pi -e "s/{{VERSION}}/$VERSION/" "$CONTENTSDIR/Info.plist"
 	perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" "$CONTENTSDIR/Info.plist"
 	# Needed for "monkeypatch" Windows builds: 

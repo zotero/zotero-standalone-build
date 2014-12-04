@@ -18,9 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+PROTOCOL="ftp"
 CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
-SITE="https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
+SITE="$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
 
 while getopts "p:" opt; do
 	case $opt in
@@ -50,17 +51,13 @@ mkdir xulrunner
 cd xulrunner
 
 if [ $BUILD_MAC == 1 ]; then
-	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
-	tar -xjf xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
-	rm xulrunner-$GECKO_VERSION.en-US.mac.tar.bz2
-
 	# Extract XUL bundle from Firefox
-	# curl -O "https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
-	# hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
-	# hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
-	cp /Volumes/Firefox/Firefox.app/Contents/MacOS/XUL XUL.framework/Versions/Current/XUL
+	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
+	hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
+	cp -a /Volumes/Firefox/Firefox.app .
 	hdiutil detach -quiet /Volumes/Zotero
-	# rm "Firefox%20$GECKO_VERSION.dmg"
+	rm "Firefox%20$GECKO_VERSION.dmg"
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then
@@ -71,7 +68,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	mv xulrunner xulrunner_win32
 
 	# Extract XUL bundle from Firefox
-	curl -O "https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
 	if which 7z >/dev/null 2>&1; then
 		Z7=7z
 	elif [ -x "$EXE7ZIP" ]; then
