@@ -248,7 +248,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
-	cp -r "$MAC_RUNTIME_PATH/Contents/MacOS/"!(firefox-bin) "$CONTENTSDIR/MacOS"
+	cp -r "$MAC_RUNTIME_PATH/Contents/MacOS/"!(firefox-bin|crashreporter.app) "$CONTENTSDIR/MacOS"
 	cp -r "$MAC_RUNTIME_PATH/Contents/Resources/"!(application.ini|updater.ini|update-settings.ini|browser|precomplete|removed-files|webapprt*|*.icns|defaults|*.lproj) "$CONTENTSDIR/Resources"
 
 	# Use our own launcher
