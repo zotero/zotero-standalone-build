@@ -39,56 +39,100 @@ copy_perm() {
 
 make_add_instruction() {
   f="$1"
+  filev2="$2"
+  # The third param will be an empty string when a file add instruction is only
+  # needed in the version 2 manifest. This only happens when the file has an
+  # add-if-not instruction in the version 3 manifest. This is due to the
+  # precomplete file prior to the version 3 manifest having a remove instruction
+  # for this file so the file is removed before applying a complete update.
+  filev3="$3"
 
   # Used to log to the console
-  if [ $2 ]; then
+  if [ $4 ]; then
     forced=" (forced)"
   else
     forced=
   fi
 
-  is_extension=$(echo "$f" | grep -c 'extensions/.*/')
+  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/')
   if [ $is_extension = "1" ]; then
     # Use the subdirectory of the extensions folder as the file to test
     # before performing this add instruction.
-    testdir=$(echo "$f" | sed 's/\(extensions\/[^\/]*\)\/.*/\1/')
-    notice "     add-if: $f$forced"
-    echo "add-if \"$testdir\" \"$f\""
+    testdir=$(echo "$f" | sed 's/\(.*distribution\/extensions\/[^\/]*\)\/.*/\1/')
+    notice "     add-if \"$testdir\" \"$f\""
+    echo "add-if \"$testdir\" \"$f\"" >> $filev2
+    if [ ! $filev3 = "" ]; then
+      echo "add-if \"$testdir\" \"$f\"" >> $filev3
+    fi
   else
-    notice "        add: $f$forced"
-    echo "add \"$f\""
+    notice "        add \"$f\"$forced"
+    echo "add \"$f\"" >> $filev2
+    if [ ! $filev3 = "" ]; then
+      echo "add \"$f\"" >> $filev3
+    fi
   fi
+}
+
+check_for_add_if_not_update() {
+  add_if_not_file_chk="$1"
+
+  if [ `basename $add_if_not_file_chk` = "channel-prefs.js" -o \
+       `basename $add_if_not_file_chk` = "update-settings.ini" ]; then
+    ## "true" *giggle*
+    return 0;
+  fi
+  ## 'false'... because this is bash. Oh yay!
+  return 1;
+}
+
+check_for_add_to_manifestv2() {
+  add_if_not_file_chk="$1"
+
+  if [ `basename $add_if_not_file_chk` = "update-settings.ini" ]; then
+    ## "true" *giggle*
+    return 0;
+  fi
+  ## 'false'... because this is bash. Oh yay!
+  return 1;
+}
+
+make_add_if_not_instruction() {
+  f="$1"
+  filev3="$2"
+
+  notice " add-if-not \"$f\" \"$f\""
+  echo "add-if-not \"$f\" \"$f\"" >> $filev3
 }
 
 make_patch_instruction() {
   f="$1"
-  is_extension=$(echo "$f" | grep -c 'extensions/.*/')
-  is_search_plugin=$(echo "$f" | grep -c 'searchplugins/.*')
+  filev2="$2"
+  filev3="$3"
+
+  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/')
   if [ $is_extension = "1" ]; then
     # Use the subdirectory of the extensions folder as the file to test
     # before performing this add instruction.
-    testdir=$(echo "$f" | sed 's/\(extensions\/[^\/]*\)\/.*/\1/')
-    notice "   patch-if: $f"
-    echo "patch-if \"$testdir\" \"$f.patch\" \"$f\""
-  elif [ $is_search_plugin = "1" ]; then
-    notice "   patch-if: $f"
-    echo "patch-if \"$f\" \"$f.patch\" \"$f\""
+    testdir=$(echo "$f" | sed 's/\(.*distribution\/extensions\/[^\/]*\)\/.*/\1/')
+    notice "   patch-if \"$testdir\" \"$f.patch\" \"$f\""
+    echo "patch-if \"$testdir\" \"$f.patch\" \"$f\"" >> $filev2
+    echo "patch-if \"$testdir\" \"$f.patch\" \"$f\"" >> $filev3
   else
-    notice "      patch: $f"
-    echo "patch \"$f.patch\" \"$f\""
+    notice "      patch \"$f.patch\" \"$f\""
+    echo "patch \"$f.patch\" \"$f\"" >> $filev2
+    echo "patch \"$f.patch\" \"$f\"" >> $filev3
   fi
 }
 
 append_remove_instructions() {
   dir="$1"
-  filev1="$2"
-  filev2="$3"
+  filev2="$2"
+  filev3="$3"
+
   if [ -f "$dir/removed-files" ]; then
-    prefix=
     listfile="$dir/removed-files"
-  elif [ -f "$dir/Contents/MacOS/removed-files" ]; then
-    prefix=Contents/MacOS/
-    listfile="$dir/Contents/MacOS/removed-files"
+  elif [ -f "$dir/Contents/Resources/removed-files" ]; then
+    listfile="$dir/Contents/Resources/removed-files"
   fi
   if [ -n "$listfile" ]; then
     # Map spaces to pipes so that we correctly handle filenames with spaces.
@@ -103,31 +147,20 @@ append_remove_instructions() {
       if [ -n "$f" ]; then
         # Exclude comments
         if [ ! $(echo "$f" | grep -c '^#') = 1 ]; then
-          # Normalize the path to the root of the Mac OS X bundle if necessary
-          fixedprefix="$prefix"
-          if [ $prefix ]; then
-            if [ $(echo "$f" | grep -c '^\.\./') = 1 ]; then
-              if [ $(echo "$f" | grep -c '^\.\./\.\./') = 1 ]; then
-                f=$(echo $f | sed -e 's:^\.\.\/\.\.\/::')
-                fixedprefix=""
-              else
-                f=$(echo $f | sed -e 's:^\.\.\/::')
-                fixedprefix=$(echo "$prefix" | sed -e 's:[^\/]*\/$::')
-              fi
-            fi
-          fi
           if [ $(echo "$f" | grep -c '\/$') = 1 ]; then
-            notice "      rmdir: $fixedprefix$f"
-            echo "rmdir \"$fixedprefix$f\"" >> $filev2
+            notice "      rmdir \"$f\""
+            echo "rmdir \"$f\"" >> $filev2
+            echo "rmdir \"$f\"" >> $filev3
           elif [ $(echo "$f" | grep -c '\/\*$') = 1 ]; then
             # Remove the *
             f=$(echo "$f" | sed -e 's:\*$::')
-            notice "    rmrfdir: $fixedprefix$f"
-            echo "rmrfdir \"$fixedprefix$f\"" >> $filev2
+            notice "    rmrfdir \"$f\""
+            echo "rmrfdir \"$f\"" >> $filev2
+            echo "rmrfdir \"$f\"" >> $filev3
           else
-            notice "     remove: $fixedprefix$f"
-            echo "remove \"$fixedprefix$f\"" >> $filev1
-            echo "remove \"$fixedprefix$f\"" >> $filev2
+            notice "     remove \"$f\""
+            echo "remove \"$f\"" >> $filev2
+            echo "remove \"$f\"" >> $filev3
           fi
         fi
       fi
@@ -136,16 +169,14 @@ append_remove_instructions() {
 }
 
 # List all files in the current directory, stripping leading "./"
-# Skip the channel-prefs.js file as it should not be included in any
-# generated MAR files (see bug 306077). Pass a variable name and it will be
-# filled as an array.
+# Pass a variable name and it will be filled as an array.
 list_files() {
   count=0
 
   find . -type f \
-    ! -name "channel-prefs.js" \
     ! -name "update.manifest" \
     ! -name "updatev2.manifest" \
+    ! -name "updatev3.manifest" \
     ! -name "temp-dirlist" \
     ! -name "temp-filelist" \
     | sed 's/\.\/\(.*\)/\1/' \
