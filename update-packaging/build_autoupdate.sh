@@ -51,7 +51,7 @@ for version in "$FROM" "$TO"; do
 	done
 done
 
-for build in "mac"; do
+for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 	if [[ $build == "mac" ]]; then
 		dir="Zotero.app"
 		touch "$STAGEDIR/$TO/$dir/Contents/Resources/precomplete"
