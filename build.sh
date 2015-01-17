@@ -286,9 +286,9 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Sign
 	if [ $SIGN == 1 ]; then
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" --resource-rules "$CALLDIR/mac/CodeResources" \
-			--requirements "$CODESIGN_REQUIREMENTS" \
-			"$APPDIR"
+		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero-bin"
+		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR"
+		/usr/bin/codesign --verify -vvvv "$APPDIR"
 	fi
 	
 	# Build disk image
