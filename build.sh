@@ -283,6 +283,11 @@ if [ $BUILD_MAC == 1 ]; then
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$CONTENTSDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
 	find "$CONTENTSDIR/Resources/extensions" -depth -type d -name build -exec rm -rf {} \;
+
+	# Copy over removed-files and make a precomplete file since it
+	# needs to be stable for the signature
+	cp "$CALLDIR/update-packaging/removed-files_mac" "$CONTENTSDIR/Resources/removed-files"
+	touch "$CONTENTSDIR/Resources/precomplete"
 	
 	# Sign
 	if [ $SIGN == 1 ]; then

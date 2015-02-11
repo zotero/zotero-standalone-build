@@ -1,6 +1,6 @@
 #!/bin/bash
 FROM=4.0.23
-TO=4.0.25.2
+TO=4.0.25.3
 USE_LOCAL_TO=1
 CALLDIR=`pwd`
 DISTDIR=$CALLDIR/../dist
@@ -54,10 +54,9 @@ done
 for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 	if [[ $build == "mac" ]]; then
 		dir="Zotero.app"
-		touch "$STAGEDIR/$TO/$dir/Contents/Resources/precomplete"
-		cp "$CALLDIR/removed-files_$build" "$STAGEDIR/$TO/$dir/Contents/Resources/removed-files"
 	else
 		dir="Zotero_$build"
+		touch "$STAGEDIR/$TO/$dir/precomplete"
 		cp "$CALLDIR/removed-files_$build" "$STAGEDIR/$TO/$dir/removed-files"
 	fi
 	"$CALLDIR/make_incremental_update.sh" "$DISTDIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGEDIR/$FROM/$dir" "$STAGEDIR/$TO/$dir"
