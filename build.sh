@@ -446,7 +446,8 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Merge xulrunner and relevant assets
 		cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
 		cp -r "$RUNTIME_PATH" "$APPDIR/xulrunner"
-		mv "$APPDIR/xulrunner/xulrunner-stub" "$APPDIR/zotero"
+		rm "$APPDIR/xulrunner/xulrunner-stub"
+		cp "$CALLDIR/linux/xulrunner-stub-$arch" "$APPDIR/zotero"
 		chmod 755 "$APPDIR/zotero"
 	
 		# Add Unix-specific Standalone assets
