@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PROTOCOL="ftp"
+PROTOCOL="https"
 CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
 SITE="$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
@@ -52,6 +52,7 @@ cd xulrunner
 
 if [ $BUILD_MAC == 1 ]; then
 	# Extract XUL bundle from Firefox
+	echo curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
 	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
 	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
 	hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
