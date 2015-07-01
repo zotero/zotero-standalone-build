@@ -154,8 +154,8 @@ else
 	find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 	
 	# Set version
-	perl -pi -e "s/VERSION: \"[^\"]*\"/VERSION: \"$VERSION\"/" \
-		"$BUILDDIR/zotero/chrome/content/zotero/xpcom/zotero.js"
+	perl -pi -e "s/VERSION: *\'[^\"]*\'/VERSION: \'$VERSION\'/" \
+		"$BUILDDIR/zotero/resource/config.js"
 	
 	# Zip chrome into JAR
 	cd "$BUILDDIR/zotero/chrome"
