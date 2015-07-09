@@ -16,6 +16,8 @@ pref("dom.max_chrome_script_run_time", 0);
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
+// Needed due to https://bugzilla.mozilla.org/show_bug.cgi?id=1181977
+pref("browser.hiddenWindowChromeURL", "chrome://zotero/content/standalone/hiddenWindow.xul");
 // Use basicViewer for opening new DOM windows from content (for TinyMCE)
 pref("browser.chromeURL", "chrome://zotero/content/standalone/basicViewer.xul");
 // We need these to get the save dialog working with contentAreaUtils.js
