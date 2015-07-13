@@ -99,7 +99,6 @@ pref("app.update.mode", 2);
 
 // If set to true, the Update Service will present no UI for any event.
 pref("app.update.silent", false);
-pref("app.update.showInstalledUI", true);
 
 // Update service URL:
 // You do not need to use all the %VAR% parameters. Use what you need, %PRODUCT%,%VERSION%,%BUILD_ID%,%CHANNEL% for example
@@ -137,7 +136,7 @@ pref("app.update.timerMinimumDelay", 120);
 // upgrade start page instead! Other apps may wish to show this UI, and supply
 // a whatsNewURL field in their brand.properties that contains a link to a page
 // which tells users what's new in this new update.
-pref("app.update.showInstalledUI", false);
+pref("app.update.showInstalledUI", true);
 
 // 0 = suppress prompting for incompatibilities if there are updates available
 //     to newer versions of installed addons that resolve them.
