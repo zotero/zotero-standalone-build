@@ -20,3 +20,4 @@ resource/csl-validator.js
 resource/concurrent-caller.js
 install.rdf
 deleted.txt
+test/*
