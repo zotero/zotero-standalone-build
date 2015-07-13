@@ -228,9 +228,10 @@ cp "$CALLDIR/assets/prefs.js" "$BUILDDIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 
-# Delete .DS_Store and .git
+# Delete .DS_Store, .git, and tests
 find "$BUILDDIR" -depth -type d -name .git -exec rm -rf {} \;
 find "$BUILDDIR" -name .DS_Store -exec rm -f {} \;
+rm -rf "$BUILDDIR/test"
 
 cd "$CALLDIR"
 
@@ -327,11 +328,11 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
 	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
 	
-	# This used to be bug 722810, but that bug was actually fixed for Gecko 12. Now it's
-	# unfortunately broken again.
-	cp "$WIN32_RUNTIME_PATH/msvcp100.dll" \
-	   "$WIN32_RUNTIME_PATH/msvcr100.dll" \
-	   "$APPDIR/"
+	# This used to be bug 722810, but that bug was actually fixed for Gecko 12.
+	# Then it was broken again. Now it seems okay...
+	# cp "$WIN32_RUNTIME_PATH/msvcp120.dll" \
+	#    "$WIN32_RUNTIME_PATH/msvcr120.dll" \
+	#    "$APPDIR/"
 	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
