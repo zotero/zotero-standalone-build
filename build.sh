@@ -209,6 +209,9 @@ else
 	cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
 	
 	perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILDDIR/zotero/chrome.manifest"
+
+	# Remove test directory
+	rm -rf "$BUILDDIR/zotero/test"
 fi
 
 # Adjust connector pref
@@ -231,7 +234,6 @@ perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILDDIR/zotero/defaults/
 # Delete .DS_Store, .git, and tests
 find "$BUILDDIR" -depth -type d -name .git -exec rm -rf {} \;
 find "$BUILDDIR" -name .DS_Store -exec rm -f {} \;
-rm -rf "$BUILDDIR/test"
 
 cd "$CALLDIR"
 
