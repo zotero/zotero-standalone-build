@@ -199,6 +199,8 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
 	<key>LSMinimumSystemVersion</key>
 	<string>10.6.3</string>
 	<key>LSMinimumSystemVersionByArchitecture</key>
