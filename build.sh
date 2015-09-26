@@ -349,14 +349,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 		rm -rf "$APPDIR/extensions/$ext/.git"
 	done
 
-	# Remove unnecessary dlls
-	INTEGRATIONDIR="$APPDIR/extensions/zoteroWinWordIntegration@zotero.org/"
-	rm -rf "$INTEGRATIONDIR/"components-!($GECKO_SHORT_VERSION)
-
-	# Fix chrome.manifest
-	perl -pi -e 's/^binary-component.*(?:\n|$)//sg' "$INTEGRATIONDIR/chrome.manifest"
-	echo "binary-component components-$GECKO_SHORT_VERSION/zoteroWinWordIntegration.dll" >> "$INTEGRATIONDIR/chrome.manifest"
-	
 	# Delete extraneous files
 	rm "$APPDIR/xulrunner/js.exe" "$APPDIR/xulrunner/redit.exe"
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
