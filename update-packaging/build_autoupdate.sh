@@ -1,16 +1,22 @@
 #!/bin/bash
-FROM=4.0.23
-TO=4.0.25.3
+FROM=4.0.29.10
+TO=4.0.29.11
 USE_LOCAL_TO=1
+BUILD_INCREMENTAL=1
+BUILD_FULL=1
 CALLDIR=`pwd`
 DISTDIR=$CALLDIR/../dist
 STAGEDIR=$CALLDIR/staging
 
 for version in "$FROM" "$TO"; do
-	versiondir=$STAGEDIR/$version
+	versiondir="$STAGEDIR/$version"
 	
-	if [ -d $versiondir ]; then
-		continue
+	if [ -d "$versiondir" ]; then
+		if [ -h "$versiondir" ]; then
+			rm "$versiondir"
+		else
+			continue
+		fi
 	fi
 	
 	if [[ $version == $TO && $USE_LOCAL_TO == "1" ]]; then
@@ -19,8 +25,8 @@ for version in "$FROM" "$TO"; do
 	fi
 	
 	echo "Getting Zotero $version..."
-	mkdir -p $versiondir
-	cd $versiondir
+	mkdir -p "$versiondir"
+	cd "$versiondir"
 	
 	# Download archives
 	MAC_ARCHIVE="Zotero-${version}.dmg"
@@ -36,7 +42,7 @@ for version in "$FROM" "$TO"; do
 	# Unpack Zotero.app
 	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
 	hdiutil attach -quiet "$MAC_ARCHIVE"
-	cp -R /Volumes/Zotero/Zotero.app $versiondir
+	cp -R /Volumes/Zotero/Zotero.app "$versiondir"
 	rm "$MAC_ARCHIVE"
 	hdiutil detach -quiet /Volumes/Zotero
 	
@@ -59,8 +65,12 @@ for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 		touch "$STAGEDIR/$TO/$dir/precomplete"
 		cp "$CALLDIR/removed-files_$build" "$STAGEDIR/$TO/$dir/removed-files"
 	fi
-	"$CALLDIR/make_incremental_update.sh" "$DISTDIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGEDIR/$FROM/$dir" "$STAGEDIR/$TO/$dir"
-	"$CALLDIR/make_full_update.sh" "$DISTDIR/Zotero-${TO}-full_$build.mar" "$STAGEDIR/$TO/$dir"
+	if [[ $BUILD_INCREMENTAL == "1" ]]; then
+		"$CALLDIR/make_incremental_update.sh" "$DISTDIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGEDIR/$FROM/$dir" "$STAGEDIR/$TO/$dir"
+	fi
+	if [[ $BUILD_FULL == "1" ]]; then
+		"$CALLDIR/make_full_update.sh" "$DISTDIR/Zotero-${TO}-full_$build.mar" "$STAGEDIR/$TO/$dir"
+	fi
 done
 
 cd "$DISTDIR"
