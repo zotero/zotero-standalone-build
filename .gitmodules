@@ -1,6 +1,3 @@
-[submodule "modules/zotero"]
-	path = modules/zotero
-	url = git://github.com/zotero/zotero.git
 [submodule "modules/zotero-word-for-mac-integration"]
 	path = modules/zotero-word-for-mac-integration
 	url = git://github.com/zotero/zotero-word-for-mac-integration.git
