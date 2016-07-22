@@ -45,6 +45,11 @@ DONE
 	exit 1
 }
 
+function cleanup {
+	rm -rf $BUILDDIR
+}
+trap cleanup EXIT
+
 PACKAGE=1
 while getopts "p:s:v:c:d" opt; do
 	case $opt in
