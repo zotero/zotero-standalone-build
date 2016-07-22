@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Copyright (c) 2011  Zotero
 #                     Center for History and New Media
@@ -21,10 +21,16 @@
 CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
 
-[ "`uname`" != "Darwin" ]
-MAC_NATIVE=$?
-[ "`uname -o 2> /dev/null`" != "Cygwin" ]
-WIN_NATIVE=$?
+if [ "`uname`" = "Darwin" ]; then
+	MAC_NATIVE=1
+else
+	MAC_NATIVE=0
+fi
+if [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
+	WIN_NATIVE=1
+else
+	WIN_NATIVE=0
+fi
 
 function usage {
 	cat >&2 <<DONE
