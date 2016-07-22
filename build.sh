@@ -260,6 +260,9 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r "$CALLDIR/mac/Contents" "$APPDIR"
 	CONTENTSDIR="$APPDIR/Contents"
 	
+	# Modify platform-specific prefs
+	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
 	cp -r "$MAC_RUNTIME_PATH/Contents/MacOS/"!(firefox-bin|crashreporter.app|updater.app) "$CONTENTSDIR/MacOS"
