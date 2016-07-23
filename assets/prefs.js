@@ -66,6 +66,12 @@ pref("xpinstall.whitelist.required", false);
 // Disable places
 pref("places.history.enabled", false);
 
+// Disable Telemetry and Health Report
+pref("toolkit.telemetry.unified", false);
+pref("toolkit.telemetry.enabled", false);
+pref("datareporting.healthreport.service.enabled", false);
+pref("datareporting.policy.dataSubmissionEnabled", false);
+
 // Preferences to allow updating add-ons from AMO
 // TODO: Does this work for Standalone, or do we need to pretend to be Firefox?
 pref("extensions.update.enabled", true);
