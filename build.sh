@@ -89,7 +89,7 @@ if [ -z "$ZIP_FILE" ]; then
 	usage
 fi
 
-BUILDID=`date +%Y%m%d`
+BUILDID=`date +%Y%m%d%H%M%S`
 
 shopt -s extglob
 mkdir -p "$BUILDDIR/zotero"
