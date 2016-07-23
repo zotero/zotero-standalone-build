@@ -8,10 +8,10 @@ GECKO_VERSION="41.0.2"
 GECKO_SHORT_VERSION="41.0"
 
 # Paths to Gecko runtimes
-MAC_RUNTIME_PATH="`pwd`/xulrunner/Firefox.app"
-WIN32_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_win32"
-LINUX_i686_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-i686"
-LINUX_x86_64_RUNTIME_PATH="`pwd`/xulrunner/xulrunner_linux-x86_64"
+MAC_RUNTIME_PATH="$CALLDIR/xulrunner/Firefox.app"
+WIN32_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_win32"
+LINUX_i686_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_linux-i686"
+LINUX_x86_64_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_linux-x86_64"
 
 # Whether to sign builds
 SIGN=1
@@ -30,17 +30,9 @@ EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
-# If version is not specified on the command line, version is this prefix followed by the revision
-DEFAULT_VERSION_PREFIX="4.0.999.SOURCE."
-# Numeric version for OS X bundle
-VERSION_NUMERIC="4.0.999"
-
 # Directory for building
 BUILDDIR="/tmp/zotero-build-`uuidgen | head -c 8`"
 # Directory for unpacked binaries
 STAGEDIR="$CALLDIR/staging"
 # Directory for packed binaries
 DISTDIR="$CALLDIR/dist"
-
-# Repository URL
-URL="git://github.com/zotero/zotero.git"

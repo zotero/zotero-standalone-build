@@ -34,11 +34,10 @@ fi
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 [-p PLATFORMS] [-s DIR] [-v VERSION] [-c CHANNEL] [-d]
+Usage: $0 -f FILE [-p PLATFORMS] [-c CHANNEL] [-d]
 Options
+ -f FILE             ZIP file to build from
  -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
- -s DIR              build symlinked to Zotero checkout DIR (implies -d)
- -v VERSION          use version VERSION
  -c CHANNEL          use update channel CHANNEL
  -d                  don't package; only build binaries in staging/ directory
 DONE
@@ -51,8 +50,11 @@ function cleanup {
 trap cleanup EXIT
 
 PACKAGE=1
-while getopts "p:s:v:c:d" opt; do
+while getopts "f:p:c:d" opt; do
 	case $opt in
+		f)
+			ZIP_FILE="$OPTARG"
+			;;
 		p)
 			BUILD_MAC=0
 			BUILD_WIN32=0
@@ -70,13 +72,6 @@ while getopts "p:s:v:c:d" opt; do
 				esac
 			done
 			;;
-		s)
-			SYMLINK_DIR="$OPTARG"
-			PACKAGE=0
-			;;
-		v)
-			VERSION="$OPTARG"
-			;;
 		c)
 			UPDATE_CHANNEL="$OPTARG"
 			;;
@@ -90,14 +85,14 @@ while getopts "p:s:v:c:d" opt; do
 	shift $((OPTIND-1)); OPTIND=1
 done
 
-if [ ! -z $1 ]; then
+if [ -z "$ZIP_FILE" ]; then
 	usage
 fi
 
 BUILDID=`date +%Y%m%d`
 
 shopt -s extglob
-mkdir "$BUILDDIR"
+mkdir -p "$BUILDDIR/zotero"
 rm -rf "$STAGEDIR"
 mkdir "$STAGEDIR"
 rm -rf "$DISTDIR"
@@ -105,125 +100,45 @@ mkdir "$DISTDIR"
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-if [ ! -z "$SYMLINK_DIR" ]; then
-	echo "Building Zotero from $SYMLINK_DIR"
-	
-	cp -RH "$SYMLINK_DIR" "$BUILDDIR/zotero"
-	cd "$BUILDDIR/zotero"
-	if [ $? != 0 ]; then
-		exit
-	fi
-	REV=`git log -n 1 --pretty='format:%h'`
-	VERSION="$DEFAULT_VERSION_PREFIX$REV"
-	find . -depth -type d -name .git -exec rm -rf {} \;
-	
-	# Windows can't actually symlink; copy instead, with a note
-	if [ "$WIN_NATIVE" == 1 ]; then
-		echo "Windows host detected; copying files instead of symlinking"
-		
-		# Copy branding
-		cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
-		find "$BUILDDIR/zotero/chrome/branding" -depth -type d -name .git -exec rm -rf {} \;
-		find "$BUILDDIR/zotero/chrome/branding" -name .DS_Store -exec rm -f {} \;
-	else	
-		# Symlink chrome dirs
-		rm -rf "$BUILDDIR/zotero/chrome/"*
-		for i in `ls $SYMLINK_DIR/chrome`; do
-			ln -s "$SYMLINK_DIR/chrome/$i" "$BUILDDIR/zotero/chrome/$i"
-		done
-		
-		# Symlink translators and styles
-		rm -rf "$BUILDDIR/zotero/translators" "$BUILDDIR/zotero/styles"
-		ln -s "$SYMLINK_DIR/translators" "$BUILDDIR/zotero/translators"
-		ln -s "$SYMLINK_DIR/styles" "$BUILDDIR/zotero/styles"
-		
-		# Symlink branding
-		ln -s "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
-	fi
-	
-	# Add to chrome manifest
-	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
-	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
-else
-	echo "Building from bundled submodule"
-	
-	# Copy Zotero directory
-	cd "$CALLDIR/modules/zotero"
-	REV=`git log -n 1 --pretty='format:%h'`
-	cp -RH "$CALLDIR/modules/zotero" "$BUILDDIR/zotero"
-	cd "$BUILDDIR/zotero"
-	
-	if [ -z "$VERSION" ]; then
-		VERSION="$DEFAULT_VERSION_PREFIX$REV"
-	fi
-	
-	# Copy branding
-	cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
-	
-	# Delete files that shouldn't be distributed
-	find "$BUILDDIR/zotero/chrome" -depth -type d -name .git -exec rm -rf {} \;
-	find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
-	
-	# Set version
-	perl -pi -e "s/VERSION: *\'[^\"]*\'/VERSION: \'$VERSION\'/" \
-		"$BUILDDIR/zotero/resource/config.js"
-	
-	# Zip chrome into JAR
-	cd "$BUILDDIR/zotero/chrome"
-	# Checkout failed -- bail
-	if [ $? -eq 1 ]; then
-		exit;
-	fi
-	
-	# Build translators.zip
-	echo "Building translators.zip"
-	cd "$BUILDDIR/zotero/translators"
-	mkdir output
-	counter=0;
-	for file in *.js; do
-		newfile=$counter.js;
-		id=`grep -m 1 '"translatorID" *: *"' "$file" | perl -pe 's/.*"translatorID"\s*:\s*"(.*)".*/\1/'`
-		label=`grep -m 1 '"label" *: *"' "$file" | perl -pe 's/.*"label"\s*:\s*"(.*)".*/\1/'`
-		mtime=`grep -m 1 '"lastUpdated" *: *"' "$file" | perl -pe 's/.*"lastUpdated"\s*:\s*"(.*)".*/\1/'`
-		echo $newfile,$id,$label,$mtime >> ../translators.index
-		cp "$file" output/$newfile;
-		counter=$(($counter+1))
-	done;
-	cd output
-	zip -q ../../translators.zip *
-	cd ../..
-	
-	# Delete translators directory except for deleted.txt
-	mv translators/deleted.txt deleted.txt
-	rm -rf translators
-	
-	# Build styles.zip with default styles
-	if [ -d styles ]; then
-		echo "Building styles.zip"
-		
-		cd styles
-		zip -q ../styles.zip *.csl
-		cd ..
-		rm -rf styles
-	fi
+echo "Building from $ZIP_FILE"
+unzip -q $ZIP_FILE -d "$BUILDDIR/zotero"
 
-	# Build zotero.jar
-	cd "$BUILDDIR/zotero"
-	zip -r -q zotero.jar chrome deleted.txt resource styles.zip translators.index translators.zip
-	rm -rf "chrome/"* install.rdf deleted.txt resource styles.zip translators.index translators.zip
-	
-	# Adjust chrome.manifest
-	echo "" >> "$BUILDDIR/zotero/chrome.manifest"
-	cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
-	
-	# Copy updater.ini
-	cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
-	
-	perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILDDIR/zotero/chrome.manifest"
+cd "$BUILDDIR/zotero"
 
-	# Remove test directory
-	rm -rf "$BUILDDIR/zotero/test"
+VERSION=`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' install.rdf`
+if [ -z "$VERSION" ]; then
+	echo "Version number not found in install.rdf"
+	exit 1
 fi
+VERSION="$VERSION.SA"
+rm install.rdf
+
+echo
+echo "Version: $VERSION"
+
+# Delete Mozilla signing info if present
+rm -rf META-INF
+
+# Copy branding
+cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+
+# Add to chrome manifest
+echo "" >> "$BUILDDIR/zotero/chrome.manifest"
+cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
+
+# Delete files that shouldn't be distributed
+find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
+
+# Zip chrome into JAR
+cd "$BUILDDIR/zotero"
+zip -r -q zotero.jar chrome deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
+rm -rf "chrome/"* install.rdf deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
+
+# Copy updater.ini
+cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
+
+# Adjust chrome.manifest
+perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILDDIR/zotero/chrome.manifest"
 
 # Adjust connector pref
 perl -pi -e 's/pref\("extensions\.zotero\.httpServer\.enabled", false\);/pref("extensions.zotero.httpServer.enabled", true);/g' "$BUILDDIR/zotero/defaults/preferences/zotero.js"
@@ -242,9 +157,13 @@ cp "$CALLDIR/assets/prefs.js" "$BUILDDIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
 
-# Delete .DS_Store, .git, and tests
-find "$BUILDDIR" -depth -type d -name .git -exec rm -rf {} \;
+echo -n "Channel: "
+grep app.update.channel "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+echo
+
+# Remove unnecessary files
 find "$BUILDDIR" -name .DS_Store -exec rm -f {} \;
+rm -rf "$BUILDDIR/zotero/test"
 
 cd "$CALLDIR"
 
@@ -295,10 +214,14 @@ if [ $BUILD_MAC == 1 ]; then
 	mkdir "$CONTENTSDIR/Resources/extensions"
 	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
 	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	echo
 	for ext in "zoteroMacWordIntegration@zotero.org" "zoteroOpenOfficeIntegration@zotero.org"; do
-		perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
+		perl -pi -e 's/\.SOURCE<\/em:version>/-'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
+		echo -n "$ext Version: "
+		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
 	done
+	echo
 	
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
@@ -364,10 +287,14 @@ if [ $BUILD_WIN32 == 1 ]; then
 	mkdir "$APPDIR/extensions"
 	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
 	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
+	echo
 	for ext in "zoteroWinWordIntegration@zotero.org" "zoteroOpenOfficeIntegration@zotero.org"; do
-		perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/$ext/install.rdf"
+		perl -pi -e 's/\.SOURCE<\/em:version>/-'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/$ext/install.rdf"
+		echo -n "$ext Version: "
+		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/$ext/install.rdf"
 		rm -rf "$APPDIR/extensions/$ext/.git"
 	done
+	echo
 
 	# Delete extraneous files
 	rm "$APPDIR/xulrunner/js.exe" "$APPDIR/xulrunner/redit.exe"
@@ -472,7 +399,11 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
 		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
-		perl -pi -e 's/SOURCE<\/em:version>/SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
+		perl -pi -e 's/\.SOURCE<\/em:version>/-'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
+		echo
+		echo -n "$ext Version: "
+		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
+		echo
 		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git"
 		
 		# Delete extraneous files
