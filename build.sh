@@ -105,12 +105,12 @@ unzip -q $ZIP_FILE -d "$BUILDDIR/zotero"
 
 cd "$BUILDDIR/zotero"
 
-VERSION=`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' install.rdf`
-if [ -z "$VERSION" ]; then
+ORIG_VERSION=`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' install.rdf`
+if [ -z "$ORIG_VERSION" ]; then
 	echo "Version number not found in install.rdf"
 	exit 1
 fi
-VERSION="$VERSION.SA"
+VERSION="$ORIG_VERSION.SA"
 rm install.rdf
 
 echo
@@ -247,13 +247,13 @@ if [ $BUILD_MAC == 1 ]; then
 		if [ $MAC_NATIVE == 1 ]; then
 			echo 'Creating Mac installer'
 			"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" \
-				--target "$DISTDIR/Zotero-$VERSION.dmg" \
+				--target "$DISTDIR/Zotero-$ORIG_VERSION.dmg" \
 				--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
 				--symlink /Applications:"/Drag Here to Install" > /dev/null
 		else
 			echo 'Not building on Mac; creating Mac distribution as a zip file'
 			rm -f "$DISTDIR/Zotero_mac.zip"
-			cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-$VERSION_mac.zip" Zotero.app
+			cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${ORIG_VERSION}_mac.zip" Zotero.app
 		fi
 	fi
 fi
@@ -305,7 +305,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
-			INSTALLER_PATH="$DISTDIR/Zotero-${VERSION}_setup.exe"
+			INSTALLER_PATH="$DISTDIR/Zotero-${ORIG_VERSION}_setup.exe"
 			
 			# Add icon to xulrunner-stub
 			"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
@@ -370,7 +370,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 		else
 			echo 'Not building on Windows; only building zip file'
 		fi
-		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_win32.zip" Zotero_win32
+		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${ORIG_VERSION}_win32.zip" Zotero_win32
 	fi
 fi
 
@@ -419,9 +419,9 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		if [ $PACKAGE == 1 ]; then
 			# Create tar
-			rm -f "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
+			rm -f "$DISTDIR/Zotero-${ORIG_VERSION}_linux-$arch.tar.bz2"
 			cd "$STAGEDIR"
-			tar -cjf "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
+			tar -cjf "$DISTDIR/Zotero-${ORIG_VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
 		fi
 	done
 fi
