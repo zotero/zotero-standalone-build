@@ -305,7 +305,8 @@ if [[ -n $MOZ_CHANNEL_ID ]]
 then
   mar_command="$mar_command -H $MOZ_CHANNEL_ID"
 fi
-mar_command="$mar_command -C \"$workdir\" -c output.mar"
+# Changed for Zotero -- -C no longer affects path for -c
+mar_command="$mar_command -C \"$workdir\" -c \"$workdir\"/output.mar"
 eval "$mar_command $archivefiles"
 mv -f "$workdir/output.mar" "$archive"
 
