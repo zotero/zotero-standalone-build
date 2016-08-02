@@ -35,4 +35,4 @@ fi
 DIST_DIR="$DIR/dist/"
 S3_PATH="$S3_BUCKET/standalone/$S3_PATH/$VERSION/"
 
-aws s3 cp --recursive --exclude files --exclude sha512sums "$DIST_DIR" s3://${S3_PATH}
+aws s3 sync "$DIST_DIR" s3://${S3_PATH}
