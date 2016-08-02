@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import sys
+import shutil
+import json
+import traceback
+
+DETAILS_URLS = {
+    '4.0': 'https://www.zotero.org/support/4.0_changelog',
+    '5.0': 'https://www.zotero.org/support/5.0_changelog',
+}
+MAJOR = False
+
+parser = argparse.ArgumentParser(
+    description='Add version info to Zotero build manifest',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+parser.add_argument('-s', '--source_dir', required=True, help="path to directory containing 'sha512sums' and 'files'")
+parser.add_argument('-t', '--target_dir', required=True, help="path to directory containing 'updates.json'")
+parser.add_argument('-p', '--platform', required=True, help="platform ('mac', 'win32', 'linux-i386', 'linux-x86_64')")
+parser.add_argument('-c', '--channel', required=True, help="release channel ('release', 'beta')")
+parser.add_argument('-v', '--version', required=True, help='version number of build')
+parser.add_argument('-b', '--build_id', required=True, help="build ID ('20160801142343')")
+
+args = parser.parse_args()
+
+def main():
+    try:
+        source_dir = args.source_dir
+        target_dir = args.target_dir
+        platform = args.platform
+        channel = args.channel
+        version = args.version
+        
+        # Make sure file lists exist and are non-empty
+        files_file = os.path.join(source_dir, 'files')
+        sums_file = os.path.join(source_dir, 'sha512sums')
+        
+        statinfo = os.stat(files_file)
+        if statinfo.st_size == 0:
+            raise Exception("{} cannot be empty".format(os.path.abspath(files_file)))
+        statinfo = os.stat(sums_file)
+        if statinfo.st_size == 0:
+            raise Exception("{} cannot be empty".format(os.path.abspath(sums_file)))
+        
+        # Use subdirectory of target directory for non-release channels
+        if channel == 'release':
+            target_version_dir = os.path.join(target_dir, version)
+        else:
+            target_version_dir = os.path.join(target_dir, channel, version)
+        
+        # Make target version directory if it doesn't exist, and copy file lists over
+        if not os.path.exists(target_version_dir):
+            os.makedirs(target_version_dir)
+        shutil.copy2(files_file, target_version_dir)
+        shutil.copy2(sums_file, target_version_dir)
+        
+        # Back up JSON file
+        updates_json_file = os.path.join(args.target_dir, 'updates.json')
+        shutil.copy2(updates_json_file, updates_json_file + '.bak')
+        
+        with open(updates_json_file) as f:
+            updates = json.loads(f.read())
+        
+        if channel not in updates:
+            updates[channel] = {}
+        if platform not in updates[channel]:
+            updates[channel][platform] = {}
+        
+        updates[channel][platform]['VERSION'] = version
+        updates[channel][platform]['BUILD_ID'] = args.build_id
+        
+        if 'DETAILSURL' not in updates[channel][platform]:
+            updates[channel][platform]['DETAILSURL'] = DETAILS_URLS[version[0:3]]
+            updates[channel][platform]['MAJOR'] = MAJOR
+        
+        updates = json.dumps(updates, indent=2)
+        
+        with open(updates_json_file, 'w') as f:
+            f.write(updates + "\n")
+        
+        print(updates)
+        
+        return 0
+    
+    except Exception as err:
+        sys.stderr.write("\n" + traceback.format_exc())
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
