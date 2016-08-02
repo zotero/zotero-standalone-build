@@ -9,6 +9,7 @@ Options
  -i FROM             Perform incremental build
  -s S3_PATH          Path within S3 standalone directory (e.g., 'beta' for /standalone/beta)
  -p PLATFORM         Platforms to build (m=Mac, w=Windows, l=Linux)
+ -l                  Use local TO directory instead of downloading TO files from S3
 DONE
 	exit 1
 }
@@ -20,7 +21,8 @@ BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
 S3_PATH=""
-while getopts "i:s:p:f" opt; do
+USE_LOCAL_TO=0
+while getopts "i:s:p:fl" opt; do
 	case $opt in
 		i)
 			FROM="$OPTARG"
@@ -46,6 +48,9 @@ while getopts "i:s:p:f" opt; do
 		f)
 			BUILD_FULL=1
 			;;
+		l)
+			USE_LOCAL_TO=1
+			;;
 		*)
 			usage
 			;;
@@ -69,7 +74,6 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
-USE_LOCAL_TO=1
 DISTDIR=$CALLDIR/../dist
 STAGEDIR=$CALLDIR/staging
 
