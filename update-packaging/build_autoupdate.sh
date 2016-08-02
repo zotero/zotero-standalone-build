@@ -195,7 +195,7 @@ done
 
 cd "$DISTDIR"
 shasum -a 512 * > sha512sums
-ls -la > files
+ls -lan > files
 
 echo
 cat sha512sums
