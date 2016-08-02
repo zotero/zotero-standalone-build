@@ -36,3 +36,5 @@ BUILDDIR="/tmp/zotero-build-`uuidgen | head -c 8`"
 STAGEDIR="$CALLDIR/staging"
 # Directory for packed binaries
 DISTDIR="$CALLDIR/dist"
+
+S3_BUCKET="zotero-download"
