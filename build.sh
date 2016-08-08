@@ -44,8 +44,9 @@ DONE
 	exit 1
 }
 
+BUILD_DIR=`mktemp -d`
 function cleanup {
-	rm -rf $BUILDDIR
+	rm -rf $BUILD_DIR
 }
 trap cleanup EXIT
 
@@ -89,24 +90,24 @@ if [ -z "$ZIP_FILE" ]; then
 	usage
 fi
 
-BUILDID=`date +%Y%m%d%H%M%S`
+BUILD_ID=`date +%Y%m%d%H%M%S`
 
 shopt -s extglob
-mkdir -p "$BUILDDIR/zotero"
-rm -rf "$STAGEDIR"
-mkdir "$STAGEDIR"
-rm -rf "$DISTDIR"
-mkdir "$DISTDIR"
+mkdir -p "$BUILD_DIR/zotero"
+rm -rf "$STAGE_DIR"
+mkdir "$STAGE_DIR"
+rm -rf "$DIST_DIR"
+mkdir "$DIST_DIR"
 
 # Save build id, which is needed for updates manifest
-echo $BUILDID > $DISTDIR/build_id
+echo $BUILD_ID > $DIST_DIR/build_id
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
 echo "Building from $ZIP_FILE"
-unzip -q $ZIP_FILE -d "$BUILDDIR/zotero"
+unzip -q $ZIP_FILE -d "$BUILD_DIR/zotero"
 
-cd "$BUILDDIR/zotero"
+cd "$BUILD_DIR/zotero"
 
 VERSION=`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' install.rdf`
 if [ -z "$VERSION" ]; then
@@ -122,50 +123,50 @@ echo "Version: $VERSION"
 rm -rf META-INF
 
 # Copy branding
-cp -R "$CALLDIR/assets/branding" "$BUILDDIR/zotero/chrome/branding"
+cp -R "$CALLDIR/assets/branding" "$BUILD_DIR/zotero/chrome/branding"
 
 # Add to chrome manifest
-echo "" >> "$BUILDDIR/zotero/chrome.manifest"
-cat "$CALLDIR/assets/chrome.manifest" >> "$BUILDDIR/zotero/chrome.manifest"
+echo "" >> "$BUILD_DIR/zotero/chrome.manifest"
+cat "$CALLDIR/assets/chrome.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
 
 # Delete files that shouldn't be distributed
-find "$BUILDDIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
+find "$BUILD_DIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 
 # Zip chrome into JAR
-cd "$BUILDDIR/zotero"
+cd "$BUILD_DIR/zotero"
 zip -r -q zotero.jar chrome deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
 rm -rf "chrome/"* install.rdf deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
 
 # Copy updater.ini
-cp "$CALLDIR/assets/updater.ini" "$BUILDDIR/zotero"
+cp "$CALLDIR/assets/updater.ini" "$BUILD_DIR/zotero"
 
 # Adjust chrome.manifest
-perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILDDIR/zotero/chrome.manifest"
+perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILD_DIR/zotero/chrome.manifest"
 
 # Adjust connector pref
-perl -pi -e 's/pref\("extensions\.zotero\.httpServer\.enabled", false\);/pref("extensions.zotero.httpServer.enabled", true);/g' "$BUILDDIR/zotero/defaults/preferences/zotero.js"
-perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' "$BUILDDIR/zotero/defaults/preferences/zotero.js"
+perl -pi -e 's/pref\("extensions\.zotero\.httpServer\.enabled", false\);/pref("extensions.zotero.httpServer.enabled", true);/g' "$BUILD_DIR/zotero/defaults/preferences/zotero.js"
+perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' "$BUILD_DIR/zotero/defaults/preferences/zotero.js"
 
 # Copy icons
-cp -r "$CALLDIR/assets/icons" "$BUILDDIR/zotero/chrome/icons"
+cp -r "$CALLDIR/assets/icons" "$BUILD_DIR/zotero/chrome/icons"
 
 # Copy application.ini and modify
-cp "$CALLDIR/assets/application.ini" "$BUILDDIR/application.ini"
-perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/application.ini"
-perl -pi -e "s/{{BUILDID}}/$BUILDID/" "$BUILDDIR/application.ini"
+cp "$CALLDIR/assets/application.ini" "$BUILD_DIR/application.ini"
+perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILD_DIR/application.ini"
+perl -pi -e "s/{{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
 
 # Copy prefs.js and modify
-cp "$CALLDIR/assets/prefs.js" "$BUILDDIR/zotero/defaults/preferences"
-perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
-perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+cp "$CALLDIR/assets/prefs.js" "$BUILD_DIR/zotero/defaults/preferences"
+perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 
 echo -n "Channel: "
-grep app.update.channel "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+grep app.update.channel "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 echo
 
 # Remove unnecessary files
-find "$BUILDDIR" -name .DS_Store -exec rm -f {} \;
-rm -rf "$BUILDDIR/zotero/test"
+find "$BUILD_DIR" -name .DS_Store -exec rm -f {} \;
+rm -rf "$BUILD_DIR/zotero/test"
 
 cd "$CALLDIR"
 
@@ -174,7 +175,7 @@ if [ $BUILD_MAC == 1 ]; then
 	echo 'Building Zotero.app'
 		
 	# Set up directory structure
-	APPDIR="$STAGEDIR/Zotero.app"
+	APPDIR="$STAGE_DIR/Zotero.app"
 	rm -rf "$APPDIR"
 	mkdir "$APPDIR"
 	chmod 755 "$APPDIR"
@@ -182,7 +183,7 @@ if [ $BUILD_MAC == 1 ]; then
 	CONTENTSDIR="$APPDIR/Contents"
 	
 	# Modify platform-specific prefs
-	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILDDIR/zotero/defaults/preferences/prefs.js"
+	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
@@ -192,7 +193,7 @@ if [ $BUILD_MAC == 1 ]; then
 	# Use our own launcher
 	mv "$CONTENTSDIR/MacOS/firefox" "$CONTENTSDIR/MacOS/zotero-bin"
 	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
-	cp "$BUILDDIR/application.ini" "$CONTENTSDIR/Resources"
+	cp "$BUILD_DIR/application.ini" "$CONTENTSDIR/Resources"
 
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cd "$CONTENTSDIR/MacOS"
@@ -206,7 +207,7 @@ if [ $BUILD_MAC == 1 ]; then
 	rm -f "$CONTENTSDIR/Info.plist.bak"
 	
 	# Add components
-	cp -R "$BUILDDIR/zotero/"* "$CONTENTSDIR/Resources"
+	cp -R "$BUILD_DIR/zotero/"* "$CONTENTSDIR/Resources"
 	
 	# Add Mac-specific Standalone assets
 	cd "$CALLDIR/assets/mac"
@@ -248,14 +249,14 @@ if [ $BUILD_MAC == 1 ]; then
 	if [ $PACKAGE == 1 ]; then
 		if [ $MAC_NATIVE == 1 ]; then
 			echo 'Creating Mac installer'
-			"$CALLDIR/mac/pkg-dmg" --source "$STAGEDIR/Zotero.app" \
-				--target "$DISTDIR/Zotero-$VERSION.dmg" \
+			"$CALLDIR/mac/pkg-dmg" --source "$STAGE_DIR/Zotero.app" \
+				--target "$DIST_DIR/Zotero-$VERSION.dmg" \
 				--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
 				--symlink /Applications:"/Drag Here to Install" > /dev/null
 		else
 			echo 'Not building on Mac; creating Mac distribution as a zip file'
-			rm -f "$DISTDIR/Zotero_mac.zip"
-			cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_mac.zip" Zotero.app
+			rm -f "$DIST_DIR/Zotero_mac.zip"
+			cd "$STAGE_DIR" && zip -rqX "$DIST_DIR/Zotero-${VERSION}_mac.zip" Zotero.app
 		fi
 	fi
 fi
@@ -265,11 +266,11 @@ if [ $BUILD_WIN32 == 1 ]; then
 	echo 'Building Zotero_win32'
 	
 	# Set up directory
-	APPDIR="$STAGEDIR/Zotero_win32"
+	APPDIR="$STAGE_DIR/Zotero_win32"
 	mkdir "$APPDIR"
 	
 	# Merge xulrunner and relevant assets
-	cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
+	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
 	
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
@@ -307,7 +308,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
-			INSTALLER_PATH="$DISTDIR/Zotero-${VERSION}_setup.exe"
+			INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
 			
 			# Add icon to xulrunner-stub
 			"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
@@ -315,13 +316,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			echo 'Creating Windows installer'
 			# Copy installer files
-			cp -r "$CALLDIR/win/installer" "$BUILDDIR/win_installer"
+			cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
 			
 			# Build and sign uninstaller
-			perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILDDIR/win_installer/defines.nsi"
-			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/uninstaller.nsi\"`"
+			perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
+			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
 			mkdir "$APPDIR/uninstall"
-			mv "$BUILDDIR/win_installer/helper.exe" "$APPDIR/uninstall"
+			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
 			
 			# Sign zotero.exe, dlls, updater, and uninstaller
 			if [ $SIGN == 1 ]; then
@@ -338,29 +339,29 @@ if [ $BUILD_WIN32 == 1 ]; then
 			fi
 			
 			# Stage installer
-			INSTALLERSTAGEDIR="$BUILDDIR/win_installer/staging"
-			mkdir "$INSTALLERSTAGEDIR"
-			cp -R "$APPDIR" "$INSTALLERSTAGEDIR/core"
+			INSTALLER_STAGE_DIR="$BUILD_DIR/win_installer/staging"
+			mkdir "$INSTALLER_STAGE_DIR"
+			cp -R "$APPDIR" "$INSTALLER_STAGE_DIR/core"
 			
 			# Build and sign setup.exe
-			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILDDIR/win_installer/installer.nsi\"`"
-			mv "$BUILDDIR/win_installer/setup.exe" "$INSTALLERSTAGEDIR"
+			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
+			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLERSTAGEDIR/setup.exe\"`"
+					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
 			fi
 			
 			# Compress application
-			cd "$INSTALLERSTAGEDIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILDDIR/app_win32.7z\"`" \
+			cd "$INSTALLER_STAGE_DIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILD_DIR/app_win32.7z\"`" \
 				-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
 				
 			# Compress 7zSD.sfx
-			"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILDDIR/7zSD.sfx\"`" \
+			"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
 				"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
 			
 			# Combine 7zSD.sfx and app.tag into setup.exe
-			cat "$BUILDDIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
-				"$BUILDDIR/app_win32.7z" > "$INSTALLER_PATH"
+			cat "$BUILD_DIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
+				"$BUILD_DIR/app_win32.7z" > "$INSTALLER_PATH"
 			
 			# Sign Zotero_setup.exe
 			if [ $SIGN == 1 ]; then
@@ -372,7 +373,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 		else
 			echo 'Not building on Windows; only building zip file'
 		fi
-		cd "$STAGEDIR" && zip -rqX "$DISTDIR/Zotero-${VERSION}_win32.zip" Zotero_win32
+		cd "$STAGE_DIR" && zip -rqX "$DIST_DIR/Zotero-${VERSION}_win32.zip" Zotero_win32
 	fi
 fi
 
@@ -383,12 +384,12 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Set up directory
 		echo 'Building Zotero_linux-'$arch
-		APPDIR="$STAGEDIR/Zotero_linux-$arch"
+		APPDIR="$STAGE_DIR/Zotero_linux-$arch"
 		rm -rf "$APPDIR"
 		mkdir "$APPDIR"
 		
 		# Merge xulrunner and relevant assets
-		cp -R "$BUILDDIR/zotero/"* "$BUILDDIR/application.ini" "$APPDIR"
+		cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 		cp -r "$RUNTIME_PATH" "$APPDIR/xulrunner"
 		rm "$APPDIR/xulrunner/xulrunner-stub"
 		cp "$CALLDIR/linux/xulrunner-stub-$arch" "$APPDIR/zotero"
@@ -421,11 +422,11 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		if [ $PACKAGE == 1 ]; then
 			# Create tar
-			rm -f "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
-			cd "$STAGEDIR"
-			tar -cjf "$DISTDIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
+			rm -f "$DIST_DIR/Zotero-${VERSION}_linux-$arch.tar.bz2"
+			cd "$STAGE_DIR"
+			tar -cjf "$DIST_DIR/Zotero-${VERSION}_linux-$arch.tar.bz2" "Zotero_linux-$arch"
 		fi
 	done
 fi
 
-rm -rf $BUILDDIR
+rm -rf $BUILD_DIR

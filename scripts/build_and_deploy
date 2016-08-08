@@ -59,7 +59,7 @@ fi
 # Build Zotero
 $ROOT_DIR/build.sh -f $XPI -p $PLATFORMS -c $CHANNEL
 
-BUILD_ID=`cat "$ROOT_DIR/dist/build_id"`
+BUILD_ID=`cat "$DIST_DIR/build_id"`
 if [ -z "$BUILD_ID" ]; then
 	echo "Error getting build id"
 	exit 1
@@ -94,7 +94,7 @@ done
 "$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
 
 # Create updates.json and version info and upload them
-"$ROOT_DIR/update-packaging/add_version_info" -s "$ROOT_DIR/dist" -t "$TEMP_DIR" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
+"$ROOT_DIR/update-packaging/add_version_info" -s "$DIST_DIR" -t "$TEMP_DIR" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
 scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
 if [ $CHANNEL == "release" ]; then
 	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH"
@@ -109,4 +109,4 @@ echo
 
 $DEPLOY_CMD
 
-rm -rf "$ROOT_DIR"/staging/*
+rm -rf "$STAGE_DIR"/*

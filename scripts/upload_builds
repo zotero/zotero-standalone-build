@@ -39,7 +39,6 @@ if [ -z "$VERSION" ]; then
 	usage
 fi
 
-DIST_DIR="$ROOT_DIR/dist/"
 S3_PATH="$S3_BUCKET/standalone${S3_SUBDIR}/$VERSION/"
 
 aws s3 sync --exclude files --exclude sha512sums --exclude build_id "$DIST_DIR" s3://${S3_PATH}

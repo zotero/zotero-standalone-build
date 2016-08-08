@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . $ROOT_DIR/config.sh
+UPDATE_STAGE_DIR="$SCRIPT_DIR/staging"
 
 function usage {
 	cat >&2 <<DONE
@@ -94,11 +95,8 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
-DIST_DIR=$ROOT_DIR/dist
-STAGE_DIR=$SCRIPT_DIR/staging
-
-rm -rf $STAGE_DIR
-mkdir $STAGE_DIR
+rm -rf "$UPDATE_STAGE_DIR"
+mkdir "$UPDATE_STAGE_DIR"
 
 INCREMENTALS_FOUND=0
 for version in "$FROM" "$TO"; do
@@ -112,20 +110,20 @@ for version in "$FROM" "$TO"; do
 	
 	echo "Getting Zotero version $version"
 	
-	versiondir="$STAGE_DIR/$version"
+	versiondir="$UPDATE_STAGE_DIR/$version"
 	
 	#
 	# Use main build script's staging directory for TO files rather than downloading the given version.
 	#
 	# The caller must ensure that the files in ../staging match the platforms and version given.
 	if [[ $version == $TO && $USE_LOCAL_TO == "1" ]]; then
-		if [ ! -d "$ROOT_DIR/staging" ]; then
-			echo "Can't find local TO dir $ROOT_DIR/staging"
+		if [ ! -d "$STAGE_DIR" ]; then
+			echo "Can't find local TO dir $STAGE_DIR"
 			exit 1
 		fi
 		
-		echo "Using files from $ROOT_DIR/staging"
-		ln -s $ROOT_DIR/staging "$versiondir"
+		echo "Using files from $STAGE_DIR"
+		ln -s "$STAGE_DIR" "$versiondir"
 		continue
 	fi
 	
@@ -223,24 +221,24 @@ for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 			continue
 		fi
 		dir="Zotero_$build"
-		touch "$STAGE_DIR/$TO/$dir/precomplete"
-		cp "$SCRIPT_DIR/removed-files_$build" "$STAGE_DIR/$TO/$dir/removed-files"
+		touch "$UPDATE_STAGE_DIR/$TO/$dir/precomplete"
+		cp "$SCRIPT_DIR/removed-files_$build" "$UPDATE_STAGE_DIR/$TO/$dir/removed-files"
 	fi
-	if [[ $BUILD_INCREMENTAL == 1 ]] && [[ -d "$STAGE_DIR/$FROM/$dir" ]]; then
+	if [[ $BUILD_INCREMENTAL == 1 ]] && [[ -d "$UPDATE_STAGE_DIR/$FROM/$dir" ]]; then
 		echo
 		echo "Building incremental update from $FROM to $TO"
-		"$SCRIPT_DIR/make_incremental_update.sh" "$DIST_DIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGE_DIR/$FROM/$dir" "$STAGE_DIR/$TO/$dir"
+		"$SCRIPT_DIR/make_incremental_update.sh" "$DIST_DIR/Zotero-${TO}-${FROM}_$build.mar" "$UPDATE_STAGE_DIR/$FROM/$dir" "$UPDATE_STAGE_DIR/$TO/$dir"
 		CHANGES_MADE=1
 	fi
 	if [[ $BUILD_FULL == 1 ]]; then
 		echo
 		echo "Building full update for $TO"
-		"$SCRIPT_DIR/make_full_update.sh" "$DIST_DIR/Zotero-${TO}-full_$build.mar" "$STAGE_DIR/$TO/$dir"
+		"$SCRIPT_DIR/make_full_update.sh" "$DIST_DIR/Zotero-${TO}-full_$build.mar" "$UPDATE_STAGE_DIR/$TO/$dir"
 		CHANGES_MADE=1
 	fi
 done
 
-rm -rf $STAGE_DIR
+rm -rf "$UPDATE_STAGE_DIR"
 
 # Update file manifests
 if [ $CHANGES_MADE -eq 1 ]; then

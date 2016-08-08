@@ -32,12 +32,10 @@ EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 
-# Directory for building
-BUILDDIR="/tmp/zotero-build-`uuidgen | head -c 8`"
 # Directory for unpacked binaries
-STAGEDIR="$DIR/staging"
+STAGE_DIR="$DIR/staging"
 # Directory for packed binaries
-DISTDIR="$DIR/dist"
+DIST_DIR="$DIR/dist"
 
 S3_BUCKET="zotero-download"
 S3_PATH="standalone"

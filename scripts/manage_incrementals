@@ -53,9 +53,9 @@ fi
 
 INCR_FILENAME="incrementals-$CHANNEL"
 S3_URL="s3://$S3_BUCKET/$S3_PATH${S3_SUBDIR}/incrementals"
-INCR_PATH="$ROOT_DIR/dist/$INCR_FILENAME"
+INCR_PATH="$DIST_DIR/$INCR_FILENAME"
 
-mkdir -p "$ROOT_DIR/dist"
+mkdir -p "$DIST_DIR"
 aws s3 cp $S3_URL $INCR_PATH >&2
 
 # Add version to file and reupload
