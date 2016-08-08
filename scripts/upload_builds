@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# Uploads build archives from 'dist' to S3 with the specified path and version
+#
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+. "$ROOT_DIR/config.sh"
+
+function usage {
+	cat >&2 <<DONE
+Usage: $0 [-s S3_SUBDIR] VERSION
+Options
+ -s S3_SUBDIR         Path within S3 standalone directory (e.g., 'beta' for /standalone/beta)
+DONE
+	exit 1
+}
+
+S3_SUBDIR=""
+while getopts "s:" opt; do
+	case $opt in
+		s)
+			if [ "$OPTARG" ]; then
+				S3_SUBDIR="/$OPTARG"
+			fi
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+shift $(($OPTIND - 1))
+VERSION="${1:-}"
+
+if [ -z "$VERSION" ]; then
+	usage
+fi
+
+DIST_DIR="$ROOT_DIR/dist/"
+S3_PATH="$S3_BUCKET/standalone${S3_SUBDIR}/$VERSION/"
+
+aws s3 sync --exclude files --exclude sha512sums --exclude build_id "$DIST_DIR" s3://${S3_PATH}

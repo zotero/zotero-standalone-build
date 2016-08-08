@@ -1,3 +1,5 @@
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Whether to build for various platforms
 BUILD_MAC=1
 BUILD_WIN32=1
@@ -8,10 +10,10 @@ GECKO_VERSION="41.0.2"
 GECKO_SHORT_VERSION="41.0"
 
 # Paths to Gecko runtimes
-MAC_RUNTIME_PATH="$CALLDIR/xulrunner/Firefox.app"
-WIN32_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_win32"
-LINUX_i686_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_linux-i686"
-LINUX_x86_64_RUNTIME_PATH="$CALLDIR/xulrunner/xulrunner_linux-x86_64"
+MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
+WIN32_RUNTIME_PATH="$DIR/xulrunner/xulrunner_win32"
+LINUX_i686_RUNTIME_PATH="$DIR/xulrunner/xulrunner_linux-i686"
+LINUX_x86_64_RUNTIME_PATH="$DIR/xulrunner/xulrunner_linux-x86_64"
 
 # Whether to sign builds
 SIGN=1
@@ -33,8 +35,15 @@ SIGNATURE_URL='https://www.zotero.org/'
 # Directory for building
 BUILDDIR="/tmp/zotero-build-`uuidgen | head -c 8`"
 # Directory for unpacked binaries
-STAGEDIR="$CALLDIR/staging"
+STAGEDIR="$DIR/staging"
 # Directory for packed binaries
-DISTDIR="$CALLDIR/dist"
+DISTDIR="$DIR/dist"
 
 S3_BUCKET="zotero-download"
+S3_PATH="standalone"
+
+DEPLOY_HOST="deploy.zotero"
+DEPLOY_PATH="www/www-production/public/download/standalone/"
+DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
+
+unset DIR

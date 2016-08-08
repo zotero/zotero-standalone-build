@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# Builds and deploys Zotero with full and incremental updates
+#
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+. $ROOT_DIR/config.sh
+
+UPDATES_JSON_URL="https://www.zotero.org/download/standalone/updates.json"
+
+function usage {
+	cat >&2 <<DONE
+Usage: $0 -x XPI_FILE -c CHANNEL -p PLATFORMS
+ -x XPI_FILE         XPI file to build from
+ -c CHANNEL          Release channel ('release', 'beta')
+ -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
+DONE
+	exit 1
+}
+
+
+XPI=""
+CHANNEL=""
+PLATFORMS=""
+while getopts "x:c:p:" opt; do
+	case $opt in
+		x)
+			XPI="$OPTARG"
+			if [ ! -f "$XPI" ]; then
+				echo "$XPI not found"
+				exit 1
+			fi
+			;;
+		c)
+			CHANNEL="$OPTARG"
+			;;
+		p)
+			PLATFORMS="$OPTARG"
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+if [[ -z "$XPI" ]] || [[ -z "$CHANNEL" ]] || [[ -z "$PLATFORMS" ]]; then
+	usage
+fi
+
+VERSION="`unzip -p \"$XPI\" install.rdf | perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;'`"
+if [ -z "$VERSION" ]; then
+	echo "Error getting version from XPI"
+	exit 1
+fi
+
+# Build Zotero
+$ROOT_DIR/build.sh -f $XPI -p $PLATFORMS -c $CHANNEL
+
+BUILD_ID=`cat "$ROOT_DIR/dist/build_id"`
+if [ -z "$BUILD_ID" ]; then
+	echo "Error getting build id"
+	exit 1
+fi
+
+TEMP_DIR=`mktemp -d`
+# Clean up on exit
+function cleanup {
+	rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
+
+curl -s $UPDATES_JSON_URL > "$TEMP_DIR/updates.json"
+
+# Build full update
+"$ROOT_DIR/update-packaging/build_autoupdate.sh" -f -c "$CHANNEL" -p $PLATFORMS -l $VERSION
+
+# Build incremental updates
+echo
+echo "Getting incrementals"
+INCREMENTALS="`\"$SCRIPT_DIR/manage_incrementals\" -n 3 -c $CHANNEL`"
+echo "$INCREMENTALS"
+echo
+
+for from in $INCREMENTALS; do
+	echo "Building incremental update from $from to $VERSION"
+	"$ROOT_DIR/update-packaging/build_autoupdate.sh" -i "$from" -c "$CHANNEL" -p $PLATFORMS -l $VERSION
+	echo
+done
+
+# Upload builds to S3
+"$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
+
+# Create updates.json and version info and upload them
+"$ROOT_DIR/update-packaging/add_version_info" -s "$ROOT_DIR/dist" -t "$TEMP_DIR" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
+scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
+if [ $CHANNEL == "release" ]; then
+	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH"
+else
+	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH/$CHANNEL"
+fi
+rsync -rv "$TEMP_DIR/$CHANNEL/$VERSION/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
+
+# Add version to incrementals list
+echo
+"$SCRIPT_DIR/manage_incrementals" -a $VERSION -c $CHANNEL
+
+$DEPLOY_CMD
+
+rm -rf "$ROOT_DIR"/staging/*

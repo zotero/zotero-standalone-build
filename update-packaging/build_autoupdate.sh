@@ -1,17 +1,34 @@
-#!/bin/bash -e
-CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+. $ROOT_DIR/config.sh
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 -f [-i FROM_VERSION] VERSION
+Usage: $0 -f [-i FROM_VERSION] [-c CHANNEL] [-p PLATFORMS] [-l] VERSION
 Options
  -f                  Perform full build
  -i FROM             Perform incremental build
- -s S3_PATH          Path within S3 standalone directory (e.g., 'beta' for /standalone/beta)
- -p PLATFORM         Platforms to build (m=Mac, w=Windows, l=Linux)
+ -c CHANNEL          Release channel ('release', 'beta')
+ -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
  -l                  Use local TO directory instead of downloading TO files from S3
 DONE
 	exit 1
+}
+
+# From https://gist.github.com/cdown/1163649#gistcomment-1639097
+urlencode() {
+    local LANG=C
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf "$c" ;;
+            *) printf '%%%02X' "'$c" ;;
+        esac
+    done
 }
 
 BUILD_FULL=0
@@ -20,16 +37,19 @@ FROM=""
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
-S3_PATH=""
+S3_SUBDIR=""
 USE_LOCAL_TO=0
-while getopts "i:s:p:fl" opt; do
+while getopts "i:c:p:fl" opt; do
 	case $opt in
 		i)
 			FROM="$OPTARG"
 			BUILD_INCREMENTAL=1
 			;;
-		s)
-			S3_PATH="$OPTARG"
+		c)
+			# Use a subdirectory if not the 'release' channel
+			if [ "$OPTARG" != 'release' ]; then
+				S3_SUBDIR="/$OPTARG"
+			fi
 			;;
 		p)
 			for i in `seq 0 1 $((${#OPTARG}-1))`
@@ -59,7 +79,7 @@ while getopts "i:s:p:fl" opt; do
 done
 
 shift $(($OPTIND - 1))
-TO=$1
+TO=${1:-}
 
 if [ -z "$TO" ]; then
 	usage
@@ -74,36 +94,38 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
-DISTDIR=$CALLDIR/../dist
-STAGEDIR=$CALLDIR/staging
+DIST_DIR=$ROOT_DIR/dist
+STAGE_DIR=$SCRIPT_DIR/staging
 
+rm -rf $STAGE_DIR
+mkdir $STAGE_DIR
+
+INCREMENTALS_FOUND=0
 for version in "$FROM" "$TO"; do
-	echo "Getting Zotero version $version"
-	echo
+	if [[ $version == "$TO" ]] && [[ $INCREMENTALS_FOUND == 0 ]] && [[ $BUILD_FULL == 0 ]]; then
+		exit
+	fi
+	
 	if [ -z "$version" ]; then
 		continue
 	fi
 	
-	versiondir="$STAGEDIR/$version"
+	echo "Getting Zotero version $version"
 	
-	if [ -d "$versiondir" ]; then
-		if [ -h "$versiondir" ]; then
-			rm "$versiondir"
-		fi
-	fi
+	versiondir="$STAGE_DIR/$version"
 	
 	#
 	# Use main build script's staging directory for TO files rather than downloading the given version.
 	#
-	# The caller must ensure that the files in ../staging match the version given.
+	# The caller must ensure that the files in ../staging match the platforms and version given.
 	if [[ $version == $TO && $USE_LOCAL_TO == "1" ]]; then
-		if [ ! -d "$CALLDIR/../staging" ]; then
-			echo "Can't find local TO dir $CALLDIR/../staging"
+		if [ ! -d "$ROOT_DIR/staging" ]; then
+			echo "Can't find local TO dir $ROOT_DIR/staging"
 			exit 1
 		fi
 		
-		echo "Using files from $CALLDIR/../staging"
-		ln -s $CALLDIR/../staging "$versiondir"
+		echo "Using files from $ROOT_DIR/staging"
+		ln -s $ROOT_DIR/staging "$versiondir"
 		continue
 	fi
 	
@@ -122,7 +144,7 @@ for version in "$FROM" "$TO"; do
 		if [[ $archive = "$MAC_ARCHIVE" ]] && [[ $BUILD_MAC != 1 ]]; then
 			continue
 		fi
-		if [[ $archive = "$WIN_ARCHIVE" ]] && [[ $BUILD_WIN != 1 ]]; then
+		if [[ $archive = "$WIN_ARCHIVE" ]] && [[ $BUILD_WIN32 != 1 ]]; then
 			continue
 		fi
 		if [[ $archive = "$LINUX_X86_ARCHIVE" ]] && [[ $BUILD_LINUX != 1 ]]; then
@@ -133,41 +155,60 @@ for version in "$FROM" "$TO"; do
 		fi
 		
 		rm -f $archive
-		ENCODED_VERSION=`python -c 'import urllib2; print urllib2.quote("'$version'")'`
-		ENCODED_ARCHIVE=`python -c 'import urllib2; print urllib2.quote("'$archive'")'`
-		URL="https://zotero-download.s3.amazonaws.com/standalone/$S3_PATH/$ENCODED_VERSION/$ENCODED_ARCHIVE"
+		# URL-encode '+' in beta version numbers
+		ENCODED_VERSION=`urlencode $version`
+		ENCODED_ARCHIVE=`urlencode $archive`
+		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_PATH${S3_SUBDIR}/$ENCODED_VERSION/$ENCODED_ARCHIVE"
 		echo "Fetching $URL"
+		set +e
 		wget -nv $URL
+		set -e
 	done
 	
 	# Unpack Zotero.app
 	if [ $BUILD_MAC == 1 ]; then
-		set +e
-		hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
-		set -e
-		hdiutil attach -quiet "$MAC_ARCHIVE"
-		cp -R /Volumes/Zotero/Zotero.app "$versiondir"
-		rm "$MAC_ARCHIVE"
-		hdiutil detach -quiet /Volumes/Zotero
+		if [ -f "$MAC_ARCHIVE" ]; then
+			set +e
+			hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
+			set -e
+			hdiutil attach -quiet "$MAC_ARCHIVE"
+			cp -R /Volumes/Zotero/Zotero.app "$versiondir"
+			rm "$MAC_ARCHIVE"
+			hdiutil detach -quiet /Volumes/Zotero
+			INCREMENTALS_FOUND=1
+		else
+			echo "$MAC_ARCHIVE not found"
+		fi
 	fi
 	
 	# Unpack Win32 zip
 	if [ $BUILD_WIN32 == 1 ]; then
-		unzip -q "$WIN_ARCHIVE"
-		rm "$WIN_ARCHIVE"
+		if [ -f "$WIN_ARCHIVE" ]; then
+			unzip -q "$WIN_ARCHIVE"
+			rm "$WIN_ARCHIVE"
+			INCREMENTALS_FOUND=1
+		else
+			echo "$WIN_ARCHIVE not found"
+		fi
 	fi
 	
 	# Unpack Linux tarballs
 	if [ $BUILD_LINUX == 1 ]; then
-		for build in "$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE"; do
-			tar -xjf "$build"
-			rm "$build"
-		done
+		if [[ -f "$LINUX_X86_ARCHIVE" ]] && [[ -f "$LINUX_X86_64_ARCHIVE" ]]; then
+			for build in "$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE"; do
+				tar -xjf "$build"
+				rm "$build"
+			done
+			INCREMENTALS_FOUND=1
+		else
+			echo "$LINUX_X86_ARCHIVE/$LINUX_X86_64_ARCHIVE not found"
+		fi
 	fi
 	
 	echo
 done
 
+CHANGES_MADE=0
 for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 	if [[ $build == "mac" ]]; then
 		if [[ $BUILD_MAC == 0 ]]; then
@@ -182,26 +223,33 @@ for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 			continue
 		fi
 		dir="Zotero_$build"
-		touch "$STAGEDIR/$TO/$dir/precomplete"
-		cp "$CALLDIR/removed-files_$build" "$STAGEDIR/$TO/$dir/removed-files"
+		touch "$STAGE_DIR/$TO/$dir/precomplete"
+		cp "$SCRIPT_DIR/removed-files_$build" "$STAGE_DIR/$TO/$dir/removed-files"
 	fi
-	if [[ $BUILD_INCREMENTAL == 1 ]]; then
+	if [[ $BUILD_INCREMENTAL == 1 ]] && [[ -d "$STAGE_DIR/$FROM/$dir" ]]; then
 		echo
 		echo "Building incremental update from $FROM to $TO"
-		"$CALLDIR/make_incremental_update.sh" "$DISTDIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGEDIR/$FROM/$dir" "$STAGEDIR/$TO/$dir"
+		"$SCRIPT_DIR/make_incremental_update.sh" "$DIST_DIR/Zotero-${TO}-${FROM}_$build.mar" "$STAGE_DIR/$FROM/$dir" "$STAGE_DIR/$TO/$dir"
+		CHANGES_MADE=1
 	fi
 	if [[ $BUILD_FULL == 1 ]]; then
 		echo
 		echo "Building full update for $TO"
-		"$CALLDIR/make_full_update.sh" "$DISTDIR/Zotero-${TO}-full_$build.mar" "$STAGEDIR/$TO/$dir"
+		"$SCRIPT_DIR/make_full_update.sh" "$DIST_DIR/Zotero-${TO}-full_$build.mar" "$STAGE_DIR/$TO/$dir"
+		CHANGES_MADE=1
 	fi
 done
 
-cd "$DISTDIR"
-shasum -a 512 * > sha512sums
-ls -lan > files
+rm -rf $STAGE_DIR
 
-echo
-cat sha512sums
-echo
-cat files
+# Update file manifests
+if [ $CHANGES_MADE -eq 1 ]; then
+	cd "$DIST_DIR"
+	shasum -a 512 * > sha512sums
+	ls -lan > files
+	
+	echo
+	cat sha512sums
+	echo
+	cat files
+fi

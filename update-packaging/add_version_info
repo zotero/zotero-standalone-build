@@ -13,12 +13,12 @@ DETAILS_URLS = {
 MAJOR = False
 
 parser = argparse.ArgumentParser(
-    description='Add version info to Zotero build manifest',
+    description='Add version info to builds manifest',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('-s', '--source_dir', required=True, help="path to directory containing 'sha512sums' and 'files'")
 parser.add_argument('-t', '--target_dir', required=True, help="path to directory containing 'updates.json'")
-parser.add_argument('-p', '--platform', required=True, help="platform ('mac', 'win32', 'linux-i386', 'linux-x86_64')")
+parser.add_argument('-p', '--platforms', required=True, help="platforms ('m', 'w', 'l')")
 parser.add_argument('-c', '--channel', required=True, help="release channel ('release', 'beta')")
 parser.add_argument('-v', '--version', required=True, help='version number of build')
 parser.add_argument('-b', '--build_id', required=True, help="build ID ('20160801142343')")
@@ -29,9 +29,13 @@ def main():
     try:
         source_dir = args.source_dir
         target_dir = args.target_dir
-        platform = args.platform
+        platforms = args.platforms
         channel = args.channel
         version = args.version
+        
+        unknown_platforms = set(platforms) - set(['m', 'w', 'l'])
+        if len(unknown_platforms) > 0:
+            raise Exception("Invalid platform '{}'".format(unknown_platforms))
         
         # Make sure file lists exist and are non-empty
         files_file = os.path.join(source_dir, 'files')
@@ -65,15 +69,26 @@ def main():
         
         if channel not in updates:
             updates[channel] = {}
-        if platform not in updates[channel]:
-            updates[channel][platform] = {}
         
-        updates[channel][platform]['VERSION'] = version
-        updates[channel][platform]['BUILD_ID'] = args.build_id
+        full_platforms = []
+        if "m" in platforms:
+            full_platforms.append("mac")
+        if "w" in platforms:
+            full_platforms.append("win32")
+        if "l" in platforms:
+            full_platforms.append("linux-i386")
+            full_platforms.append("linux-x86_64")
         
-        if 'DETAILSURL' not in updates[channel][platform]:
-            updates[channel][platform]['DETAILSURL'] = DETAILS_URLS[version[0:3]]
-            updates[channel][platform]['MAJOR'] = MAJOR
+        for platform in full_platforms:
+            if platform not in updates[channel]:
+                updates[channel][platform] = {}
+            
+            updates[channel][platform]['VERSION'] = version
+            updates[channel][platform]['BUILD_ID'] = args.build_id
+            
+            if 'DETAILSURL' not in updates[channel][platform]:
+                updates[channel][platform]['DETAILSURL'] = DETAILS_URLS[version[0:3]]
+                updates[channel][platform]['MAJOR'] = MAJOR
         
         updates = json.dumps(updates, indent=2)
         

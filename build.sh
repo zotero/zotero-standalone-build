@@ -98,6 +98,9 @@ mkdir "$STAGEDIR"
 rm -rf "$DISTDIR"
 mkdir "$DISTDIR"
 
+# Save build id, which is needed for updates manifest
+echo $BUILDID > $DISTDIR/build_id
+
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
 echo "Building from $ZIP_FILE"

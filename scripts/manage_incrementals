@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# Manage list of deployed version numbers for a channel in order to generate incremental builds
+#
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+. "$ROOT_DIR/config.sh"
+
+function usage {
+	cat >&2 <<DONE
+Usage:
+ -a VERSION            Add version to incrementals list; cannot be used with -n
+ -n NUM_VERSIONS       Number of previous versions to return; cannot be used with -a
+ -c CHANNEL            Release channel (e.g., 'beta'); defaults to 'release'
+DONE
+	exit 1
+}
+
+VERSION=""
+NUM_VERSIONS=""
+CHANNEL="release"
+S3_SUBDIR=""
+while getopts "a:n:c:" opt; do
+	case $opt in
+		a)
+			VERSION="$OPTARG"
+			;;
+		n)
+			NUM_VERSIONS="$OPTARG"
+			;;
+		c)
+			CHANNEL="$OPTARG"
+			if [ "$CHANNEL" ]; then
+				S3_SUBDIR="/$CHANNEL"
+			fi
+			;;
+		*)
+			usage
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+if [[ -z "$VERSION" ]] && [[ -z "$NUM_VERSIONS" ]]; then
+	usage
+fi
+
+if [[ "$VERSION" ]] && [[ "$NUM_VERSIONS" ]]; then
+	usage
+fi
+
+INCR_FILENAME="incrementals-$CHANNEL"
+S3_URL="s3://$S3_BUCKET/$S3_PATH${S3_SUBDIR}/incrementals"
+INCR_PATH="$ROOT_DIR/dist/$INCR_FILENAME"
+
+mkdir -p "$ROOT_DIR/dist"
+aws s3 cp $S3_URL $INCR_PATH >&2
+
+# Add version to file and reupload
+if [ "$VERSION" ]; then
+	echo "Adding $VERSION to incrementals"
+	echo $VERSION >> $INCR_PATH
+	cat $INCR_PATH | uniq > $INCR_PATH.tmp
+	mv $INCR_PATH.tmp $INCR_PATH
+	aws s3 cp $INCR_PATH $S3_URL
+# Show last n versions
+elif [ "$NUM_VERSIONS" ]; then
+	tail -n $NUM_VERSIONS $INCR_PATH
+fi
+rm $INCR_PATH
