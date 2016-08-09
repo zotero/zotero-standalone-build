@@ -78,7 +78,7 @@ trap cleanup EXIT
 # Build incremental updates
 echo
 echo "Getting incrementals"
-INCREMENTALS="`\"$SCRIPT_DIR/manage_incrementals\" -n 3 -c $CHANNEL`"
+INCREMENTALS="`\"$SCRIPT_DIR/manage_incrementals\" -n $NUM_INCREMENTALS -c $CHANNEL`"
 echo "$INCREMENTALS"
 echo
 
