@@ -72,8 +72,6 @@ function cleanup {
 }
 trap cleanup EXIT
 
-curl -s $UPDATES_JSON_URL > "$TEMP_DIR/updates.json"
-
 # Build full update
 "$ROOT_DIR/update-packaging/build_autoupdate.sh" -f -c "$CHANNEL" -p $PLATFORMS -l $VERSION
 
@@ -93,15 +91,20 @@ done
 # Upload builds to S3
 "$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
 
-# Create updates.json and version info and upload them
-"$ROOT_DIR/update-packaging/add_version_info" -s "$DIST_DIR" -t "$TEMP_DIR" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
-scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
+# Upload file lists for each platform
 if [ $CHANNEL == "release" ]; then
 	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH"
 else
 	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH/$CHANNEL"
 fi
-rsync -rv "$TEMP_DIR/$CHANNEL/$VERSION/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
+mkdir "$TEMP_DIR/version_info"
+cp "$DIST_DIR"/files-* "$TEMP_DIR/version_info"
+rsync -rv "$TEMP_DIR/version_info/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
+
+# Download updates.json, update it, and reupload it
+curl -s $UPDATES_JSON_URL > "$TEMP_DIR/updates.json"
+"$ROOT_DIR/update-packaging/add_version_info" -f "$TEMP_DIR/updates.json" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
+scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
 
 # Add version to incrementals list
 echo

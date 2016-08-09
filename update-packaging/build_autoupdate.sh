@@ -243,11 +243,13 @@ rm -rf "$UPDATE_STAGE_DIR"
 # Update file manifests
 if [ $CHANGES_MADE -eq 1 ]; then
 	cd "$DIST_DIR"
-	shasum -a 512 * > sha512sums
-	ls -lan > files
-	
-	echo
-	cat sha512sums
-	echo
-	cat files
+	for platform in "mac" "win" "linux"; do
+		file=files-$platform
+		rm -f $file
+		for fn in `find . -name "*$platform*.mar"`; do
+			size=`wc -c "$fn" | tr -s ' ' | cut -d ' ' -f2`
+			hash=`shasum -a 512 "$fn" | cut -d ' ' -f1`
+			echo $fn $hash $size >> $file
+		done
+	done
 fi

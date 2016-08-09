@@ -16,8 +16,7 @@ parser = argparse.ArgumentParser(
     description='Add version info to builds manifest',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('-s', '--source_dir', required=True, help="path to directory containing 'sha512sums' and 'files'")
-parser.add_argument('-t', '--target_dir', required=True, help="path to directory containing 'updates.json'")
+parser.add_argument('-f', '--file', required=True, help="path to updates.json")
 parser.add_argument('-p', '--platforms', required=True, help="platforms ('m', 'w', 'l')")
 parser.add_argument('-c', '--channel', required=True, help="release channel ('release', 'beta')")
 parser.add_argument('-v', '--version', required=True, help='version number of build')
@@ -27,8 +26,7 @@ args = parser.parse_args()
 
 def main():
     try:
-        source_dir = args.source_dir
-        target_dir = args.target_dir
+        file = args.file
         platforms = args.platforms
         channel = args.channel
         version = args.version
@@ -37,34 +35,10 @@ def main():
         if len(unknown_platforms) > 0:
             raise Exception("Invalid platform '{}'".format(unknown_platforms))
         
-        # Make sure file lists exist and are non-empty
-        files_file = os.path.join(source_dir, 'files')
-        sums_file = os.path.join(source_dir, 'sha512sums')
-        
-        statinfo = os.stat(files_file)
-        if statinfo.st_size == 0:
-            raise Exception("{} cannot be empty".format(os.path.abspath(files_file)))
-        statinfo = os.stat(sums_file)
-        if statinfo.st_size == 0:
-            raise Exception("{} cannot be empty".format(os.path.abspath(sums_file)))
-        
-        # Use subdirectory of target directory for non-release channels
-        if channel == 'release':
-            target_version_dir = os.path.join(target_dir, version)
-        else:
-            target_version_dir = os.path.join(target_dir, channel, version)
-        
-        # Make target version directory if it doesn't exist, and copy file lists over
-        if not os.path.exists(target_version_dir):
-            os.makedirs(target_version_dir)
-        shutil.copy2(files_file, target_version_dir)
-        shutil.copy2(sums_file, target_version_dir)
-        
         # Back up JSON file
-        updates_json_file = os.path.join(args.target_dir, 'updates.json')
-        shutil.copy2(updates_json_file, updates_json_file + '.bak')
+        shutil.copy2(file, file + '.bak')
         
-        with open(updates_json_file) as f:
+        with open(file) as f:
             updates = json.loads(f.read())
         
         if channel not in updates:
@@ -92,7 +66,7 @@ def main():
         
         updates = json.dumps(updates, indent=2)
         
-        with open(updates_json_file, 'w') as f:
+        with open(file, 'w') as f:
             f.write(updates + "\n")
         
         print(updates)
