@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$ROOT_DIR"
+
+PLATFORM="m"
+
+"$ROOT_DIR/../zotero-build/xpi/build_xpi" -s "$ROOT_DIR/../zotero" -c source
+"$ROOT_DIR/build.sh" -f "$ROOT_DIR/../zotero-build/xpi/build/zotero-build.xpi" -p $PLATFORM -d -c source
