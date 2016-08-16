@@ -15,6 +15,9 @@ which perl || { $FAIL_CMD; FAILED=1; }
 echo -n "Checking for python3: "
 which python3 || { $FAIL_CMD; FAILED=1; }
 
+echo -n "Checking for wget: "
+which wget || { $FAIL_CMD; FAILED=1; }
+
 echo -n "Checking for zip: "
 which zip || { $FAIL_CMD; FAILED=1; }
 
