@@ -8,6 +8,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . $ROOT_DIR/config.sh
 
+"$SCRIPT_DIR"/check_requirements
+
 UPDATES_JSON_URL="https://www.zotero.org/download/standalone/updates.json"
 
 function usage {
