@@ -8,5 +8,12 @@ cd "$ROOT_DIR"
 PLATFORM="m"
 CHANNEL="source"
 
+VERSION=`perl -ne 'print and last if s/.*<em:version>(.{3}).+/\1/;' "$ROOT_DIR/../zotero/install.rdf"`
+if [ $VERSION != "4.0" ]; then
+	ABS="$(cd "$(dirname "$ROOT_DIR/../zotero/")"; pwd)/$(basename "$ROOT_DIR/../zotero/")"
+	echo "Found $VERSION in $ABS -- 4.0 expected"
+	exit 1
+fi
+
 "$ROOT_DIR/../zotero-build/xpi/build_xpi_4.0" "$ROOT_DIR/../zotero" $CHANNEL
 "$ROOT_DIR/build.sh" -f "$ROOT_DIR/../zotero-build/xpi/build/zotero-build.xpi" -p $PLATFORM -d -c $CHANNEL
