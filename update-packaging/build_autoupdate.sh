@@ -246,7 +246,7 @@ if [ $CHANGES_MADE -eq 1 ]; then
 	for platform in "mac" "win" "linux"; do
 		file=files-$platform
 		rm -f $file
-		for fn in `find . -name "*$platform*.mar"`; do
+		for fn in `find . -name "*$platform*.mar" -exec basename {} \;`; do
 			size=`wc -c "$fn" | tr -s ' ' | cut -d ' ' -f2`
 			hash=`shasum -a 512 "$fn" | cut -d ' ' -f1`
 			echo $fn $hash $size >> $file
