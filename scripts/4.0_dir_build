@@ -6,6 +6,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 PLATFORM="m"
+CHANNEL="source"
 
-"$ROOT_DIR/../zotero-build/xpi/build_xpi_4.0" "$ROOT_DIR/../zotero" source source source
-"$ROOT_DIR/build.sh" -f "$ROOT_DIR/../zotero-build/xpi/build/zotero-build.xpi" -p $PLATFORM -d -c source
+"$ROOT_DIR/../zotero-build/xpi/build_xpi_4.0" "$ROOT_DIR/../zotero" $CHANNEL
+"$ROOT_DIR/build.sh" -f "$ROOT_DIR/../zotero-build/xpi/build/zotero-build.xpi" -p $PLATFORM -d -c $CHANNEL

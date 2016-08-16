@@ -6,7 +6,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 PLATFORMS="ml"
-CHANNEL="beta"
+CHANNEL="release"
 
 "$ROOT_DIR/../zotero-build/xpi/build_xpi_4.0" 4.0 $CHANNEL
 "$SCRIPT_DIR/build_and_deploy" -x ../zotero-build/xpi/build/zotero-build.xpi -p $PLATFORMS -c $CHANNEL

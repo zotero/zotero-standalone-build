@@ -8,5 +8,5 @@ cd "$ROOT_DIR"
 PLATFORMS="ml"
 CHANNEL="beta"
 
-"$ROOT_DIR/../zotero-build/xpi/build_xpi" -c beta -x 5.0-beta -r 5.0-branch --xpi-dir dev
+"$ROOT_DIR/../zotero-build/xpi/build_xpi" -c $CHANNEL
 "$SCRIPT_DIR/build_and_deploy" -x ../zotero-build/xpi/build/zotero-build.xpi -p $PLATFORMS -c $CHANNEL
