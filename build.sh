@@ -162,8 +162,8 @@ cp -r "$CALLDIR/assets/icons" "$BUILD_DIR/zotero/chrome/icons"
 
 # Copy application.ini and modify
 cp "$CALLDIR/assets/application.ini" "$BUILD_DIR/application.ini"
-perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILD_DIR/application.ini"
-perl -pi -e "s/{{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
+perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/application.ini"
+perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
 
 # Copy prefs.js and modify
 cp "$CALLDIR/assets/prefs.js" "$BUILD_DIR/zotero/defaults/preferences"
