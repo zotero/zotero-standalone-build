@@ -23,12 +23,21 @@ CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
 SITE="$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
 
+function usage {
+	cat >&2 <<DONE
+Usage: $0 -p platforms
+Options
+ -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
+DONE
+	exit 1
+}
+
+BUILD_MAC=0
+BUILD_WIN32=0
+BUILD_LINUX=0
 while getopts "p:" opt; do
 	case $opt in
 		p)
-			BUILD_MAC=0
-			BUILD_WIN32=0
-			BUILD_LINUX=0
 			for i in `seq 0 1 $((${#OPTARG}-1))`
 			do
 				case ${OPTARG:i:1} in
@@ -45,6 +54,11 @@ while getopts "p:" opt; do
 	esac
 	shift $((OPTIND-1)); OPTIND=1
 done
+
+# Require at least one platform
+if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
+	usage
+fi
 
 rm -rf xulrunner
 mkdir xulrunner

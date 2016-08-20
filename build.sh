@@ -34,7 +34,7 @@ fi
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 -f FILE [-p PLATFORMS] [-c CHANNEL] [-d]
+Usage: $0 -f FILE -p PLATFORMS [-c CHANNEL] [-d]
 Options
  -f FILE             ZIP file to build from
  -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
@@ -54,6 +54,9 @@ function abspath {
 	echo $(cd $(dirname $1); pwd)/$(basename $1);
 }
 
+BUILD_MAC=0
+BUILD_WIN32=0
+BUILD_LINUX=0
 PACKAGE=1
 while getopts "f:p:c:d" opt; do
 	case $opt in
@@ -61,9 +64,6 @@ while getopts "f:p:c:d" opt; do
 			ZIP_FILE="$OPTARG"
 			;;
 		p)
-			BUILD_MAC=0
-			BUILD_WIN32=0
-			BUILD_LINUX=0
 			for i in `seq 0 1 $((${#OPTARG}-1))`
 			do
 				case ${OPTARG:i:1} in
@@ -91,6 +91,11 @@ while getopts "f:p:c:d" opt; do
 done
 
 if [ -z "$ZIP_FILE" ]; then
+	usage
+fi
+
+# Require at least one platform
+if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
 	usage
 fi
 
