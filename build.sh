@@ -50,6 +50,10 @@ function cleanup {
 }
 trap cleanup EXIT
 
+function abspath {
+	echo $(cd $(dirname $1); pwd)/$(basename $1);
+}
+
 PACKAGE=1
 while getopts "f:p:c:d" opt; do
 	case $opt in
@@ -104,6 +108,7 @@ echo $BUILD_ID > $DIST_DIR/build_id
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
+ZIP_FILE="`abspath $ZIP_FILE`"
 echo "Building from $ZIP_FILE"
 unzip -q $ZIP_FILE -d "$BUILD_DIR/zotero"
 
