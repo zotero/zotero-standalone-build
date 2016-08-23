@@ -1,0 +1,6 @@
+﻿[Desktop Entry]
+Name=Zotero
+Exec=bash -c "`dirname %k`/zotero"
+Icon=zotero.ico
+Type=Application
+Terminal=false

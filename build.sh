@@ -405,6 +405,10 @@ if [ $BUILD_LINUX == 1 ]; then
 		mv "$APPDIR"/firefox "$APPDIR"/zotero-bin
 		cp "$CALLDIR/linux/zotero" "$APPDIR"/zotero
 		
+		# Copy Ubuntu launcher files
+		cp "$CALLDIR/linux/zotero.desktop" "$APPDIR"/zotero.desktop
+		cp "$CALLDIR/linux/set_launcher_icon" "$APPDIR"/updater
+		
 		# Use our own updater, because Mozilla's requires updates signed by Mozilla
 		cp "$CALLDIR/linux/updater-$arch" "$APPDIR"/updater
 		
