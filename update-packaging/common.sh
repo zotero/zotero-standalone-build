@@ -135,6 +135,10 @@ append_remove_instructions() {
     listfile="$dir/Contents/Resources/removed-files"
   fi
   if [ -n "$listfile" ]; then
+    # Changed by Zotero: Use subshell and disable filename globbing to prevent bash from expanding
+    # entries in removed-files with paths from the root (e.g., 'xulrunner/*')
+    (
+    set -f
     # Map spaces to pipes so that we correctly handle filenames with spaces.
     files=($(cat "$listfile" | tr " " "|"  | sort -r))
     num_files=${#files[*]}
@@ -165,6 +169,7 @@ append_remove_instructions() {
         fi
       fi
     done
+    )
   fi
 }
 
