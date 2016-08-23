@@ -25,7 +25,10 @@ echo -n "Checking for unzip: "
 which unzip || { $FAIL_CMD; FAILED=1; }
 
 echo -n "Checking for Mozilla ARchive (MAR) tool: "
-which mar || { $FAIL_CMD; FAILED=1; }
+which mar || { $FAIL_CMD; FAILED=1; echo "  -- Install mar from https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/mar-tools/"; }
+
+echo -n "Checking for mbsdiff: "
+which mbsdiff || { $FAIL_CMD; FAILED=1; echo "  -- Install mbsdiff from https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/mar-tools/"; }
 
 if [ "`uname`" = "Darwin" ]; then
 	echo -n "Checking for codesign: "
