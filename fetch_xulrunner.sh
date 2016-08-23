@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Copyright (c) 2011  Zotero
 #                     Center for History and New Media
@@ -60,18 +61,47 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
+# Modify AddonConstants.jsm in omni.ja to allow unsigned add-ons
+#
+# Theoretically there should be other ways of doing this without modifying omni.ja
+# (e.g., an 'override' statement in chrome.manifest, a enterprise config.js file that clears
+# SIGNED_TYPES in XPIProvider.jsm), but I couldn't get them to work.
+function modify_omni {
+	mkdir omni
+	mv omni.ja omni
+	cd omni
+	# omni.ja is an "optimized" ZIP file, so use a script from Mozilla to avoid a warning from unzip
+	# here and to make it work after rezipping below
+	python "$CALLDIR/scripts/optimizejars.py" --deoptimize ./ ./ ./
+	unzip omni.ja
+	rm omni.ja
+	perl -pi -e 's/value: true/value: false/' modules/addons/AddonConstants.jsm
+	# Delete binary version of file
+	rm jsloader/resource/gre/modules/addons/AddonConstants.jsm
+	zip -qr9XD omni.ja *
+	mv omni.ja ..
+	cd ..
+	python "$CALLDIR/scripts/optimizejars.py" --optimize ./ ./ ./
+	rm -rf omni
+}
+
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
 
 if [ $BUILD_MAC == 1 ]; then
-	# Extract XUL bundle from Firefox
-	echo curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
 	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
-	hdiutil detach -quiet /Volumes/Zotero 2>/dev/null
+	set +e
+	hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
+	set -e
 	hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
 	cp -a /Volumes/Firefox/Firefox.app .
-	hdiutil detach -quiet /Volumes/Zotero
+	hdiutil detach -quiet /Volumes/Firefox
+	
+	pushd Firefox.app/Contents/Resources
+	modify_omni
+	popd
+	
 	rm "Firefox%20$GECKO_VERSION.dmg"
 fi
 
@@ -97,25 +127,23 @@ if [ $BUILD_WIN32 == 1 ]; then
 fi
 
 if [ $BUILD_LINUX == 1 ]; then
-	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2 \
-		-O $SITE/xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2 
+	rm -rf firefox
 	
-	tar -xjf xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2
-	rm xulrunner-$GECKO_VERSION.en-US.linux-i686.tar.bz2
-	mv xulrunner xulrunner_linux-i686
+	curl -O "https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	rm -rf firefox-i686
+	tar xvf firefox-$GECKO_VERSION.tar.bz2
+	mv firefox firefox-i686
+	cd firefox-i686
+	modify_omni
+	cd ..
+	rm "firefox-$GECKO_VERSION.tar.bz2"
 	
-	tar -xjf xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2
-	rm xulrunner-$GECKO_VERSION.en-US.linux-x86_64.tar.bz2
-	mv xulrunner xulrunner_linux-x86_64
-
-	# Extract XUL bundle from Firefox
-	# curl -O "https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
-	# tar -xjf firefox-$GECKO_VERSION.tar.bz2 firefox/libxul.so
-	# mv firefox/libxul.so xulrunner_linux-i686/libxul.so
-	# #rm -rf firefox "firefox-$GECKO_VERSION.tar.bz2"
-
-	# curl -O "https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
-	# tar -xjf firefox-$GECKO_VERSION.tar.bz2 firefox/libxul.so
-	# mv firefox/libxul.so xulrunner_linux-x86_64/libxul.so
-	# #rm -rf firefox "firefox-$GECKO_VERSION.tar.bz2"
+	curl -O "https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	rm -rf firefox-x86_64
+	tar xvf firefox-$GECKO_VERSION.tar.bz2
+	mv firefox firefox-x86_64
+	cd firefox-x86_64
+	modify_omni
+	cd ..
+	rm "firefox-$GECKO_VERSION.tar.bz2"
 fi

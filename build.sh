@@ -398,13 +398,21 @@ if [ $BUILD_LINUX == 1 ]; then
 		rm -rf "$APPDIR"
 		mkdir "$APPDIR"
 		
-		# Merge xulrunner and relevant assets
+		# Merge relevant assets from Firefox
+		cp -r "$RUNTIME_PATH/"!(application.ini|browser|defaults|crashreporter|crashreporter.ini|firefox-bin|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
+		
+		# Use our own launcher that calls the original Firefox executable with -app
+		mv "$APPDIR"/firefox "$APPDIR"/zotero-bin
+		cp "$CALLDIR/linux/zotero" "$APPDIR"/zotero
+		
+		# Use our own updater, because Mozilla's requires updates signed by Mozilla
+		cp "$CALLDIR/linux/updater-$arch" "$APPDIR"/updater
+		
 		cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
-		cp -r "$RUNTIME_PATH" "$APPDIR/xulrunner"
-		rm "$APPDIR/xulrunner/xulrunner-stub"
-		cp "$CALLDIR/linux/xulrunner-stub-$arch" "$APPDIR/zotero"
-		chmod 755 "$APPDIR/zotero"
-	
+		
+		# Modify platform-specific prefs
+		perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+		
 		# Add Unix-specific Standalone assets
 		cd "$CALLDIR/assets/unix"
 		zip -0 -r -q "$APPDIR/zotero.jar" *
@@ -425,10 +433,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 		
 		# Add run-zotero.sh
-		cp "$CALLDIR/linux/run-zotero.sh" "$APPDIR/run-zotero.sh"
-		
-		# Move icons, so that updater.png doesn't fail
-		mv "$APPDIR/xulrunner/icons" "$APPDIR/icons"
+		#cp "$CALLDIR/linux/run-zotero.sh" "$APPDIR/run-zotero.sh"
 		
 		if [ $PACKAGE == 1 ]; then
 			# Create tar

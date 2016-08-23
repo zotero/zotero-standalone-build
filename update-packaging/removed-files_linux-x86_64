@@ -1,10 +1,4 @@
-xulrunner/omni.jar
-xulrunner/README.txt
-xulrunner/run-mozilla.sh
-xulrunner/xpcshell
-xulrunner/xulrunner-bin
-xulrunner/libxpcom.so
-xulrunner/components/binary.manifest
+xulrunner/*
 translators.zip
 translators.index
 styles.zip
@@ -21,3 +15,4 @@ resource/concurrent-caller.js
 install.rdf
 deleted.txt
 test/*
+run-zotero.sh

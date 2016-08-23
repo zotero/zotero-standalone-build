@@ -1,14 +1,14 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Version of Gecko to build with
-GECKO_VERSION="41.0.2"
-GECKO_SHORT_VERSION="41.0"
+GECKO_VERSION="48.0.1"
+GECKO_SHORT_VERSION="48.0"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
 WIN32_RUNTIME_PATH="$DIR/xulrunner/xulrunner_win32"
-LINUX_i686_RUNTIME_PATH="$DIR/xulrunner/xulrunner_linux-i686"
-LINUX_x86_64_RUNTIME_PATH="$DIR/xulrunner/xulrunner_linux-x86_64"
+LINUX_i686_RUNTIME_PATH="$DIR/xulrunner/firefox-i686"
+LINUX_x86_64_RUNTIME_PATH="$DIR/xulrunner/firefox-x86_64"
 
 # Whether to sign builds
 SIGN=1
