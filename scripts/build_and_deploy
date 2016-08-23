@@ -16,7 +16,7 @@ function usage {
 	cat >&2 <<DONE
 Usage: $0 -x XPI_FILE -c CHANNEL -p PLATFORMS
  -x XPI_FILE         XPI file to build from
- -c CHANNEL          Release channel ('release', 'beta')
+ -c CHANNEL          Release channel ('release', 'beta', 'dev')
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
 DONE
 	exit 1
