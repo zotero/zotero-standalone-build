@@ -1,4 +1,4 @@
-﻿[Desktop Entry]
+[Desktop Entry]
 Name=Zotero
 Exec=bash -c "`dirname %k`/zotero"
 Icon=zotero.ico
