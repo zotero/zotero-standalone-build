@@ -93,7 +93,7 @@ done
 # Upload builds to S3
 "$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
 
-# Upload file lists for each platform
+# Upload file lists for each platform, using a subdirectory for non-release channels
 if [ $CHANNEL == "release" ]; then
 	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH"
 else

@@ -21,7 +21,7 @@ S3_SUBDIR=""
 while getopts "s:" opt; do
 	case $opt in
 		s)
-			if [ "$OPTARG" ]; then
+			if [ "$OPTARG" != "release" ]; then
 				S3_SUBDIR="/$OPTARG"
 			fi
 			;;

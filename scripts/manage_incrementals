@@ -32,7 +32,7 @@ while getopts "a:n:c:" opt; do
 			;;
 		c)
 			CHANNEL="$OPTARG"
-			if [ "$CHANNEL" ]; then
+			if [ "$CHANNEL" != "release" ]; then
 				S3_SUBDIR="/$CHANNEL"
 			fi
 			;;
