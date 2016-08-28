@@ -19,10 +19,9 @@ set -euo pipefail
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PROTOCOL="https"
 CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$CALLDIR/config.sh"
-SITE="$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$GECKO_VERSION/runtimes/"
+DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
 
 function usage {
 	cat >&2 <<DONE
@@ -90,7 +89,9 @@ mkdir xulrunner
 cd xulrunner
 
 if [ $BUILD_MAC == 1 ]; then
-	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+	rm -rf Firefox.app
+	
+	curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
 	set +e
 	hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
 	set -e
@@ -106,30 +107,33 @@ if [ $BUILD_MAC == 1 ]; then
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then
-	curl -O $SITE/xulrunner-$GECKO_VERSION.en-US.win32.zip
+	XDIR=firefox-win32
+	rm -rf $XDIR
+	mkdir $XDIR
 	
-	unzip -q xulrunner-$GECKO_VERSION.en-US.win32.zip
-	rm xulrunner-$GECKO_VERSION.en-US.win32.zip
-	mv xulrunner xulrunner_win32
-
-	# Extract XUL bundle from Firefox
-	curl -O "$PROTOCOL://ftp.mozilla.org/pub/mozilla.org/firefox/releases/$GECKO_VERSION/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+	curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+	
 	if which 7z >/dev/null 2>&1; then
 		Z7=7z
 	elif [ -x "$EXE7ZIP" ]; then
 		Z7="`cygpath -u "$EXE7ZIP"`"
 	fi
-	cd xulrunner_win32
-	rm *.dll *.chk
-	"$Z7" e "../Firefox%20Setup%20$GECKO_VERSION.exe" core/*.dll core/*.chk
+	"$Z7" x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
+	mv $XDIR/core $XDIR-core
+	rm -rf $XDIR
+	mv $XDIR-core $XDIR
+	
+	cd $XDIR
+	modify_omni
 	cd ..
+	
 	rm "Firefox%20Setup%20$GECKO_VERSION.exe"
 fi
 
 if [ $BUILD_LINUX == 1 ]; then
 	rm -rf firefox
 	
-	curl -O "https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	curl -O "$DOWNLOAD_URL/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
 	rm -rf firefox-i686
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-i686
@@ -138,7 +142,7 @@ if [ $BUILD_LINUX == 1 ]; then
 	cd ..
 	rm "firefox-$GECKO_VERSION.tar.bz2"
 	
-	curl -O "https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	curl -O "$DOWNLOAD_URL/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
 	rm -rf firefox-x86_64
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-x86_64
