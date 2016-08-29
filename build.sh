@@ -277,20 +277,26 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Set up directory
 	APPDIR="$STAGE_DIR/Zotero_win32"
+	rm -rf "$APPDIR"
 	mkdir "$APPDIR"
 	
-	# Merge xulrunner and relevant assets
-	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
-	cp -r "$WIN32_RUNTIME_PATH" "$APPDIR/xulrunner"
+	# Merge relevant assets from Firefox
+	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
 	
+	# Use xulrunner-stub from https://github.com/duanyao/xulrunner-stub
+	cp "$CALLDIR/win/xulrunner-stub.exe" "$APPDIR/zotero.exe"
+	
+	# Use our own updater, because Mozilla's requires updates signed by Mozilla
+	cp "$CALLDIR/win/updater.exe" "$APPDIR"
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
-	mv "$APPDIR/xulrunner/xulrunner-stub.exe" "$APPDIR/zotero.exe"
 	
 	# This used to be bug 722810, but that bug was actually fixed for Gecko 12.
 	# Then it was broken again. Now it seems okay...
 	# cp "$WIN32_RUNTIME_PATH/msvcp120.dll" \
 	#    "$WIN32_RUNTIME_PATH/msvcr120.dll" \
 	#    "$APPDIR/"
+	
+	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	
 	# Add Windows-specific Standalone assets
 	cd "$CALLDIR/assets/win"
@@ -310,9 +316,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	echo
 
 	# Delete extraneous files
-	rm "$APPDIR/xulrunner/js.exe" "$APPDIR/xulrunner/redit.exe"
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
-	find "$APPDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
+	find "$APPDIR" \( -name .DS_Store -or -name '.git*' -or -name '.travis.yml' -or -name update.rdf -or -name '*.bak' \) -exec rm -f {} \;
 	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 	find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
 	
