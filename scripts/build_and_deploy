@@ -8,8 +8,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . $ROOT_DIR/config.sh
 
-"$SCRIPT_DIR"/check_requirements
-
 UPDATES_JSON_URL="https://www.zotero.org/download/standalone/updates.json"
 
 function usage {
@@ -51,6 +49,8 @@ done
 if [[ -z "$XPI" ]] || [[ -z "$CHANNEL" ]] || [[ -z "$PLATFORMS" ]]; then
 	usage
 fi
+
+"$SCRIPT_DIR"/check_requirements
 
 VERSION="`unzip -p \"$XPI\" install.rdf | perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;'`"
 if [ -z "$VERSION" ]; then
