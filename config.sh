@@ -19,8 +19,6 @@ CODESIGN_REQUIREMENTS="=designated => anchor apple generic  and identifier \"org
 
 # Paths for Windows installer build
 MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
-UPX='C:\Program Files (x86)\upx\upx.exe'
-EXE7ZIP='C:\Program Files\7-Zip\7z.exe'
 
 # Paths for Windows installer build only necessary for signed binaries
 #SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'

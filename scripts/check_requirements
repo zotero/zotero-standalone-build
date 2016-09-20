@@ -41,6 +41,9 @@ which unzip || { $FAIL_CMD; FAILED=1; }
 if [ $WIN_NATIVE == 1 ]; then
 	echo -n "Checking for 7z: "
 	which 7z || { $FAIL_CMD; FAILED=1; }
+	
+	echo -n "Checking for upx: "
+	which upx || { $FAIL_CMD; FAILED=1; }
 fi
 
 echo -n "Checking for Mozilla ARchive (MAR) tool: "

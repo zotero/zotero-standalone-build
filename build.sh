@@ -367,11 +367,11 @@ if [ $BUILD_WIN32 == 1 ]; then
 			fi
 			
 			# Compress application
-			cd "$INSTALLER_STAGE_DIR" && "`cygpath -u \"$EXE7ZIP\"`" a -r -t7z "`cygpath -w \"$BUILD_DIR/app_win32.7z\"`" \
+			cd "$INSTALLER_STAGE_DIR" && 7z a -r -t7z "`cygpath -w \"$BUILD_DIR/app_win32.7z\"`" \
 				-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
 				
 			# Compress 7zSD.sfx
-			"`cygpath -u \"$UPX\"`" --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
+			upx --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
 				"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
 			
 			# Combine 7zSD.sfx and app.tag into setup.exe
