@@ -280,21 +280,28 @@ if [ $BUILD_WIN32 == 1 ]; then
 	rm -rf "$APPDIR"
 	mkdir "$APPDIR"
 	
-	# Merge relevant assets from Firefox
-	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
+	# Copy relevant assets from Firefox
+	mkdir "$APPDIR/xulrunner"
+	cp -R "$WIN32_RUNTIME_PATH"/!(api-ms*.dll|application.ini|browser|defaults|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR/xulrunner"
 	
-	# Use xulrunner-stub from https://github.com/duanyao/xulrunner-stub
-	cp "$CALLDIR/win/xulrunner-stub.exe" "$APPDIR/zotero.exe"
+	# Copy zotero.exe, which is xulrunner-stub from https://github.com/duanyao/xulrunner-stub
+	# modified with ReplaceVistaIcon.exe and edited with Resource Hacker
+	#
+	#   "$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" \
+	#       "`cygpath -w \"$APPDIR/zotero.exe\"`" \
+	#       "`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
+	#
+	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
 	
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
 	
-	# This used to be bug 722810, but that bug was actually fixed for Gecko 12.
-	# Then it was broken again. Now it seems okay...
-	# cp "$WIN32_RUNTIME_PATH/msvcp120.dll" \
-	#    "$WIN32_RUNTIME_PATH/msvcr120.dll" \
-	#    "$APPDIR/"
+	# Copy files to root as required by xulrunner-stub
+	cp "$WIN32_RUNTIME_PATH/mozglue.dll" \
+		"$WIN32_RUNTIME_PATH/msvcp120.dll" \
+		"$WIN32_RUNTIME_PATH/msvcr120.dll" \
+		"$APPDIR/"
 	
 	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	
@@ -324,10 +331,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	if [ $PACKAGE == 1 ]; then
 		if [ $WIN_NATIVE == 1 ]; then
 			INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
-			
-			# Add icon to xulrunner-stub
-			"$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" "`cygpath -w \"$APPDIR/zotero.exe\"`" \
-				"`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
 			
 			echo 'Creating Windows installer'
 			# Copy installer files
