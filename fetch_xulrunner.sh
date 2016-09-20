@@ -113,12 +113,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
 	
-	if which 7z >/dev/null 2>&1; then
-		Z7=7z
-	elif [ -x "$EXE7ZIP" ]; then
-		Z7="`cygpath -u "$EXE7ZIP"`"
-	fi
-	"$Z7" x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
+	7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
 	mv $XDIR/core $XDIR-core
 	rm -rf $XDIR
 	mv $XDIR-core $XDIR
