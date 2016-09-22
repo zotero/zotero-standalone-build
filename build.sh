@@ -344,15 +344,15 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			# Sign zotero.exe, dlls, updater, and uninstaller
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
 				for dll in "$APPDIR/"*.dll "$APPDIR/xulrunner/"*.dll; do
-					"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero" \
+					"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
 						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
 				done
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Updater" \
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Updater" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Uninstaller" \
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Uninstaller" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
 			fi
 			
@@ -365,7 +365,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Setup" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
 			fi
 			

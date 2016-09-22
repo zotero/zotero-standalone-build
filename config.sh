@@ -31,6 +31,7 @@ MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
 #SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
 SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
+SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
 
 # Directory for unpacked binaries
 STAGE_DIR="$DIR/staging"
