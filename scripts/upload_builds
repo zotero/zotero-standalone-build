@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Uploads build archives from 'dist' to S3 with the specified path and version
+# Upload build archives from 'dist' to S3 with the specified path and version
 #
 set -euo pipefail
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Update a builds manifest with info on a given build
+"""
 import argparse
 import os
 import sys
@@ -13,7 +16,7 @@ DETAILS_URLS = {
 MAJOR = False
 
 parser = argparse.ArgumentParser(
-    description='Add version info to builds manifest',
+    description='Update a builds manifest with info on a given build',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('-f', '--file', required=True, help="path to updates.json")
@@ -38,6 +41,7 @@ def main():
         # Back up JSON file
         shutil.copy2(file, file + '.bak')
         
+        # Read in existing file
         with open(file) as f:
             updates = json.loads(f.read())
         
@@ -53,6 +57,7 @@ def main():
             full_platforms.append("linux-i386")
             full_platforms.append("linux-x86_64")
         
+        # Add info for current builds
         for platform in full_platforms:
             if platform not in updates[channel]:
                 updates[channel][platform] = {}
@@ -64,8 +69,8 @@ def main():
                 updates[channel][platform]['DETAILSURL'] = DETAILS_URLS[version[0:3]]
                 updates[channel][platform]['MAJOR'] = MAJOR
         
+        # Write new file
         updates = json.dumps(updates, indent=2)
-        
         with open(file, 'w') as f:
             f.write(updates + "\n")
         
