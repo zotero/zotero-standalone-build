@@ -3,7 +3,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Version of Gecko to build with
 #
 # xulrunner-stub.exe currently requires <=47, though it can probably be rebuilt against a later SDK
-if [ `uname -o` = 'Cygwin' ]; then
+if [ "`uname -o 2> /dev/null`" = 'Cygwin' ]; then
 	GECKO_VERSION="45.0.2esr"
 	GECKO_SHORT_VERSION="45.0"
 else
