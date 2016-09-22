@@ -337,7 +337,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
 			
 			# Build and sign uninstaller
-			perl -pi -e "s/{{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
+			perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
 			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
 			mkdir "$APPDIR/uninstall"
 			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
