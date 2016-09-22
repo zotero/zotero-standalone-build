@@ -294,8 +294,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
 	
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
-	cp "$CALLDIR/win/updater.exe" "$APPDIR"
-	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
+	cp "$CALLDIR/win/updater.exe" "$APPDIR/xulrunner"
+	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/xulrunner/updater.ini"
 	
 	# Copy files to root as required by xulrunner-stub
 	cp "$WIN32_RUNTIME_PATH/mozglue.dll" \
