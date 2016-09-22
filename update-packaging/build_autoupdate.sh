@@ -226,13 +226,13 @@ for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
 	fi
 	if [[ $BUILD_INCREMENTAL == 1 ]] && [[ -d "$UPDATE_STAGE_DIR/$FROM/$dir" ]]; then
 		echo
-		echo "Building incremental update from $FROM to $TO"
+		echo "Building incremental $build update from $FROM to $TO"
 		"$SCRIPT_DIR/make_incremental_update.sh" "$DIST_DIR/Zotero-${TO}-${FROM}_$build.mar" "$UPDATE_STAGE_DIR/$FROM/$dir" "$UPDATE_STAGE_DIR/$TO/$dir"
 		CHANGES_MADE=1
 	fi
 	if [[ $BUILD_FULL == 1 ]]; then
 		echo
-		echo "Building full update for $TO"
+		echo "Building full $build update for $TO"
 		"$SCRIPT_DIR/make_full_update.sh" "$DIST_DIR/Zotero-${TO}-full_$build.mar" "$UPDATE_STAGE_DIR/$TO/$dir"
 		CHANGES_MADE=1
 	fi

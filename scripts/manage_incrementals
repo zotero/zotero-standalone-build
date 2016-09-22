@@ -11,30 +11,43 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 function usage {
 	cat >&2 <<DONE
 Usage:
+ -c CHANNEL            Release channel (e.g., 'beta'); defaults to 'release'
+ -p PLATFORM           Platform (m=Mac, w=Windows, l=Linux)
  -a VERSION            Add version to incrementals list; cannot be used with -n
  -n NUM_VERSIONS       Number of previous versions to return; cannot be used with -a
- -c CHANNEL            Release channel (e.g., 'beta'); defaults to 'release'
 DONE
 	exit 1
 }
 
+CHANNEL="release"
+PLATFORM=""
+S3_SUBDIR=""
 VERSION=""
 NUM_VERSIONS=""
-CHANNEL="release"
-S3_SUBDIR=""
-while getopts "a:n:c:" opt; do
+while getopts "c:p:a:n:" opt; do
 	case $opt in
-		a)
-			VERSION="$OPTARG"
-			;;
-		n)
-			NUM_VERSIONS="$OPTARG"
-			;;
 		c)
 			CHANNEL="$OPTARG"
 			if [ "$CHANNEL" != "release" ]; then
 				S3_SUBDIR="/$CHANNEL"
 			fi
+			;;
+		p)
+			case "$OPTARG" in
+				m) PLATFORM=mac;;
+				w) PLATFORM=win;;
+				l) PLATFORM=linux;;
+				*)
+					echo "$0: Invalid platform option $OPTARG"
+					usage
+					;;
+			esac
+			;;
+		a)
+			VERSION="$OPTARG"
+			;;
+		n)
+			NUM_VERSIONS="$OPTARG"
 			;;
 		*)
 			usage
@@ -42,6 +55,10 @@ while getopts "a:n:c:" opt; do
 	esac
 	shift $((OPTIND-1)); OPTIND=1
 done
+
+if [[ -z "$PLATFORM" ]]; then
+	usage
+fi
 
 if [[ -z "$VERSION" ]] && [[ -z "$NUM_VERSIONS" ]]; then
 	usage
@@ -51,8 +68,8 @@ if [[ "$VERSION" ]] && [[ "$NUM_VERSIONS" ]]; then
 	usage
 fi
 
-INCR_FILENAME="incrementals-$CHANNEL"
-S3_URL="s3://$S3_BUCKET/$S3_PATH${S3_SUBDIR}/incrementals"
+INCR_FILENAME="incrementals-$CHANNEL-$PLATFORM"
+S3_URL="s3://$S3_BUCKET/$S3_PATH${S3_SUBDIR}/incrementals-$PLATFORM"
 INCR_PATH="$DIST_DIR/$INCR_FILENAME"
 
 mkdir -p "$DIST_DIR"
@@ -60,9 +77,9 @@ aws s3 cp $S3_URL $INCR_PATH >&2
 
 # Add version to file and reupload
 if [ "$VERSION" ]; then
-	echo "Adding $VERSION to incrementals"
+	echo "Adding $VERSION to incrementals-$PLATFORM"
 	echo $VERSION >> $INCR_PATH
-	cat $INCR_PATH | uniq > $INCR_PATH.tmp
+	cat $INCR_PATH | sort -u > $INCR_PATH.tmp
 	mv $INCR_PATH.tmp $INCR_PATH
 	aws s3 cp $INCR_PATH $S3_URL
 # Show last n versions

@@ -77,17 +77,39 @@ trap cleanup EXIT
 # Build full update
 "$ROOT_DIR/update-packaging/build_autoupdate.sh" -f -c "$CHANNEL" -p $PLATFORMS -l $VERSION
 
-# Build incremental updates
-echo
-echo "Getting incrementals"
-INCREMENTALS="`\"$SCRIPT_DIR/manage_incrementals\" -n $NUM_INCREMENTALS -c $CHANNEL`"
-echo "$INCREMENTALS"
-echo
-
-for from in $INCREMENTALS; do
-	echo "Building incremental update from $from to $VERSION"
-	"$ROOT_DIR/update-packaging/build_autoupdate.sh" -i "$from" -c "$CHANNEL" -p $PLATFORMS -l $VERSION
+# Build incremental updates for each platform
+for i in `seq 0 1 $((${#PLATFORMS}-1))`
+do
+	case ${PLATFORMS:i:1} in
+		m)
+			platform=mac
+			platform_name=Mac
+			;;
+		w)
+			platform=win
+			platform_name=Windows
+			;;
+		l)
+			platform=linux
+			platform_name=Linux
+			;;
+		*)
+			echo "$0: Invalid platform option ${PLATFORMS:i:1}"
+			usage
+			;;
+	esac
+	
 	echo
+	echo "Getting $platform_name incrementals"
+	INCREMENTALS="`\"$SCRIPT_DIR/manage_incrementals\" -c $CHANNEL -p ${PLATFORMS:i:1} -n $NUM_INCREMENTALS`"
+	echo "$INCREMENTALS"
+	echo
+	
+	for from in $INCREMENTALS; do
+		echo "Building incremental update for $platform_name from $from to $VERSION"
+		"$ROOT_DIR/update-packaging/build_autoupdate.sh" -i "$from" -c "$CHANNEL" -p ${PLATFORMS:i:1} -l $VERSION
+		echo
+	done
 done
 
 # Upload builds to S3
@@ -108,9 +130,12 @@ curl -s $UPDATES_JSON_URL > "$TEMP_DIR/updates.json"
 "$ROOT_DIR/update-packaging/add_version_info" -f "$TEMP_DIR/updates.json" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
 scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
 
-# Add version to incrementals list
+# Add version to incremental lists
 echo
-"$SCRIPT_DIR/manage_incrementals" -a $VERSION -c $CHANNEL
+for i in `seq 0 1 $((${#PLATFORMS}-1))`
+do
+	"$SCRIPT_DIR/manage_incrementals" -c $CHANNEL -p ${PLATFORMS:i:1} -a $VERSION
+done
 
 $DEPLOY_CMD
 
