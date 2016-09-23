@@ -242,13 +242,20 @@ rm -rf "$UPDATE_STAGE_DIR"
 
 # Update file manifests
 if [ $CHANGES_MADE -eq 1 ]; then
+	# Cygwin has sha512sum, macOS has shasum, Linux has both
+	if [[ -n "`which sha512sum 2> /dev/null`" ]]; then
+		SHACMD="sha512sum"
+	else
+		SHACMD="shasum -a 512"
+	fi
+	
 	cd "$DIST_DIR"
 	for platform in "mac" "win" "linux"; do
 		file=files-$platform
 		rm -f $file
 		for fn in `find . -name "*$platform*.mar" -exec basename {} \;`; do
 			size=`wc -c "$fn" | tr -s ' ' | cut -d ' ' -f2`
-			hash=`shasum -a 512 "$fn" | cut -d ' ' -f1`
+			hash=`$SHACMD "$fn" | cut -d ' ' -f1`
 			echo $fn $hash $size >> $file
 		done
 	done
