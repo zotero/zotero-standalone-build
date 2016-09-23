@@ -8,6 +8,9 @@
 # Author: Darin Fisher
 #
 
+# Added for Zotero
+set -eo pipefail
+
 . $(dirname "$0")/common.sh
 
 # -----------------------------------------------------------------------------

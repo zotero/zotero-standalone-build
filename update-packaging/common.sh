@@ -54,7 +54,10 @@ make_add_instruction() {
     forced=
   fi
 
+  # Changed by Zotero
+  set +e
   is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/')
+  set -e
   if [ $is_extension = "1" ]; then
     # Use the subdirectory of the extensions folder as the file to test
     # before performing this add instruction.
@@ -188,7 +191,9 @@ list_files() {
     | sort -r > "temp-filelist"
   while read file; do
     eval "${1}[$count]=\"$file\""
-    (( count++ ))
+    # Changed for Zotero to avoid eval as 1
+    #(( count++ ))
+    (( ++count ))
   done < "temp-filelist"
   rm "temp-filelist"
 }
@@ -204,7 +209,9 @@ list_dirs() {
     | sort -r > "temp-dirlist"
   while read dir; do
     eval "${1}[$count]=\"$dir\""
-    (( count++ ))
+    # Changed for Zotero
+    #(( count++ ))
+    (( +count ))
   done < "temp-dirlist"
   rm "temp-dirlist"
 }
