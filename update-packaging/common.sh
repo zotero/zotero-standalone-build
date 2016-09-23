@@ -54,10 +54,8 @@ make_add_instruction() {
     forced=
   fi
 
-  # Changed by Zotero
-  set +e
-  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/')
-  set -e
+  # Changed by Zotero for -e
+  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/') || true
   if [ $is_extension = "1" ]; then
     # Use the subdirectory of the extensions folder as the file to test
     # before performing this add instruction.
@@ -112,7 +110,7 @@ make_patch_instruction() {
   filev2="$2"
   filev3="$3"
 
-  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/')
+  is_extension=$(echo "$f" | grep -c 'distribution/extensions/.*/') || true
   if [ $is_extension = "1" ]; then
     # Use the subdirectory of the extensions folder as the file to test
     # before performing this add instruction.

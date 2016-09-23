@@ -8,6 +8,8 @@
 # Author: Darin Fisher
 #
 
+set -eo pipefail
+
 . $(dirname "$0")/common.sh
 
 # -----------------------------------------------------------------------------
@@ -87,8 +89,10 @@ done
 
 # -----------------------------------------------------------------------------
 
+set +e
 let arg_start=$OPTIND-1
 shift $arg_start
+set -e
 
 archive="$1"
 olddir="$2"
