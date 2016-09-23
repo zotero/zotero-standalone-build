@@ -41,6 +41,9 @@ which zip || { $FAIL_CMD; FAILED=1; }
 echo -n "Checking for unzip: "
 which unzip || { $FAIL_CMD; FAILED=1; }
 
+echo -n "Checking for awk: "
+which awk || { $FAIL_CMD; FAILED=1; }
+
 echo
 echo "Checking packaging requirements:"
 echo
@@ -86,6 +89,12 @@ which mar || { $FAIL_CMD; FAILED=1; echo "  -- Install mar from https://ftp.mozi
 
 echo -n "Checking for mbsdiff: "
 which mbsdiff || { $FAIL_CMD; FAILED=1; echo "  -- Install mbsdiff from https://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/mar-tools/"; }
+
+echo -n "Checking for rsync: "
+which rsync || { $FAIL_CMD; FAILED=1; }
+
+echo -n "Checking for sha512sum/shasum: "
+which sha512sum 2>/dev/null || which shasum 2>/dev/null || { $FAIL_CMD; FAILED=1; }
 
 echo -n "Checking for AWS CLI: "
 which aws || { $FAIL_CMD; FAILED=1; }
