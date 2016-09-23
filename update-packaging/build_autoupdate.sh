@@ -271,8 +271,8 @@ if [ $CHANGES_MADE -eq 1 ]; then
 		file=files-$platform
 		rm -f $file
 		for fn in `find . -name "*$platform*.mar" -exec basename {} \;`; do
-			size=`wc -c "$fn" | tr -s ' ' | cut -d ' ' -f2`
-			hash=`$SHACMD "$fn" | cut -d ' ' -f1`
+			size=`wc -c "$fn" | awk '{print $1}'`
+			hash=`$SHACMD "$fn" | awk '{print $1}'`
 			echo $fn $hash $size >> $file
 		done
 	done
