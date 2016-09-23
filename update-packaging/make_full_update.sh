@@ -110,8 +110,10 @@ append_remove_instructions "$targetdir" "$updatemanifestv2" "$updatemanifestv3"
 $BZIP2 -z9 "$updatemanifestv2" && mv -f "$updatemanifestv2.bz2" "$updatemanifestv2"
 $BZIP2 -z9 "$updatemanifestv3" && mv -f "$updatemanifestv3.bz2" "$updatemanifestv3"
 
-# Changed for Zotero -- -C no longer affects path for -c
-eval "$MAR -C \"$workdir\" -c \"$workdir\"/output.mar $targetfiles"
+# Changed for Zotero -- -C is unreliable
+pushd $workdir > /dev/null
+eval "$MAR -c output.mar $targetfiles"
+popd > /dev/null
 mv -f "$workdir/output.mar" "$archive"
 
 # cleanup
