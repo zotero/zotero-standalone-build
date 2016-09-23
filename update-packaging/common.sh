@@ -211,7 +211,7 @@ list_dirs() {
     eval "${1}[$count]=\"$dir\""
     # Changed for Zotero
     #(( count++ ))
-    (( +count ))
+    (( ++count ))
   done < "temp-dirlist"
   rm "temp-dirlist"
 }
