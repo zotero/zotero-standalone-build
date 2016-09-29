@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-. $ROOT_DIR/config.sh
+. "$ROOT_DIR/config.sh"
 
 UPDATES_JSON_URL="https://www.zotero.org/download/standalone/updates.json"
 
@@ -59,7 +59,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 # Build Zotero
-$ROOT_DIR/build.sh -f $XPI -p $PLATFORMS -c $CHANNEL
+"$ROOT_DIR/build.sh" -f $XPI -p $PLATFORMS -c $CHANNEL
 
 BUILD_ID=`cat "$DIST_DIR/build_id"`
 if [ -z "$BUILD_ID" ]; then

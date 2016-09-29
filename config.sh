@@ -33,6 +33,10 @@ SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
 
+# Directory for Zotero source code (needed for scripts/dir_build)
+ZOTERO_SOURCE_DIR=$( cd ~ && pwd )/zotero
+# Directory for Zotero build files (needed for scripts/*_build_and_deploy)
+ZOTERO_BUILD_DIR=$( cd ~ && pwd )/zotero-build
 # Directory for unpacked binaries
 STAGE_DIR="$DIR/staging"
 # Directory for packed binaries

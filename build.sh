@@ -109,7 +109,7 @@ rm -rf "$DIST_DIR"
 mkdir "$DIST_DIR"
 
 # Save build id, which is needed for updates manifest
-echo $BUILD_ID > $DIST_DIR/build_id
+echo $BUILD_ID > "$DIST_DIR/build_id"
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 

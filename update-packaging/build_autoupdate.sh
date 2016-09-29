@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-. $ROOT_DIR/config.sh
+. "$ROOT_DIR/config.sh"
 UPDATE_STAGE_DIR="$SCRIPT_DIR/staging"
 
 function usage {
