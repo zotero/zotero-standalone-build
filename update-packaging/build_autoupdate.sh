@@ -144,6 +144,11 @@ for version in "$FROM" "$TO"; do
 	LINUX_X86_ARCHIVE="Zotero-${version}_linux-i686.tar.bz2"
 	LINUX_X86_64_ARCHIVE="Zotero-${version}_linux-x86_64.tar.bz2"
 	
+	CACHE_DIR="$ROOT_DIR/cache"
+	if [ ! -e "$CACHE_DIR" ]; then
+		mkdir "$CACHE_DIR"
+	fi
+	
 	for archive in "$MAC_ARCHIVE" "$WIN_ARCHIVE" "$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE"; do
 		if [[ $archive = "$MAC_ARCHIVE" ]] && [[ $BUILD_MAC != 1 ]]; then
 			continue
@@ -158,6 +163,15 @@ for version in "$FROM" "$TO"; do
 			continue
 		fi
 		
+		ETAG_FILE="$CACHE_DIR/$archive.etag"
+		
+		# Check cache for archive
+		if [[ -f "$CACHE_DIR/$archive" ]] && [[ -f "$CACHE_DIR/$archive.etag" ]]; then
+			ETAG="`cat $ETAG_FILE | tr '\n' ' '`"
+		else
+			ETAG=""
+		fi
+		
 		rm -f $archive
 		# URL-encode '+' in beta version numbers
 		ENCODED_VERSION=`urlencode $version`
@@ -165,7 +179,29 @@ for version in "$FROM" "$TO"; do
 		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_PATH${S3_SUBDIR}/$ENCODED_VERSION/$ENCODED_ARCHIVE"
 		echo "Fetching $URL"
 		set +e
-		wget -nv $URL
+		# Cached version is available
+		if [ -n "$ETAG" ]; then
+			NEW_ETAG=$(wget -nv -S --header "If-None-Match: $ETAG" $URL 2>&1 | awk '/ *ETag: */ {print $2}')
+			
+			# If ETag didn't match, cache newly downloaded version
+			if [ -f $archive ]; then
+				echo "ETag for $archive didn't match! -- using new version"
+				rm -f "$CACHE_DIR/$archive.etag"
+				cp $archive "$CACHE_DIR/"
+				echo "$NEW_ETAG" > "$CACHE_DIR/$archive.etag"
+			# If ETag matched (or there was another error), use cached version
+			else
+				echo "Using cached $archive"
+				cp "$CACHE_DIR/$archive" .
+			fi
+		else
+			NEW_ETAG=$(wget -nv -S $URL 2>&1 | awk '/ *ETag: */ {print $2}')
+			
+			# Save archive to cache
+			rm -f "$CACHE_DIR/$archive.etag"
+			cp $archive "$CACHE_DIR/"
+			echo "$NEW_ETAG" > "$CACHE_DIR/$archive.etag"
+		fi
 		set -e
 	done
 	
