@@ -122,7 +122,9 @@ else
 	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH/$CHANNEL"
 fi
 mkdir "$TEMP_DIR/version_info"
+chmod g+ws "$TEMP_DIR/version_info"
 cp "$DIST_DIR"/files-* "$TEMP_DIR/version_info"
+chmod g+w "$TEMP_DIR"/version_info/files-*
 rsync -rv "$TEMP_DIR/version_info/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
 
 # Download updates.json, update it, and reupload it
