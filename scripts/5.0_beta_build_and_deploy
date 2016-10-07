@@ -6,7 +6,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
 PLATFORMS="ml"
-CHANNEL="dev"
+CHANNEL="beta"
 
 "$SCRIPT_DIR/check_requirements"
 "$ZOTERO_BUILD_DIR/xpi/build_xpi" -c $CHANNEL
