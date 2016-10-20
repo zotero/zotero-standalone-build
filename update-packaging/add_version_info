@@ -54,7 +54,7 @@ def main():
         if "w" in platforms:
             full_platforms.append("win32")
         if "l" in platforms:
-            full_platforms.append("linux-i386")
+            full_platforms.append("linux-i686")
             full_platforms.append("linux-x86_64")
         
         # Add info for current builds
