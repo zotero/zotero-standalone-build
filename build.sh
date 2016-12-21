@@ -34,12 +34,13 @@ fi
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 -f FILE -p PLATFORMS [-c CHANNEL] [-d]
+Usage: $0 [-f FILE] [-u DIR] -p PLATFORMS [-c CHANNEL] [-d]
 Options
- -f FILE             ZIP file to build from
+ -d DIR              build directory to build from (from build_xpi; cannot be used with -f)
+ -f FILE             ZIP file to build from (cannot be used with -d)
  -p PLATFORMS        build for platforms PLATFORMS (m=Mac, w=Windows, l=Linux)
  -c CHANNEL          use update channel CHANNEL
- -d                  don't package; only build binaries in staging/ directory
+ -s                  don't package; only build binaries in staging/ directory
 DONE
 	exit 1
 }
@@ -58,8 +59,11 @@ BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
 PACKAGE=1
-while getopts "f:p:c:d" opt; do
+while getopts "d:f:p:c:s" opt; do
 	case $opt in
+		d)
+			SOURCE_DIR="$OPTARG"
+			;;
 		f)
 			ZIP_FILE="$OPTARG"
 			;;
@@ -80,7 +84,7 @@ while getopts "f:p:c:d" opt; do
 		c)
 			UPDATE_CHANNEL="$OPTARG"
 			;;
-		d)
+		s)
 			PACKAGE=0
 			;;
 		*)
@@ -90,7 +94,10 @@ while getopts "f:p:c:d" opt; do
 	shift $((OPTIND-1)); OPTIND=1
 done
 
-if [ -z "$ZIP_FILE" ]; then
+# Require source dir or ZIP file
+if [[ -z "$SOURCE_DIR" ]] && [[ -z "$ZIP_FILE" ]]; then
+	usage
+elif [[ -n "$SOURCE_DIR" ]] && [[ -n "$ZIP_FILE" ]]; then
 	usage
 fi
 
@@ -113,9 +120,14 @@ echo $BUILD_ID > "$DIST_DIR/build_id"
 
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 
-ZIP_FILE="`abspath $ZIP_FILE`"
-echo "Building from $ZIP_FILE"
-unzip -q $ZIP_FILE -d "$BUILD_DIR/zotero"
+if [ -n "$ZIP_FILE" ]; then
+	ZIP_FILE="`abspath $ZIP_FILE`"
+	echo "Building from $ZIP_FILE"
+	unzip -q $ZIP_FILE -d "$BUILD_DIR/zotero"
+else
+	# TODO: Could probably just mv instead, at least if these repos are merged
+	rsync -a "$SOURCE_DIR/" "$BUILD_DIR/zotero/"
+fi
 
 cd "$BUILD_DIR/zotero"
 

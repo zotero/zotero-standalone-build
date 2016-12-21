@@ -9,5 +9,5 @@ PLATFORMS="ml"
 CHANNEL="beta"
 
 "$SCRIPT_DIR/check_requirements"
-"$ZOTERO_BUILD_DIR/xpi/build_xpi" -c $CHANNEL
+"$ZOTERO_BUILD_DIR/xpi/build_xpi" -c $CHANNEL -z
 "$SCRIPT_DIR/build_and_deploy" -x "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $PLATFORMS -c $CHANNEL

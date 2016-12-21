@@ -18,8 +18,8 @@ CHANNEL="source"
 VERSION=`perl -ne 'print and last if s/.*<em:version>(.{3}).+/\1/;' "$ZOTERO_SOURCE_DIR/install.rdf"`
 if [ $VERSION = "4.0" ]; then
 	"$ZOTERO_BUILD_DIR/xpi/build_xpi_4.0" "$ZOTERO_SOURCE_DIR" $CHANNEL
+	"$ROOT_DIR/build.sh" -f "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $PLATFORM -c $CHANNEL -s
 else
 	"$ZOTERO_BUILD_DIR/xpi/build_xpi" -s "$ZOTERO_SOURCE_DIR" -c $CHANNEL
+	"$ROOT_DIR/build.sh" -d "$ZOTERO_BUILD_DIR/xpi/build/staging" -p $PLATFORM -c $CHANNEL -s
 fi
-
-"$ROOT_DIR/build.sh" -f "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $PLATFORM -d -c $CHANNEL
