@@ -151,6 +151,15 @@ cp -R "$CALLDIR/assets/branding" "$BUILD_DIR/zotero/chrome/branding"
 echo "" >> "$BUILD_DIR/zotero/chrome.manifest"
 cat "$CALLDIR/assets/chrome.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
 
+# Copy Error Console files
+cp "$CALLDIR/assets/console/jsconsole-clhandler.js" "$BUILD_DIR/zotero/components/"
+echo >> "$BUILD_DIR/zotero/chrome.manifest"
+cat "$CALLDIR/assets/console/jsconsole-clhandler.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
+cp -R "$CALLDIR/assets/console/content" "$BUILD_DIR/zotero/chrome/console"
+cp -R "$CALLDIR/assets/console/skin/osx" "$BUILD_DIR/zotero/chrome/console/skin"
+cp -R "$CALLDIR/assets/console/locale/en-US" "$BUILD_DIR/zotero/chrome/console/locale"
+cat "$CALLDIR/assets/console/jsconsole.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
+
 # Delete files that shouldn't be distributed
 find "$BUILD_DIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
 

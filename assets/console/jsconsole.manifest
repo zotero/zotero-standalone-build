@@ -1,0 +1,8 @@
+override chrome://global/content/console.xul chrome/console/console.xul
+override chrome://global/content/consoleBindings.xml chrome/console/consoleBindings.xml
+override chrome://global/content/console.js chrome/console/console.js
+override chrome://global/content/console.css chrome/console/console.css
+override chrome://global/skin/console/console.css chrome/console/skin/console.css
+override chrome://global/locale/console.dtd chrome/console/locale/console.dtd
+override chrome://global/locale/console.properties chrome/console/locale/console.properties
+
