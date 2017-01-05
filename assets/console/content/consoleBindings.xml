@@ -218,6 +218,9 @@
       <method name="appendError">
         <parameter name="aObject"/>
         <body><![CDATA[
+          // Zotero: Hide some messages
+          if (aObject.errorMessage.includes('Trying to re-register')) return;
+
           var row = this.createConsoleRow();
           var nsIScriptError = Components.interfaces.nsIScriptError;
 
@@ -261,6 +264,9 @@
         <parameter name="aMessage"/>
         <parameter name="aType"/>
         <body><![CDATA[
+          // Zotero: Hide some messages
+          if (aMessage.includes('Renderer:')) return;
+
           var row = this.createConsoleRow();
           row.setAttribute("type", aType || "message");
           row.setAttribute("msg", aMessage);
