@@ -161,3 +161,6 @@ pref("app.update.channel", "default");
 
 // This should probably not be a preference that's used in toolkit....
 pref("browser.preferences.instantApply", false);
+
+// Whether to show the Error Console option in the Tools menu
+pref("devtools.errorconsole.enabled", false);
