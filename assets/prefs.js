@@ -66,6 +66,9 @@ pref("xpinstall.whitelist.required", false);
 // Disable places
 pref("places.history.enabled", false);
 
+// Probably not used, but prevent an error in the console
+pref("app.support.baseURL", "https://www.zotero.org/support/");
+
 // Disable Telemetry and Health Report
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
