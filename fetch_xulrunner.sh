@@ -77,6 +77,9 @@ function modify_omni {
 	perl -pi -e 's/value: true/value: false/' modules/addons/AddonConstants.jsm
 	# Delete binary version of file
 	rm jsloader/resource/gre/modules/addons/AddonConstants.jsm
+	# Disable unwanted components
+	cat components/components.manifest | grep -vi telemetry > components/components2.manifest
+	mv components/components2.manifest components/components.manifest
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
 	cd ..
