@@ -7,8 +7,8 @@ if [ "`uname -o 2> /dev/null`" = 'Cygwin' ]; then
 	GECKO_VERSION="45.0.2esr"
 	GECKO_SHORT_VERSION="45.0"
 else
-	GECKO_VERSION="49.0b10"
-	GECKO_SHORT_VERSION="49.0"
+	GECKO_VERSION="50.1.0"
+	GECKO_SHORT_VERSION="50.1"
 fi
 
 # Paths to Gecko runtimes
