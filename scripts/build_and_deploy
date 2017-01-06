@@ -16,6 +16,7 @@ Usage: $0 -x XPI_FILE -c CHANNEL -p PLATFORMS
  -x XPI_FILE         XPI file to build from
  -c CHANNEL          Release channel ('release', 'beta', 'dev')
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
+ -i INCREMENTALS     Number of incremental builds to create
 DONE
 	exit 1
 }
@@ -24,7 +25,7 @@ DONE
 XPI=""
 CHANNEL=""
 PLATFORMS=""
-while getopts "x:c:p:" opt; do
+while getopts "x:c:p:i:" opt; do
 	case $opt in
 		x)
 			XPI="$OPTARG"
@@ -38,6 +39,9 @@ while getopts "x:c:p:" opt; do
 			;;
 		p)
 			PLATFORMS="$OPTARG"
+			;;
+		i)
+			NUM_INCREMENTALS="$OPTARG"
 			;;
 		*)
 			usage
