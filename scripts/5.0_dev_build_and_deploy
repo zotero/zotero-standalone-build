@@ -5,8 +5,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
-CHANNEL="beta"
+CHANNEL="dev"
 
 "$SCRIPT_DIR/check_requirements"
 "$ZOTERO_BUILD_DIR/xpi/build_xpi" -c $CHANNEL -z
-"$SCRIPT_DIR/build_and_deploy" -x "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $DIR_BUILD_PLATFORMS -c $CHANNEL
+"$SCRIPT_DIR/build_and_deploy" -x "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $DIR_BUILD_PLATFORMS -c $CHANNEL -i 1
