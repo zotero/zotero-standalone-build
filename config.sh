@@ -49,6 +49,7 @@ DEPLOY_HOST="deploy.zotero"
 DEPLOY_PATH="www/www-production/public/download/standalone/"
 DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
 
+BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
 
 unset DIR
