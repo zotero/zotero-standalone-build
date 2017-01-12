@@ -319,14 +319,14 @@ def optimizejar(jar, outjar, inlog = None):
         outfd.seek(out_offset)
         outfd.write(dirend_data)
 
-    print "Stripped %d bytes" % total_stripped
-    print "%s %d/%d in %s" % (("Ordered" if inlog is not None else "Deoptimized"),
+    print ("Stripped %d bytes") % total_stripped
+    print ("%s %d/%d in %s") % (("Ordered" if inlog is not None else "Deoptimized"),
                               reordered_count, len(central_directory), outjar)
     outfd.close()
     return outlog
         
 if len(sys.argv) != 5:
-    print "Usage: --optimize|--deoptimize %s JAR_LOG_DIR IN_JAR_DIR OUT_JAR_DIR" % sys.argv[0]
+    print ("Usage: --optimize|--deoptimize %s JAR_LOG_DIR IN_JAR_DIR OUT_JAR_DIR") % sys.argv[0]
     exit(1)
 
 jar_regex = re.compile("\\.jar?$")
