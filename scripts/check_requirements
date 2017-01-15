@@ -26,8 +26,8 @@ echo
 echo -n "Checking for perl: "
 which perl || { $FAIL_CMD; FAILED=1; }
 
-echo -n "Checking for python2: "
-which python2 || { $FAIL_CMD; FAILED=1; }
+echo -n "Checking for python2.7: "
+which python2.7 || { $FAIL_CMD; FAILED=1; }
 
 echo -n "Checking for python3: "
 which python3 || { $FAIL_CMD; FAILED=1; }
