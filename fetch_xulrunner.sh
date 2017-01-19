@@ -60,11 +60,9 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
-# Modify AddonConstants.jsm in omni.ja to allow unsigned add-ons
 #
-# Theoretically there should be other ways of doing this without modifying omni.ja
-# (e.g., an 'override' statement in chrome.manifest, a enterprise config.js file that clears
-# SIGNED_TYPES in XPIProvider.jsm), but I couldn't get them to work.
+# Make various modifications to omni.ja
+#
 function modify_omni {
 	mkdir omni
 	mv omni.ja omni
@@ -74,12 +72,24 @@ function modify_omni {
 	python2.7 "$CALLDIR/scripts/optimizejars.py" --deoptimize ./ ./ ./
 	unzip omni.ja
 	rm omni.ja
+	
+	# Modify AddonConstants.jsm in omni.ja to allow unsigned add-ons
+	#
+	# Theoretically there should be other ways of doing this (e.g., an 'override' statement in
+	# chrome.manifest, an enterprise config.js file that clears SIGNED_TYPES in XPIProvider.jsm),
+	# but I couldn't get them to work.
 	perl -pi -e 's/value: true/value: false/' modules/addons/AddonConstants.jsm
 	# Delete binary version of file
 	rm jsloader/resource/gre/modules/addons/AddonConstants.jsm
+	
+	# Increase internal SQL transaction timeout to an hour
+	perl -pi -e 's/TRANSACTIONS_QUEUE_TIMEOUT_MS = .+/TRANSACTIONS_QUEUE_TIMEOUT_MS = 3600000;/' modules/Sqlite.jsm
+	rm jsloader/resource/gre/modules/Sqlite.jsm
+	
 	# Disable unwanted components
 	cat components/components.manifest | grep -vi telemetry > components/components2.manifest
 	mv components/components2.manifest components/components.manifest
+	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
 	cd ..
