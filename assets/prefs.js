@@ -114,11 +114,11 @@ pref("app.update.url", "https://www.zotero.org/download/standalone/update/%VERSI
 
 // URL user can browse to manually if for some reason all update installation
 // attempts fail.
-pref("app.update.url.manual", "http://www.zotero.org/support/standalone");
+pref("app.update.url.manual", "https://www.zotero.org/download");
 
 // A default value for the "More information about this update" link
 // supplied in the "An update is available" page of the update wizard.
-pref("app.update.url.details", "http://www.zotero.org/support/standalone_changelog");
+pref("app.update.url.details", "https://www.zotero.org/support/changelog");
 
 // User-settable override to app.update.url for testing purposes.
 //pref("app.update.url.override", "");
