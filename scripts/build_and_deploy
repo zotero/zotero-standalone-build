@@ -8,8 +8,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
-UPDATES_JSON_URL="https://www.zotero.org/download/standalone/updates.json"
-
 function usage {
 	cat >&2 <<DONE
 Usage: $0 -x XPI_FILE -c CHANNEL -p PLATFORMS
@@ -132,7 +130,7 @@ chmod g+w "$TEMP_DIR"/version_info/files-*
 rsync -rv "$TEMP_DIR/version_info/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
 
 # Download updates.json, update it, and reupload it
-curl -s $UPDATES_JSON_URL > "$TEMP_DIR/updates.json"
+scp $DEPLOY_HOST:"$DEPLOY_PATH/updates.json" "$TEMP_DIR/updates.json"
 "$ROOT_DIR/update-packaging/add_version_info" -f "$TEMP_DIR/updates.json" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
 scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
 
