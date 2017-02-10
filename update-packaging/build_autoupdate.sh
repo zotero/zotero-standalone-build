@@ -205,6 +205,9 @@ for version in "$FROM" "$TO"; do
 		set -e
 	done
 	
+	# Delete cached files older than 14 days
+	find "$CACHE_DIR" -ctime +14 -delete
+	
 	# Unpack Zotero.app
 	if [ $BUILD_MAC == 1 ]; then
 		if [ -f "$MAC_ARCHIVE" ]; then
