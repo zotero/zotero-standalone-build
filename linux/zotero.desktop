@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Zotero
-Exec=bash -c "`dirname %k`/zotero"
+Exec=bash -c "$(dirname $(readlink -f %k))/zotero"
 Icon=zotero.ico
 Type=Application
 Terminal=false
