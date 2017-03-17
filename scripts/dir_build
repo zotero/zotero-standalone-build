@@ -5,6 +5,20 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
+DEVTOOLS=0
+while getopts "t" opt; do
+	case $opt in
+		t)
+			DEVTOOLS=1
+			;;
+		
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+	esac
+done
+
 if [ "`uname`" = "Darwin" ]; then
 	PLATFORM="m"
 elif [ "`uname`" = "Linux" ]; then
@@ -20,6 +34,11 @@ if [ $VERSION = "4.0" ]; then
 	"$ZOTERO_BUILD_DIR/xpi/build_xpi_4.0" "$ZOTERO_SOURCE_DIR" $CHANNEL
 	"$ROOT_DIR/build.sh" -f "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $PLATFORM -c $CHANNEL -s
 else
+	PARAMS=""
+	if [ $DEVTOOLS -eq 1 ]; then
+		PARAMS="-t"
+	fi
+	
 	"$ZOTERO_BUILD_DIR/xpi/build_xpi" -s "$ZOTERO_SOURCE_DIR" -c $CHANNEL
-	"$ROOT_DIR/build.sh" -d "$ZOTERO_BUILD_DIR/xpi/build/staging" -p $PLATFORM -c $CHANNEL -s
+	"$ROOT_DIR/build.sh" -d "$ZOTERO_BUILD_DIR/xpi/build/staging" -p $PLATFORM -c $CHANNEL -s $PARAMS
 fi

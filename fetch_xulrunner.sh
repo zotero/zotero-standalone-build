@@ -97,6 +97,17 @@ function modify_omni {
 	rm -rf omni
 }
 
+# Add devtools server from browser omni.ja
+function extract_devtools {
+	set +e
+	unzip browser/omni.ja 'chrome/devtools/*' -d devtools-files
+	unzip browser/omni.ja 'chrome/en-US/locale/en-US/devtools/*' -d devtools-files
+	mv devtools-files/chrome/en-US/locale devtools-files/chrome
+	rmdir devtools-files/chrome/en-US
+	unzip browser/omni.ja 'components/interfaces.xpt' -d devtools-files
+	set -e
+}
+
 rm -rf xulrunner
 mkdir xulrunner
 cd xulrunner
@@ -114,6 +125,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	pushd Firefox.app/Contents/Resources
 	modify_omni
+	extract_devtools
 	popd
 	
 	rm "Firefox%20$GECKO_VERSION.dmg"
@@ -133,6 +145,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	cd $XDIR
 	modify_omni
+	extract_devtools
 	cd ..
 	
 	rm "Firefox%20Setup%20$GECKO_VERSION.exe"
@@ -147,6 +160,7 @@ if [ $BUILD_LINUX == 1 ]; then
 	mv firefox firefox-i686
 	cd firefox-i686
 	modify_omni
+	extract_devtools
 	cd ..
 	rm "firefox-$GECKO_VERSION.tar.bz2"
 	
@@ -156,6 +170,9 @@ if [ $BUILD_LINUX == 1 ]; then
 	mv firefox firefox-x86_64
 	cd firefox-x86_64
 	modify_omni
+	extract_devtools
 	cd ..
 	rm "firefox-$GECKO_VERSION.tar.bz2"
 fi
+
+echo Done

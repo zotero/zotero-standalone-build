@@ -1,0 +1,5 @@
+locale devtools en-US chrome/locale/en-US/devtools/client/
+locale devtools-shared en-US chrome/locale/en-US/devtools/shared/
+content devtools chrome/devtools/content/
+resource devtools chrome/devtools/modules/devtools/
+interfaces components/interfaces.xpt
