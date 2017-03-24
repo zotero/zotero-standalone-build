@@ -496,9 +496,6 @@ if [ $BUILD_LINUX == 1 ]; then
 		find "$APPDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
 		find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 		
-		# Add run-zotero.sh
-		#cp "$CALLDIR/linux/run-zotero.sh" "$APPDIR/run-zotero.sh"
-		
 		if [ $PACKAGE == 1 ]; then
 			# Create tar
 			rm -f "$DIST_DIR/Zotero-${VERSION}_linux-$arch.tar.bz2"

@@ -15,3 +15,4 @@ resource/concurrent-caller.js
 install.rdf
 deleted.txt
 test/*
+run-zotero.sh
