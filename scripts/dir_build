@@ -5,13 +5,37 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
+function usage {
+	cat >&2 <<DONE
+Usage: $0 -p platforms
+Options
+ -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
+ -t                  add devtools
+DONE
+	exit 1
+}
+
 DEVTOOLS=0
-while getopts "t" opt; do
+PLATFORM=""
+while getopts "p:t" opt; do
 	case $opt in
 		t)
 			DEVTOOLS=1
 			;;
-		
+		p)
+			for i in `seq 0 1 $((${#OPTARG}-1))`
+			do
+				case ${OPTARG:i:1} in
+					m) PLATFORM="m";;
+					w) PLATFORM="w";;
+					l) PLATFORM="l";;
+					*)
+						echo "$0: Invalid platform option ${OPTARG:i:1}"
+						usage
+						;;
+				esac
+			done
+			;;		
 		\?)
 			echo "Invalid option: -$OPTARG" >&2
 			exit 1
@@ -19,12 +43,14 @@ while getopts "t" opt; do
 	esac
 done
 
-if [ "`uname`" = "Darwin" ]; then
-	PLATFORM="m"
-elif [ "`uname`" = "Linux" ]; then
-	PLATFORM="l"
-elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
-	PLATFORM="w"
+if [[ -z $PLATFORM ]]; then
+	if [ "`uname`" = "Darwin" ]; then
+		PLATFORM="m"
+	elif [ "`uname`" = "Linux" ]; then
+		PLATFORM="l"
+	elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
+		PLATFORM="w"
+	fi
 fi
 
 CHANNEL="source"
