@@ -3,13 +3,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Version of Gecko to build with
 #
 # xulrunner-stub.exe currently requires <=47, though it can probably be rebuilt against a later SDK
-if [ "`uname -o 2> /dev/null`" = 'Cygwin' ]; then
-	GECKO_VERSION="45.0.2esr"
-	GECKO_SHORT_VERSION="45.0"
-else
-	GECKO_VERSION="50.1.0"
-	GECKO_SHORT_VERSION="50.1"
-fi
+GECKO_VERSION_MAC="50.1.0"
+GECKO_VERSION_LINUX="50.1.0"
+GECKO_VERSION_WIN="45.0.2esr"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"

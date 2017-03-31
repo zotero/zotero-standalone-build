@@ -194,7 +194,6 @@ perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
 # Copy prefs.js and modify
 cp "$CALLDIR/assets/prefs.js" "$BUILD_DIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 
 # Add devtools manifest and pref
 if [ $DEVTOOLS -eq 1 ]; then
@@ -228,6 +227,7 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Modify platform-specific prefs
 	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_MAC"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
@@ -319,6 +319,9 @@ if [ $BUILD_WIN32 == 1 ]; then
 	APPDIR="$STAGE_DIR/Zotero_win32"
 	rm -rf "$APPDIR"
 	mkdir "$APPDIR"
+	
+	# Modify platform-specific prefs
+	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_WIN"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	
 	# Copy relevant assets from Firefox
 	mkdir "$APPDIR/xulrunner"
@@ -470,6 +473,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Modify platform-specific prefs
 		perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+		perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_LINUX"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 		
 		# Add Unix-specific Standalone assets
 		cd "$CALLDIR/assets/unix"
