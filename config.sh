@@ -30,9 +30,9 @@ SIGNATURE_URL='https://www.zotero.org/'
 SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
 
 # Directory for Zotero source code (needed for scripts/dir_build)
-ZOTERO_SOURCE_DIR=$( cd .. && pwd )/zotero
+ZOTERO_SOURCE_DIR=$( cd "$DIR"/.. && pwd )/zotero-client
 # Directory for Zotero build files (needed for scripts/*_build_and_deploy)
-ZOTERO_BUILD_DIR=$( cd .. && pwd )/zotero-build
+ZOTERO_BUILD_DIR=$( cd "$DIR"/.. && pwd )/zotero-build
 # Directory for unpacked binaries
 STAGE_DIR="$DIR/staging"
 # Directory for packed binaries
