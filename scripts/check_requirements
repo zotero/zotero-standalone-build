@@ -47,14 +47,16 @@ which unzip || { $FAIL_CMD; FAILED=1; }
 echo -n "Checking for awk: "
 which awk || { $FAIL_CMD; FAILED=1; }
 
+if [ $WIN_NATIVE == 1 ]; then
+	echo -n "Checking for 7z: "
+	which 7z || { $FAIL_CMD; FAILED=1; }
+fi
+
 echo
 echo "Checking packaging requirements:"
 echo
 
 if [ $WIN_NATIVE == 1 ]; then
-	echo -n "Checking for 7z: "
-	which 7z || { $FAIL_CMD; FAILED=1; }
-	
 	echo -n "Checking for upx: "
 	which upx || { $FAIL_CMD; FAILED=1; }
 
