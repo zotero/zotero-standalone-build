@@ -234,7 +234,9 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
     # remove instructions are added after add / patch instructions for
     # consistency with make_incremental_updates.py
     remove_array[$num_removes]=$f
-    (( num_removes++ ))
+    # Changed by Zotero for -e
+    #(( num_removes++ ))
+    (( ++num_removes ))
   fi
 done
 
