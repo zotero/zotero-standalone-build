@@ -3,8 +3,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Version of Gecko to build with
 #
 # xulrunner-stub.exe currently requires <=47, though it can probably be rebuilt against a later SDK
-GECKO_VERSION_MAC="50.1.0"
-GECKO_VERSION_LINUX="50.1.0"
+GECKO_VERSION_MAC="54.0b9"
+GECKO_VERSION_LINUX="54.0b9"
 GECKO_VERSION_WIN="45.0.2esr"
 
 # Paths to Gecko runtimes
