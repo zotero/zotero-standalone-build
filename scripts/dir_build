@@ -65,6 +65,6 @@ else
 		PARAMS="-t"
 	fi
 	
-	"$ZOTERO_BUILD_DIR/xpi/build_xpi" -s "$ZOTERO_SOURCE_DIR" -c $CHANNEL
+	"$ZOTERO_BUILD_DIR/xpi/build_xpi" -s "$ZOTERO_SOURCE_DIR/build" -c $CHANNEL
 	"$ROOT_DIR/build.sh" -d "$ZOTERO_BUILD_DIR/xpi/build/staging" -p $PLATFORM -c $CHANNEL -s $PARAMS
 fi

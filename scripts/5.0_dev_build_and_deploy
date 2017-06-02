@@ -8,5 +8,17 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 CHANNEL="dev"
 
 "$SCRIPT_DIR/check_requirements"
-"$ZOTERO_BUILD_DIR/xpi/build_xpi" -c $CHANNEL -z
+
+cd "$ZOTERO_SOURCE_DIR"
+if [ ! -f chrome.manifest ]; then
+	echo "chrome.manifest not found" >&2
+	exit 1
+fi
+
+echo
+npm i
+npm run clean && node_modules/.bin/gulp build
+echo
+
+"$ZOTERO_BUILD_DIR/xpi/build_xpi" -s "$ZOTERO_SOURCE_DIR/build" -c $CHANNEL -z
 "$SCRIPT_DIR/build_and_deploy" -x "$ZOTERO_BUILD_DIR/xpi/build/zotero-build.xpi" -p $BUILD_PLATFORMS -c $CHANNEL -i 1
