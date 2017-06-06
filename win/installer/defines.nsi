@@ -71,6 +71,12 @@ VIAddVersionKey "ProductVersion"  "${AppVersion}"
 !define QUICKLAUNCH_SHORTCUT_ENABLED  1
 !define QUICKLAUNCH_SHORTCUT_DEFAULT  ${QUICKLAUNCH_SHORTCUT_ENABLED}
 
+# Install scope defines. These are assigned to the RequestedInstallScope
+# variable.
+!define INSTALLSCOPE_USER    1
+!define INSTALLSCOPE_GLOBAL  2
+!define INSTALLSCOPE_DEFAULT ${INSTALLSCOPE_GLOBAL}
+
 !define INSTALLTYPE_BASIC     1
 !define INSTALLTYPE_CUSTOM    2
 !define INSTALLTYPE_DEFAULT   ${INSTALLTYPE_BASIC}

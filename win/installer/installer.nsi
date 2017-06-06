@@ -31,6 +31,7 @@ Var AddDesktopSC
 Var AddQuickLaunchSC
 Var AddStartMenuSC
 Var InstallType
+Var RequestedInstallScope
 
 ; By defining NO_STARTMENU_DIR an installer that doesn't provide an option for
 ; an application's Start Menu PROGRAMS directory and doesn't define the
@@ -78,6 +79,7 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro CheckForFilesInUse
 !insertmacro CleanUpdatesDir
 !insertmacro CopyFilesFromDir
+!insertmacro ElevateUAC
 !insertmacro GetParent
 !insertmacro GetPathFromString
 !insertmacro IsHandlerForInstallDir
@@ -105,11 +107,6 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 
 Name "${BrandFullName}"
 OutFile "setup.exe"
-!ifdef HAVE_64BIT_OS
-  InstallDir "$PROGRAMFILES64\${BrandFullName}\"
-!else
-  InstallDir "$PROGRAMFILES32\${BrandFullName}\"
-!endif
 ShowInstDetails nevershow
 
 ################################################################################
@@ -137,6 +134,9 @@ ShowInstDetails nevershow
 ; Welcome Page
 !define MUI_PAGE_CUSTOMFUNCTION_PRE preWelcome
 !insertmacro MUI_PAGE_WELCOME
+
+; Page for per-user or global install
+Page custom preScopeOptions leaveScopeOptions
 
 ; Custom Options Page
 Page custom preOptions leaveOptions
@@ -636,10 +636,81 @@ BrandingText " "
 # Page pre, show, and leave functions
 
 Function preWelcome
+  ; Skip this page if we are running the "inner" process.
+  Push $R9
+  Push $0
+  ${GetParameters} $R9
+  ${If} $R9 != ""
+    ClearErrors
+    ${GetOptions} "$R9" "/UAC:" $0
+
+    ${Unless} ${Errors}
+       Abort
+    ${EndUnless}
+  ${EndIf}
+  Pop $0
+  Pop $R9
+
   StrCpy $PageName "Welcome"
   ${If} ${FileExists} "$EXEDIR\core\distribution\modern-wizard.bmp"
     Delete "$PLUGINSDIR\modern-wizard.bmp"
     CopyFiles /SILENT "$EXEDIR\core\distribution\modern-wizard.bmp" "$PLUGINSDIR\modern-wizard.bmp"
+  ${EndIf}
+FunctionEnd
+
+Function preScopeOptions
+  ; The UAC plugin's author, Anders, says that an installer run elevated
+  ; should always write to global locations. In this case we'll make the scope
+  ; choice for the user.
+  Push $0
+  UAC::IsAdmin
+  ${If} $0 = 1
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+    Pop $0
+    Abort
+  ${Else}
+    Pop $0
+  ${EndIf}
+
+  StrCpy $PageName "Install Scope Options"
+  ${If} ${FileExists} "$EXEDIR\core\distribution\modern-header.bmp"
+  ${AndIf} $hHeaderBitmap == ""
+    Delete "$PLUGINSDIR\modern-header.bmp"
+    CopyFiles /SILENT "$EXEDIR\core\distribution\modern-header.bmp" \
+      "$PLUGINSDIR\modern-header.bmp"
+    ${ChangeMUIHeaderImage} "$PLUGINSDIR\modern-header.bmp"
+  ${EndIf}
+  ; Share title with other options pages.
+  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" \
+    "$(OPTIONS_PAGE_SUBTITLE)"
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY "scopeoptions.ini"
+FunctionEnd
+
+Function leaveScopeOptions
+  ${MUI_INSTALLOPTIONS_READ} $0 "scopeoptions.ini" "Settings" "State"
+  ${If} $0 != 0
+    Abort
+  ${EndIf}
+
+  Push $R0
+  Push $R1
+  ${MUI_INSTALLOPTIONS_READ} $R0 "scopeoptions.ini" "Field 2" "State"
+  ${MUI_INSTALLOPTIONS_READ} $R1 "scopeoptions.ini" "Field 3" "State"
+  ${If} $R0 == "1"
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
+  ${ElseIf} $R1 == "1"
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+  ${Else}
+    StrCpy $RequestedInstallScope ${INSTALLSCOPE_DEFAULT}
+  ${EndIf}
+  Pop $R1
+  Pop $R0
+
+  ; A global install should restart with admin priviledges. On the second run
+  ; this page will skip because of a check made in preScopeOptions.
+  ${If} $RequestedInstallScope == ${INSTALLSCOPE_GLOBAL}
+    HideWindow
+    ${ElevateUAC}
   ${EndIf}
 FunctionEnd
 
@@ -651,7 +722,9 @@ Function preOptions
     CopyFiles /SILENT "$EXEDIR\core\distribution\modern-header.bmp" "$PLUGINSDIR\modern-header.bmp"
     ${ChangeMUIHeaderImage} "$PLUGINSDIR\modern-header.bmp"
   ${EndIf}
-  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" "$(OPTIONS_PAGE_SUBTITLE)"
+  ; Share title with other options pages.
+  !insertmacro MUI_HEADER_TEXT "$(OPTIONS_PAGE_TITLE)" \
+    "$(OPTIONS_PAGE_SUBTITLE)"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "options.ini"
 FunctionEnd
 
@@ -854,18 +927,86 @@ Function .onInit
   StrCpy $AddStartMenuSC "${START_MENU_SHORTCUT_DEFAULT}"
   StrCpy $AddQuickLaunchSC "${QUICKLAUNCH_SHORTCUT_DEFAULT}"
   StrCpy $InstallType ${INSTALLTYPE_DEFAULT}
+  StrCpy $RequestedInstallScope ${INSTALLSCOPE_DEFAULT}
+
+  ; Silent installers perform a global or per-user installation based on
+  ; whether they are run elevated.
+  ${If} ${Silent}
+    Push $0
+    UAC::IsAdmin
+    ${If} $0 = 1
+      StrCpy $RequestedInstallScope ${INSTALLSCOPE_GLOBAL}
+    ${Else}
+      StrCpy $RequestedInstallScope ${INSTALLSCOPE_USER}
+    ${EndIf}
+    Pop $0
+  ${EndIf}
 
   ${SetBrandNameVars} "$EXEDIR\core\distribution\setup.ini"
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
 
+  !insertmacro InitInstallOptionsFile "scopeoptions.ini"
   !insertmacro InitInstallOptionsFile "options.ini"
   !insertmacro InitInstallOptionsFile "shortcuts.ini"
   !insertmacro InitInstallOptionsFile "summary.ini"
 
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Settings" NumFields "5"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Type   "label"
+  ; Share summary with other options pages.
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Text   "$(OPTIONS_SUMMARY)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Left   "0"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Top    "0"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 1" Bottom "10"
+
+  ; The State is defined later
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Type   "RadioButton"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Text   "$(SCOPEOPTIONS_USER_RADIO)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Left   "15"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Top    "25"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Bottom "35"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" Flags  "GROUP"
+
+  ; The State is defined later
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Type   "RadioButton"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Text   "$(SCOPEOPTIONS_GLOBAL_RADIO)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Left   "15"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Top    "55"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" Bottom "65"
+
+
+  ; Define the UI to match what it has already been defined as
+  ; programmatically.
+  ${If} $RequestedInstallScope == ${INSTALLSCOPE_GLOBAL}
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "0"
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "1"
+  ${Else}
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 2" State  "1"
+    WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 3" State  "0"
+  ${EndIf}
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Type   "label"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Text   "$(SCOPEOPTIONS_USER_DESC)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Left   "30"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Top    "37"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 4" Bottom "57"
+
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Type   "label"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Text   "$(SCOPEOPTIONS_GLOBAL_DESC)"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Left   "30"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Right  "-1"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Top    "67"
+  WriteINIStr "$PLUGINSDIR\scopeoptions.ini" "Field 5" Bottom "87"
+
   WriteINIStr "$PLUGINSDIR\options.ini" "Settings" NumFields "5"
 
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Type   "label"
+  ; Share summary with other options pages.
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Text   "$(OPTIONS_SUMMARY)"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Left   "0"
   WriteINIStr "$PLUGINSDIR\options.ini" "Field 1" Right  "-1"
