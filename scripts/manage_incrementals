@@ -69,7 +69,7 @@ if [[ "$VERSION" ]] && [[ "$NUM_VERSIONS" ]]; then
 fi
 
 INCR_FILENAME="incrementals-$CHANNEL-$PLATFORM"
-S3_URL="s3://$S3_BUCKET/$S3_PATH${S3_SUBDIR}/incrementals-$PLATFORM"
+S3_URL="s3://$S3_BUCKET/$S3_DIST_PATH${S3_SUBDIR}/incrementals-$PLATFORM"
 INCR_PATH="$DIST_DIR/$INCR_FILENAME"
 
 mkdir -p "$DIST_DIR"

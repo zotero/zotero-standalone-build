@@ -176,7 +176,7 @@ for version in "$FROM" "$TO"; do
 		# URL-encode '+' in beta version numbers
 		ENCODED_VERSION=`urlencode $version`
 		ENCODED_ARCHIVE=`urlencode $archive`
-		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_PATH${S3_SUBDIR}/$ENCODED_VERSION/$ENCODED_ARCHIVE"
+		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_DIST_PATH${S3_SUBDIR}/$ENCODED_VERSION/$ENCODED_ARCHIVE"
 		echo "Fetching $URL"
 		set +e
 		# Cached version is available

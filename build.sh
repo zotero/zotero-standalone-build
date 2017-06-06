@@ -34,7 +34,7 @@ fi
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 [-f FILE] [-u DIR] -p PLATFORMS [-c CHANNEL] [-d]
+Usage: $0 [-d DIR] [-f FILE] -p PLATFORMS [-c CHANNEL] [-d]
 Options
  -d DIR              build directory to build from (from build_xpi; cannot be used with -f)
  -f FILE             ZIP file to build from (cannot be used with -d)
@@ -56,6 +56,8 @@ function abspath {
 	echo $(cd $(dirname $1); pwd)/$(basename $1);
 }
 
+SOURCE_DIR=""
+ZIP_FILE=""
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0

@@ -10,8 +10,8 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 -x XPI_FILE -c CHANNEL -p PLATFORMS
- -x XPI_FILE         XPI file to build from
+Usage: $0 -d SOURCE_DIR -c CHANNEL -p PLATFORMS
+ -d SOURCE_DIR       Source directory to build from
  -c CHANNEL          Release channel ('release', 'beta', 'dev')
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
  -i INCREMENTALS     Number of incremental builds to create
@@ -20,15 +20,15 @@ DONE
 }
 
 
-XPI=""
+SOURCE_DIR=""
 CHANNEL=""
 PLATFORMS=""
-while getopts "x:c:p:i:" opt; do
+while getopts "d:c:p:i:" opt; do
 	case $opt in
-		x)
-			XPI="$OPTARG"
-			if [ ! -f "$XPI" ]; then
-				echo "$XPI not found"
+		d)
+			SOURCE_DIR="$OPTARG"
+			if [ ! -d "$SOURCE_DIR" ]; then
+				echo "$SOURCE_DIR not found"
 				exit 1
 			fi
 			;;
@@ -48,20 +48,20 @@ while getopts "x:c:p:i:" opt; do
 	shift $((OPTIND-1)); OPTIND=1
 done
 
-if [[ -z "$XPI" ]] || [[ -z "$CHANNEL" ]] || [[ -z "$PLATFORMS" ]]; then
+if [[ -z "$SOURCE_DIR" ]] || [[ -z "$CHANNEL" ]] || [[ -z "$PLATFORMS" ]]; then
 	usage
 fi
 
 "$SCRIPT_DIR"/check_requirements
 
-VERSION="`unzip -p \"$XPI\" install.rdf | perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;'`"
+VERSION="`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' \"$SOURCE_DIR\"/install.rdf`"
 if [ -z "$VERSION" ]; then
-	echo "Error getting version from XPI"
+	echo "Error getting version from $SOURCE_DIR/install.rdf"
 	exit 1
 fi
 
 # Build Zotero
-"$ROOT_DIR/build.sh" -f $XPI -p $PLATFORMS -c $CHANNEL
+"$ROOT_DIR/build.sh" -d "$SOURCE_DIR" -p $PLATFORMS -c $CHANNEL
 
 BUILD_ID=`cat "$DIST_DIR/build_id"`
 if [ -z "$BUILD_ID" ]; then

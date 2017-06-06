@@ -40,8 +40,10 @@ STAGE_DIR="$DIR/staging"
 # Directory for packed binaries
 DIST_DIR="$DIR/dist"
 
+SOURCE_REPO_URL="https://github.com/zotero/zotero"
 S3_BUCKET="zotero-download"
-S3_PATH="standalone"
+S3_CI_ZIP_PATH="ci/client"
+S3_DIST_PATH="standalone"
 
 DEPLOY_HOST="deploy.zotero"
 DEPLOY_PATH="www/www-production/public/download/standalone/"

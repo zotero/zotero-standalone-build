@@ -105,7 +105,7 @@ echo -n "Checking for AWS CLI: "
 which aws || { $FAIL_CMD; FAILED=1; }
 
 echo -n "Checking for AWS S3 access: "
-aws s3 ls $S3_BUCKET/$S3_PATH | sed 's/^[[:blank:]]*//' || { $FAIL_CMD; FAILED=1; }
+aws s3 ls $S3_BUCKET/$S3_DIST_PATH | sed 's/^[[:blank:]]*//' || { $FAIL_CMD; FAILED=1; }
 
 echo -n "Checking for deploy host directory access: "
 ssh $DEPLOY_HOST ls -d $DEPLOY_PATH || { $FAIL_CMD; FAILED=1; }

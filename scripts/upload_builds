@@ -39,6 +39,5 @@ if [ -z "$VERSION" ]; then
 	usage
 fi
 
-S3_PATH="$S3_BUCKET/standalone${S3_SUBDIR}/$VERSION/"
-
-aws s3 sync --exclude "files-*" --exclude build_id "$DIST_DIR" s3://${S3_PATH}
+url="s3://$S3_BUCKET/$S3_DIST_PATH${S3_SUBDIR}/$VERSION/"
+aws s3 sync --exclude "files-*" --exclude build_id "$DIST_DIR" $url
