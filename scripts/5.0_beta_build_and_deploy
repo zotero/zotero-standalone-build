@@ -10,7 +10,7 @@ CHANNEL="beta"
 cd "$SCRIPT_DIR"
 ./check_requirements
 
-hash=`git ls-remote $SOURCE_REPO_URL --tags master --exit-code | cut -f 1`
+hash=`./get_repo_branch_hash master`
 source_dir=`./get_commit_files $hash`
 
 function cleanup {
