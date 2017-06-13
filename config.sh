@@ -46,7 +46,7 @@ S3_CI_ZIP_PATH="ci/client"
 S3_DIST_PATH="standalone"
 
 DEPLOY_HOST="deploy.zotero"
-DEPLOY_PATH="www/www-production/public/download/standalone/"
+DEPLOY_PATH="www/www-production/public/download/standalone/manifests"
 DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
 
 BUILD_PLATFORMS=""

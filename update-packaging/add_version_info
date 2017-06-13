@@ -20,8 +20,6 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('-f', '--file', required=True, help="path to updates.json")
-parser.add_argument('-p', '--platforms', required=True, help="platforms ('m', 'w', 'l')")
-parser.add_argument('-c', '--channel', required=True, help="release channel ('release', 'beta')")
 parser.add_argument('-v', '--version', required=True, help='version number of build')
 parser.add_argument('-b', '--build_id', required=True, help="build ID ('20160801142343')")
 
@@ -30,13 +28,7 @@ args = parser.parse_args()
 def main():
     try:
         file = args.file
-        platforms = args.platforms
-        channel = args.channel
         version = args.version
-        
-        unknown_platforms = set(platforms) - set(['m', 'w', 'l'])
-        if len(unknown_platforms) > 0:
-            raise Exception("Invalid platform '{}'".format(unknown_platforms))
         
         # Back up JSON file
         shutil.copy2(file, file + '.bak')
@@ -44,30 +36,16 @@ def main():
         # Read in existing file
         with open(file) as f:
             updates = json.loads(f.read())
-        
-        if channel not in updates:
-            updates[channel] = {}
-        
-        full_platforms = []
-        if "m" in platforms:
-            full_platforms.append("mac")
-        if "w" in platforms:
-            full_platforms.append("win32")
-        if "l" in platforms:
-            full_platforms.append("linux-i686")
-            full_platforms.append("linux-x86_64")
-        
-        # Add info for current builds
-        for platform in full_platforms:
-            if platform not in updates[channel]:
-                updates[channel][platform] = {}
             
-            updates[channel][platform]['VERSION'] = version
-            updates[channel][platform]['BUILD_ID'] = args.build_id
-            
-            if 'DETAILSURL' not in updates[channel][platform]:
-                updates[channel][platform]['DETAILSURL'] = DETAILS_URLS[version[0:3]]
-                updates[channel][platform]['MAJOR'] = MAJOR
+        updates.append({
+            'version': version,
+            'buildID': args.build_id,
+            'detailsURL': DETAILS_URLS[version[0:3]],
+            'major': MAJOR
+        })
+        
+        # Keep last 5 entries
+        updates = updates[-5:]
         
         # Write new file
         updates = json.dumps(updates, indent=2)

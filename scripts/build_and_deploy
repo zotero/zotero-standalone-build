@@ -117,22 +117,38 @@ done
 # Upload builds to S3
 "$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
 
-# Upload file lists for each platform, using a subdirectory for non-release channels
-if [ $CHANNEL == "release" ]; then
-	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH"
-else
-	VERSIONS_DEPLOY_PATH="$DEPLOY_PATH/$CHANNEL"
-fi
+# Upload file lists for each platform
+channel_deploy_path="$DEPLOY_PATH/$CHANNEL"
 mkdir "$TEMP_DIR/version_info"
 chmod g+ws "$TEMP_DIR/version_info"
 cp "$DIST_DIR"/files-* "$TEMP_DIR/version_info"
 chmod g+w "$TEMP_DIR"/version_info/files-*
-rsync -rv "$TEMP_DIR/version_info/" $DEPLOY_HOST:"$VERSIONS_DEPLOY_PATH/$VERSION/"
+rsync -rv "$TEMP_DIR/version_info/" $DEPLOY_HOST:"$channel_deploy_path/$VERSION/"
 
-# Download updates.json, update it, and reupload it
-scp $DEPLOY_HOST:"$DEPLOY_PATH/updates.json" "$TEMP_DIR/updates.json"
-"$ROOT_DIR/update-packaging/add_version_info" -f "$TEMP_DIR/updates.json" -p $PLATFORMS -c $CHANNEL -v $VERSION -b $BUILD_ID
-scp "$TEMP_DIR/updates.json" $DEPLOY_HOST:"$DEPLOY_PATH/updates.json"
+# Download updates JSON for each platform, update it, and reupload it
+for i in `seq 0 1 $((${#PLATFORMS}-1))`
+do
+	case ${PLATFORMS:i:1} in
+		m)
+			architectures="mac"
+			;;
+		w)
+			architectures="win32"
+			;;
+		l)
+			architectures="linux-i686 linux-x86_64"
+			;;
+	esac
+	
+	for arch in $architectures;
+	do
+		jsonfile="updates-$arch.json"
+		
+		scp $DEPLOY_HOST:"$channel_deploy_path/$jsonfile" "$TEMP_DIR/$jsonfile"
+		"$ROOT_DIR/update-packaging/add_version_info" -f "$TEMP_DIR/$jsonfile" -v $VERSION -b $BUILD_ID
+		scp "$TEMP_DIR/$jsonfile" $DEPLOY_HOST:"$channel_deploy_path/$jsonfile"
+	done
+done
 
 # Add version to incremental lists
 echo
