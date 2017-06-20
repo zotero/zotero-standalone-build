@@ -5,7 +5,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # xulrunner-stub.exe currently requires <=47, though it can probably be rebuilt against a later SDK
 GECKO_VERSION_MAC="54.0b13"
 GECKO_VERSION_LINUX="54.0b13"
-GECKO_VERSION_WIN="45.0.2esr"
+GECKO_VERSION_WIN="52.2.0esr"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
