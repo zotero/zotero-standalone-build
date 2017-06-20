@@ -326,8 +326,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_WIN"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	
 	# Copy relevant assets from Firefox
-	mkdir "$APPDIR/xulrunner"
-	cp -R "$WIN32_RUNTIME_PATH"/!(api-ms*.dll|application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR/xulrunner"
+	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
 	
 	# Copy zotero.exe, which is xulrunner-stub from https://github.com/duanyao/xulrunner-stub
 	# modified with ReplaceVistaIcon.exe and edited with Resource Hacker
@@ -337,16 +336,14 @@ if [ $BUILD_WIN32 == 1 ]; then
 	#       "`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
 	#
 	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
-	
+
+	# zotero.exe (xulrunner-stub) is compiled with VS2013 therefore
+	# needs older 'msvcr' library than Firefox has
+	cp "$CALLDIR/win/msvcr120.dll" "$APPDIR"
+
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
-	cp "$CALLDIR/win/updater.exe" "$APPDIR/xulrunner"
-	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/xulrunner/updater.ini"
-	
-	# Copy files to root as required by xulrunner-stub
-	cp "$WIN32_RUNTIME_PATH/mozglue.dll" \
-		"$WIN32_RUNTIME_PATH/msvcp120.dll" \
-		"$WIN32_RUNTIME_PATH/msvcr120.dll" \
-		"$APPDIR/"
+	cp "$CALLDIR/win/updater.exe" "$APPDIR"
+	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
 	
 	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	
@@ -397,12 +394,12 @@ if [ $BUILD_WIN32 == 1 ]; then
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
-				for dll in "$APPDIR/"*.dll "$APPDIR/xulrunner/"*.dll; do
+				for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
 					"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
 						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
 				done
 				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Updater" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/xulrunner/updater.exe\"`"
+					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/updater.exe\"`"
 				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Uninstaller" \
 					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
 			fi
