@@ -52,4 +52,8 @@ DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
 BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
 
+if [ -f "$DIR/config-custom.sh" ]; then
+	. config-custom.sh
+fi
+
 unset DIR
