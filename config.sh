@@ -53,7 +53,7 @@ BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
 
 if [ -f "$DIR/config-custom.sh" ]; then
-	. config-custom.sh
+	. "$DIR/config-custom.sh"
 fi
 
 unset DIR
