@@ -274,12 +274,55 @@ Section "Uninstall"
   ${EndIf}
 
   ; Remove the updates directory for Vista and above
-  ${un.CleanUpdatesDir} "Zotero\Standalone"
+  ${un.CleanUpdatesDir} "Zotero\Zotero"
 
   ; Parse the uninstall log to unregister dll's and remove all installed
   ; files / directories this install is responsible for.
   ${un.ParseUninstallLog}
 
+  ; Files that were added by an in-app update aren't currently being added to the uninstall log,
+  ; so manually delete everything we know about as long as the directory name begins with "Zotero".
+  ; We don't just delete the directory because we don't know for sure that the user didn't do
+  ; something crazy like put their data directory in it.
+  ${GetFileName} $INSTDIR $R1
+  StrCpy $R2 $R1 6
+  StrCmp $R2 "Zotero" +1 post_delete
+  ${If} ${FileExists} "$INSTDIR\chrome"
+    RMDir /r /REBOOTOK "$INSTDIR\chrome"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\components"
+    RMDir /r /REBOOTOK "$INSTDIR\components"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\defaults"
+    RMDir /r /REBOOTOK "$INSTDIR\defaults"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\dictionaries"
+    RMDir /r /REBOOTOK "$INSTDIR\dictionaries"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\extensions"
+    RMDir /r /REBOOTOK "$INSTDIR\extensions"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\fonts"
+    RMDir /r /REBOOTOK "$INSTDIR\fonts"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\gmp-clearkey"
+    RMDir /r /REBOOTOK "$INSTDIR\gmp-clearkey"
+  ${EndIF}
+  ${If} ${FileExists} "$INSTDIR\xulrunner"
+    RMDir /r /REBOOTOK "$INSTDIR\xulrunner"
+  ${EndIF}
+  Delete /REBOOTOK "$INSTDIR\*.chk"
+  Delete /REBOOTOK "$INSTDIR\*.dll"
+  Delete /REBOOTOK "$INSTDIR\*.exe"
+  Delete /REBOOTOK "$INSTDIR\Accessible.tlb"
+  Delete /REBOOTOK "$INSTDIR\dependentlibs.list"
+  Delete /REBOOTOK "$INSTDIR\firefox.VisualElementsManifest.xml"
+  Delete /REBOOTOK "$INSTDIR\omni.ja"
+  Delete /REBOOTOK "$INSTDIR\platform.ini"
+  Delete /REBOOTOK "$INSTDIR\precomplete"
+  Delete /REBOOTOK "$INSTDIR\voucher.bin"
+  post_delete:
+  
   ; Remove the uninstall directory that we control
   RmDir /r /REBOOTOK "$INSTDIR\uninstall"
 

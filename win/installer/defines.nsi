@@ -9,7 +9,7 @@
 # handled in widget/src/windows/WinTaskbar.cpp.
 
 !define AppVendor             "Zotero"
-!define AppName               "Standalone"
+!define AppName               "Zotero"
 !define AppVersion            "{{VERSION}}"
 !define AppUserModelID        "${AppVendor}.${AppName}.${AppVersion}"
 !define GREVersion            2.0
