@@ -17,8 +17,7 @@ LINUX_x86_64_RUNTIME_PATH="$DIR/xulrunner/firefox-x86_64"
 SIGN=1
 
 # OS X Developer ID certificate information
-DEVELOPER_ID=c8a15a3bc9eaaabc112e83b2f885609e535d07f0
-CODESIGN_REQUIREMENTS="=designated => anchor apple generic  and identifier \"org.zotero.zotero\" and ((cert leaf[field.1.2.840.113635.100.6.1.9] exists) or ( certificate 1[field.1.2.840.113635.100.6.2.6] exists and certificate leaf[field.1.2.840.113635.100.6.1.13] exists  and certificate leaf[subject.OU] = \"8LAYR367YV\" ))"
+DEVELOPER_ID=F0F1FE48DB909B263AC51C8215374D87FDC12121
 
 # Paths for Windows installer build
 MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
