@@ -110,7 +110,7 @@ pref("app.update.silent", false);
 
 // Update service URL:
 // You do not need to use all the %VAR% parameters. Use what you need, %PRODUCT%,%VERSION%,%BUILD_ID%,%CHANNEL% for example
-pref("app.update.url", "https://www.zotero.org/download/standalone/update/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/update.xml");
+pref("app.update.url", "https://www.zotero.org/download/client/update/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/update.xml");
 
 // URL user can browse to manually if for some reason all update installation
 // attempts fail.
