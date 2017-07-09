@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Upload build archives from 'dist' to S3 with the specified path and version
+# Upload build archives from 'dist' to S3 with the specified channel and version
 #
 set -euo pipefail
 
@@ -9,35 +9,16 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
 function usage {
-	cat >&2 <<DONE
-Usage: $0 [-s S3_SUBDIR] VERSION
-Options
- -s S3_SUBDIR         Path within S3 standalone directory (e.g., 'beta' for /standalone/beta)
-DONE
+	echo Usage: $0 CHANNEL VERSION >&2
 	exit 1
 }
 
-S3_SUBDIR=""
-while getopts "s:" opt; do
-	case $opt in
-		s)
-			if [ "$OPTARG" != "release" ]; then
-				S3_SUBDIR="/$OPTARG"
-			fi
-			;;
-		*)
-			usage
-			;;
-	esac
-	shift $((OPTIND-1)); OPTIND=1
-done
+CHANNEL="${1:-}"
+VERSION="${2:-}"
 
-shift $(($OPTIND - 1))
-VERSION="${1:-}"
-
-if [ -z "$VERSION" ]; then
+if [[ -z "$CHANNEL" ]] || [[ -z "$VERSION" ]]; then
 	usage
 fi
 
-url="s3://$S3_BUCKET/$S3_DIST_PATH${S3_SUBDIR}/$VERSION/"
+url="s3://$S3_BUCKET/$S3_DIST_PATH/$CHANNEL/$VERSION/"
 aws s3 sync --exclude "files-*" --exclude build_id "$DIST_DIR" $url

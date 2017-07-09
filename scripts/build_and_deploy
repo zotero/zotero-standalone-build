@@ -115,7 +115,7 @@ do
 done
 
 # Upload builds to S3
-"$SCRIPT_DIR/upload_builds" -s "$CHANNEL" $VERSION
+"$SCRIPT_DIR/upload_builds" $CHANNEL $VERSION
 
 # Upload file lists for each platform
 channel_deploy_path="$DEPLOY_PATH/$CHANNEL"
