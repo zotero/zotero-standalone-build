@@ -53,7 +53,7 @@ while getopts "i:c:p:fl" opt; do
 			BUILD_INCREMENTAL=1
 			;;
 		c)
-			CHANNEL="/$OPTARG"
+			CHANNEL="$OPTARG"
 			;;
 		p)
 			for i in `seq 0 1 $((${#OPTARG}-1))`
