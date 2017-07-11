@@ -12,7 +12,7 @@ Usage: $0 -f [-i FROM_VERSION] [-c CHANNEL] [-p PLATFORMS] [-l] VERSION
 Options
  -f                  Perform full build
  -i FROM             Perform incremental build
- -c CHANNEL          Release channel ('release', 'beta')
+ -c CHANNEL          Release channel ('release', 'beta') (required for incremental builds)
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
  -l                  Use local TO directory instead of downloading TO files from S3
 DONE
@@ -44,7 +44,7 @@ FROM=""
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
-S3_SUBDIR=""
+CHANNEL=""
 USE_LOCAL_TO=0
 while getopts "i:c:p:fl" opt; do
 	case $opt in
@@ -53,10 +53,7 @@ while getopts "i:c:p:fl" opt; do
 			BUILD_INCREMENTAL=1
 			;;
 		c)
-			# Use a subdirectory if not the 'release' channel
-			if [ "$OPTARG" != 'release' ]; then
-				S3_SUBDIR="/$OPTARG"
-			fi
+			CHANNEL="/$OPTARG"
 			;;
 		p)
 			for i in `seq 0 1 $((${#OPTARG}-1))`
@@ -94,6 +91,11 @@ fi
 
 if [ -z "$FROM" ] && [ $BUILD_FULL -eq 0 ]; then
 	usage
+fi
+
+if [[ $BUILD_INCREMENTAL -eq 1 ]] && [[ -z "$CHANNEL" ]]; then
+	echo "Channel not provided for incremental builds" >&2
+	exit 1
 fi
 
 # Require at least one platform
@@ -176,7 +178,7 @@ for version in "$FROM" "$TO"; do
 		# URL-encode '+' in beta version numbers
 		ENCODED_VERSION=`urlencode $version`
 		ENCODED_ARCHIVE=`urlencode $archive`
-		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_DIST_PATH${S3_SUBDIR}/$ENCODED_VERSION/$ENCODED_ARCHIVE"
+		URL="https://$S3_BUCKET.s3.amazonaws.com/$S3_DIST_PATH/$CHANNEL/$ENCODED_VERSION/$ENCODED_ARCHIVE"
 		echo "Fetching $URL"
 		set +e
 		# Cached version is available
