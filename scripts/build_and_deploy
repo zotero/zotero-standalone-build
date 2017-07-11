@@ -77,7 +77,7 @@ function cleanup {
 trap cleanup EXIT
 
 # Build full update
-"$ROOT_DIR/update-packaging/build_autoupdate.sh" -f -c "$CHANNEL" -p $PLATFORMS -l $VERSION
+"$ROOT_DIR/update-packaging/build_autoupdate.sh" -f -c $CHANNEL -p $PLATFORMS -l $VERSION
 
 # Build incremental updates for each platform
 for i in `seq 0 1 $((${#PLATFORMS}-1))`

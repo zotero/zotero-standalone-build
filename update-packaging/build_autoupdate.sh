@@ -41,10 +41,10 @@ fi
 BUILD_FULL=0
 BUILD_INCREMENTAL=0
 FROM=""
+CHANNEL=""
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
-CHANNEL=""
 USE_LOCAL_TO=0
 while getopts "i:c:p:fl" opt; do
 	case $opt in
