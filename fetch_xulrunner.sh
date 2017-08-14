@@ -90,9 +90,10 @@ function modify_omni {
 	mv components/components2.manifest components/components.manifest
 	
 	# Change text in update dialog
-	perl -pi -e 's/A security and stability update for/An update for/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
+	perl -pi -e 's/A security and stability update for/A new version of/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/updateType_major=New Version/updateType_major=New Major Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/updateType_minor=Security Update/updateType_minor=New Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
+	perl -pi -e 's/update for &brandShortName; as soon as possible/update as soon as possible/' chrome/en-US/locale/en-US/mozapps/update/updates.dtd
 	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
