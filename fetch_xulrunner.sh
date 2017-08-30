@@ -81,8 +81,9 @@ function modify_omni {
 	# Delete binary version of file
 	rm jsloader/resource/gre/modules/addons/AddonConstants.jsm
 	
-	# Increase internal SQL transaction timeout to an hour
-	perl -pi -e 's/TRANSACTIONS_QUEUE_TIMEOUT_MS = .+/TRANSACTIONS_QUEUE_TIMEOUT_MS = 3600000;/' modules/Sqlite.jsm
+	# Disable transaction timeout
+	perl -pi -e 's/let timeoutPromise/\/*let timeoutPromise/' modules/Sqlite.jsm
+	perl -pi -e 's/return Promise.race\(\[transactionPromise, timeoutPromise\]\);/*\/return transactionPromise;/' modules/Sqlite.jsm
 	rm jsloader/resource/gre/modules/Sqlite.jsm
 	
 	# Disable unwanted components
