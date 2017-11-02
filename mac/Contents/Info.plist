@@ -202,13 +202,6 @@
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.6.3</string>
-	<key>LSMinimumSystemVersionByArchitecture</key>
-	<dict>
-		<key>i386</key>
-		<string>10.6.3</string>
-		<key>x86_64</key>
-		<string>10.6.3</string>
-	</dict>
+	<string>10.9.0</string>
 </dict>
 </plist>
