@@ -22,6 +22,7 @@ Contents/MacOS/libssl3.dylib
 Contents/MacOS/libxpcom.dylib
 Contents/MacOS/LICENSE
 Contents/MacOS/omni.ja
+Contents/MacOS/pingsender
 Contents/MacOS/platform.ini
 Contents/MacOS/precomplete
 Contents/MacOS/README.xulrunner
