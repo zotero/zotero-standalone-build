@@ -61,7 +61,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 # Build Zotero
-"$ROOT_DIR/build.sh" -d "$SOURCE_DIR" -p $PLATFORMS -c $CHANNEL
+"$ROOT_DIR/build.sh" -d "$SOURCE_DIR" -p $PLATFORMS -c $CHANNEL -e
 
 BUILD_ID=`cat "$DIST_DIR/build_id"`
 if [ -z "$BUILD_ID" ]; then
