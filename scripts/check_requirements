@@ -72,14 +72,14 @@ if [ $WIN_NATIVE == 1 ]; then
 	fi
 	
 	echo -n "Checking for Unicode NSIS: "
-	if [ -x "`cygpath -u \"$MAKENSISU\"`" ]; then
-		echo "`cygpath -u \"$MAKENSISU\"`"
+	if [ -x "`cygpath -u \"${NSIS_DIR}makensis.exe\"`" ]; then
+		echo "`cygpath -u \"${NSIS_DIR}makensis.exe\"`"
 	else
 		$FAIL_CMD
 		FAILED=1
 	fi
 	
-	plugin_path=$(cd "$(dirname "$MAKENSISU")\\Plugins" && pwd)
+	plugin_path=$(cd "$NSIS_DIR\\Plugins" && pwd)
 	plugins="AppAssocReg ApplicationID InvokeShellVerb ShellLink UAC"
 	echo "Checking for NSIS plugins in $plugin_path"
 	for i in $plugins; do

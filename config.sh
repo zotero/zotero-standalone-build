@@ -20,7 +20,7 @@ SIGN=0
 DEVELOPER_ID=F0F1FE48DB909B263AC51C8215374D87FDC12121
 
 # Paths for Windows installer build
-MAKENSISU='C:\Program Files (x86)\NSIS\Unicode\makensis.exe'
+NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
 
 # Paths for Windows installer build only necessary for signed binaries
 #SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'

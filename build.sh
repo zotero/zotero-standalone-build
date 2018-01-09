@@ -389,7 +389,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			# Build and sign uninstaller
 			perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
-			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
 			mkdir "$APPDIR/uninstall"
 			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
 			
@@ -413,7 +413,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			cp -R "$APPDIR" "$INSTALLER_STAGE_DIR/core"
 			
 			# Build and sign setup.exe
-			"`cygpath -u \"$MAKENSISU\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
+			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Setup" \
