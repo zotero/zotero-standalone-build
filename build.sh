@@ -395,16 +395,22 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			# Sign zotero.exe, dlls, updater, and uninstaller
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/zotero.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "Zotero" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$APPDIR/zotero.exe\"`"
 				for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
 					"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
 						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
 				done
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Updater" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/updater.exe\"`"
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Uninstaller" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "Zotero Updater" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$APPDIR/updater.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "Zotero Uninstaller" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
 			fi
 			
 			# Stage installer
@@ -416,8 +422,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero Setup" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "Zotero Setup" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
 			fi
 			
 			# Compress application
@@ -434,8 +442,10 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			# Sign Zotero_setup.exe
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a /d "Zotero Setup" \
-					/du "$SIGNATURE_URL" "`cygpath -w \"$INSTALLER_PATH\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /a \
+					/d "Zotero Setup" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$INSTALLER_PATH\"`"
 			fi
 			
 			chmod 755 "$INSTALLER_PATH"
