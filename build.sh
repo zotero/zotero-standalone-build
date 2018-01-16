@@ -247,7 +247,12 @@ if [ $BUILD_MAC == 1 ]; then
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cd "$CONTENTSDIR/MacOS"
 	tar -xjf "$CALLDIR/mac/updater.tar.bz2"
-	
+
+	# Copy PDF tools and data
+	cp "$CALLDIR/pdftools/pdftotext-mac" "$CONTENTSDIR/MacOS/pdftotext"
+	cp "$CALLDIR/pdftools/pdfinfo-mac" "$CONTENTSDIR/MacOS/pdfinfo"
+	cp -r "$CALLDIR/pdftools/poppler-data" "$CONTENTSDIR/Resources/"
+
 	# Modify Info.plist
 	perl -pi -e "s/{{VERSION}}/$VERSION/" "$CONTENTSDIR/Info.plist"
 	perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" "$CONTENTSDIR/Info.plist"
@@ -295,6 +300,8 @@ if [ $BUILD_MAC == 1 ]; then
 	if [ $SIGN == 1 ]; then
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/updater.app"
+		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/pdftotext"
+		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/pdfinfo"
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR"
 		/usr/bin/codesign --verify -vvvv "$APPDIR"
@@ -347,6 +354,11 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
+
+	# Copy PDF tools and data
+	cp "$CALLDIR/pdftools/pdftotext-win.exe" "$APPDIR/pdftotext.exe"
+	cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
+	cp -r "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 	
 	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	
@@ -393,7 +405,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 			mkdir "$APPDIR/uninstall"
 			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
 			
-			# Sign zotero.exe, dlls, updater, and uninstaller
+			# Sign zotero.exe, dlls, updater, uninstaller and PDF tools
 			if [ $SIGN == 1 ]; then
 				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "Zotero" /du "$SIGNATURE_URL" \
@@ -411,6 +423,14 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/d "Zotero Uninstaller" /du "$SIGNATURE_URL" \
 					/t http://timestamp.verisign.com/scripts/timstamp.dll \
 					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "PDF Converter" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
+				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "PDF Info" /du "$SIGNATURE_URL" \
+					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+					"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
 			fi
 			
 			# Stage installer
@@ -480,6 +500,11 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Use our own updater, because Mozilla's requires updates signed by Mozilla
 		cp "$CALLDIR/linux/updater-$arch" "$APPDIR"/updater
+
+		# Copy PDF tools and data
+		cp "$CALLDIR/pdftools/pdftotext-linux-$arch" "$APPDIR/pdftotext"
+		cp "$CALLDIR/pdftools/pdfinfo-linux-$arch" "$APPDIR/pdfinfo"
+		cp -r "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 		
 		cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 		
