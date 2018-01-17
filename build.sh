@@ -251,7 +251,7 @@ if [ $BUILD_MAC == 1 ]; then
 	# Copy PDF tools and data
 	cp "$CALLDIR/pdftools/pdftotext-mac" "$CONTENTSDIR/MacOS/pdftotext"
 	cp "$CALLDIR/pdftools/pdfinfo-mac" "$CONTENTSDIR/MacOS/pdfinfo"
-	cp -r "$CALLDIR/pdftools/poppler-data" "$CONTENTSDIR/Resources/"
+	cp -R "$CALLDIR/pdftools/poppler-data" "$CONTENTSDIR/Resources/"
 
 	# Modify Info.plist
 	perl -pi -e "s/{{VERSION}}/$VERSION/" "$CONTENTSDIR/Info.plist"
@@ -358,7 +358,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# Copy PDF tools and data
 	cp "$CALLDIR/pdftools/pdftotext-win.exe" "$APPDIR/pdftotext.exe"
 	cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
-	cp -r "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
+	cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 	
 	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 	
@@ -504,7 +504,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Copy PDF tools and data
 		cp "$CALLDIR/pdftools/pdftotext-linux-$arch" "$APPDIR/pdftotext"
 		cp "$CALLDIR/pdftools/pdfinfo-linux-$arch" "$APPDIR/pdfinfo"
-		cp -r "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
+		cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 		
 		cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
 		

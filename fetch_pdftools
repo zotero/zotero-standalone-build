@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Copyright (c) 2018  Zotero
 #                     Center for History and New Media
@@ -18,14 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DOWNLOAD_URL="https://s3.amazonaws.com/zotero-bucket-example/pdftools.tar.gz"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $SCRIPT_DIR
+. config.sh
 
 rm -rf pdftools
 mkdir pdftools
 cd pdftools
 
-curl -O "$DOWNLOAD_URL"
+curl -o pdftools.tar.gz $PDF_TOOLS_URL
 tar -zxvf pdftools.tar.gz
-rm "pdftools.tar.gz"
+rm pdftools.tar.gz
 
 echo Done
