@@ -6,7 +6,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
 CHANNEL="release"
-BRANCH="5.0.34.3-hotfix"
+BRANCH="5.0.34.4-hotfix"
 
 cd "$SCRIPT_DIR"
 ./check_requirements
