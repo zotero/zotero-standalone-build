@@ -70,4 +70,4 @@ else
 	exit 1
 fi
 
-~/zotero-standalone-build/staging/$command $PROFILE -jsconsole $PARAMS
+~/zotero-standalone-build/staging/$command $PROFILE -ZoteroDebugText -jsconsole $PARAMS
