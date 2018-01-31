@@ -4,4 +4,5 @@ Exec=bash -c "$(dirname $(readlink -f %k))/zotero -url %U"
 Icon=zotero.ico
 Type=Application
 Terminal=false
+Categories=Education;
 MimeType=text/plain
