@@ -347,10 +347,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	#
 	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
 
-	# zotero.exe (xulrunner-stub) is compiled with VS2013 therefore
-	# needs older 'msvcr' library than Firefox has
-	cp "$CALLDIR/win/msvcr120.dll" "$APPDIR"
-
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
