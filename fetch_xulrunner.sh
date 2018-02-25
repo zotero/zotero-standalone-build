@@ -78,14 +78,24 @@ function modify_omni {
 	unzip omni.ja
 	rm omni.ja
 	
-	# Modify AddonConstants.jsm in omni.ja to allow unsigned add-ons
-	#
-	# Theoretically there should be other ways of doing this (e.g., an 'override' statement in
-	# chrome.manifest, an enterprise config.js file that clears SIGNED_TYPES in XPIProvider.jsm),
-	# but I couldn't get them to work.
-	perl -pi -e 's/value: true/value: false/' modules/addons/AddonConstants.jsm
-	# Delete binary version of file
-	rm -f jsloader/resource/gre/modules/addons/AddonConstants.jsm
+	# Modify various constants (e.g., to allow unsigned add-ons)
+	if [ -f modules/addons/AddonConstants.jsm ]; then
+		perl -pi -e 's/value: true/value: false/' modules/addons/AddonConstants.jsm
+		# Delete binary version of file
+		rm -f jsloader/resource/gre/modules/addons/AddonConstants.jsm
+	else
+		perl -pi -e 's/MOZ_REQUIRE_SIGNING:/MOZ_REQUIRE_SIGNING: false \&\&/' modules/AppConstants.jsm
+		perl -pi -e 's/MOZ_ALLOW_LEGACY_EXTENSIONS:/MOZ_ALLOW_LEGACY_EXTENSIONS: true, _: /' modules/AppConstants.jsm
+		perl -pi -e 's/MOZ_DATA_REPORTING:/MOZ_DATA_REPORTING: false \&\&/' modules/AppConstants.jsm
+		perl -pi -e 's/MOZ_TELEMETRY_REPORTING:/MOZ_TELEMETRY_REPORTING: false \&\&/' modules/AppConstants.jsm
+		perl -pi -e 's/MOZ_TELEMETRY_ON_BY_DEFAULT:/MOZ_TELEMETRY_ON_BY_DEFAULT: false \&\&/' modules/AppConstants.jsm
+		perl -pi -e 's/MOZ_CRASHREPORTER:/MOZ_CRASHREPORTER: false \&\&/' modules/AppConstants.jsm
+		# Delete binary version of file
+		rm -f jsloader/resource/gre/modules/AppConstants.jsm
+	fi
+	
+	# Update URL for built-in add-ons list
+	perl -pi -e 's/const BUILT_IN_ADDONS_URI.+/const BUILT_IN_ADDONS_URI = "chrome:\/\/zotero\/content\/built_in_addons.json";/' modules/addons/XPIProvider.jsm
 	
 	# Disable transaction timeout
 	perl -pi -e 's/let timeoutPromise/\/*let timeoutPromise/' modules/Sqlite.jsm
