@@ -24,9 +24,10 @@ CALLDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 function usage {
 	cat >&2 <<DONE
-Usage: $0 -p platforms
+Usage: $0 -p platforms [-s]
 Options
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
+ -s                  Skip download; Firefox must already be extracted in xulrunner/ directory
 DONE
 	exit 1
 }
@@ -34,7 +35,8 @@ DONE
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
-while getopts "p:" opt; do
+skip_download=0
+while getopts "p:s" opt; do
 	case $opt in
 		p)
 			for i in `seq 0 1 $((${#OPTARG}-1))`
@@ -49,6 +51,10 @@ while getopts "p:" opt; do
 						;;
 				esac
 			done
+			;;
+		
+		s)
+			skip_download=1
 			;;
 	esac
 	shift $((OPTIND-1)); OPTIND=1
@@ -120,27 +126,32 @@ cd xulrunner
 if [ $BUILD_MAC == 1 ]; then
 	GECKO_VERSION="$GECKO_VERSION_MAC"
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
-	rm -rf Firefox.app
-	
-	if [ -e "Firefox-Modified-$GECKO_VERSION.dmg" ]; then
-		echo "Using Firefox-Modified-$GECKO_VERSION.dmg"
-		cp "Firefox-Modified-$GECKO_VERSION.dmg" "Firefox%20$GECKO_VERSION.dmg"
-	else
-		curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+	if [ $skip_download -eq 0 ]; then
+		rm -rf Firefox.app
+		
+		if [ -e "Firefox-Modified-$GECKO_VERSION.dmg" ]; then
+			echo "Using Firefox-Modified-$GECKO_VERSION.dmg"
+			cp "Firefox-Modified-$GECKO_VERSION.dmg" "Firefox%20$GECKO_VERSION.dmg"
+		else
+			curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+		fi
+		
+		set +e
+		hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
+		set -e
+		hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
+		cp -a /Volumes/Firefox/Firefox.app .
+		hdiutil detach -quiet /Volumes/Firefox
 	fi
-	set +e
-	hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
-	set -e
-	hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
-	cp -a /Volumes/Firefox/Firefox.app .
-	hdiutil detach -quiet /Volumes/Firefox
 	
 	pushd Firefox.app/Contents/Resources
 	modify_omni
 	extract_devtools
 	popd
 	
-	rm "Firefox%20$GECKO_VERSION.dmg"
+	if [ $skip_download -eq 0 ]; then
+		rm "Firefox%20$GECKO_VERSION.dmg"
+	fi
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then
@@ -148,48 +159,64 @@ if [ $BUILD_WIN32 == 1 ]; then
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
 	
 	XDIR=firefox-win32
-	rm -rf $XDIR
-	mkdir $XDIR
 	
-	curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
-	
-	7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
-	mv $XDIR/core $XDIR-core
-	rm -rf $XDIR
-	mv $XDIR-core $XDIR
+	if [ $skip_download -eq 0 ]; then
+		rm -rf $XDIR
+		mkdir $XDIR
+		
+		curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+		
+		7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
+		mv $XDIR/core $XDIR-core
+		rm -rf $XDIR
+		mv $XDIR-core $XDIR
+	fi
 	
 	cd $XDIR
 	modify_omni
 	extract_devtools
 	cd ..
 	
-	rm "Firefox%20Setup%20$GECKO_VERSION.exe"
+	if [ $skip_download -eq 0 ]; then
+		rm "Firefox%20Setup%20$GECKO_VERSION.exe"
+	fi
 fi
 
 if [ $BUILD_LINUX == 1 ]; then
 	GECKO_VERSION="$GECKO_VERSION_LINUX"
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
-	rm -rf firefox
 	
-	curl -O "$DOWNLOAD_URL/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
-	rm -rf firefox-i686
-	tar xvf firefox-$GECKO_VERSION.tar.bz2
-	mv firefox firefox-i686
+	if [ $skip_download -eq 0 ]; then
+		rm -rf firefox
+		
+		curl -O "$DOWNLOAD_URL/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
+		rm -rf firefox-i686
+		tar xvf firefox-$GECKO_VERSION.tar.bz2
+		mv firefox firefox-i686
+	fi
+	
 	cd firefox-i686
 	modify_omni
 	extract_devtools
 	cd ..
-	rm "firefox-$GECKO_VERSION.tar.bz2"
 	
-	curl -O "$DOWNLOAD_URL/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
-	rm -rf firefox-x86_64
-	tar xvf firefox-$GECKO_VERSION.tar.bz2
-	mv firefox firefox-x86_64
+	if [ $skip_download -eq 0 ]; then
+		rm "firefox-$GECKO_VERSION.tar.bz2"
+		
+		curl -O "$DOWNLOAD_URL/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
+		rm -rf firefox-x86_64
+		tar xvf firefox-$GECKO_VERSION.tar.bz2
+		mv firefox firefox-x86_64
+	fi
+	
 	cd firefox-x86_64
 	modify_omni
 	extract_devtools
 	cd ..
-	rm "firefox-$GECKO_VERSION.tar.bz2"
+	
+	if [ $skip_download -eq 0 ]; then
+		rm "firefox-$GECKO_VERSION.tar.bz2"
+	fi
 fi
 
 echo Done
