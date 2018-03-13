@@ -298,6 +298,10 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Sign
 	if [ $SIGN == 1 ]; then
+		# Unlock keychain if a password is provided (necessary for building from a shell)
+		if [ -n "$KEYCHAIN_PASSWORD" ]; then
+			security -v unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/$KEYCHAIN.keychain
+		fi
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/updater.app"
 		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/pdftotext"

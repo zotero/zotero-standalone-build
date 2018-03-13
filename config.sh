@@ -19,6 +19,9 @@ SIGN=0
 
 # OS X Developer ID certificate information
 DEVELOPER_ID=F0F1FE48DB909B263AC51C8215374D87FDC12121
+# Keychain and keychain password, if not building via the GUI
+KEYCHAIN=""
+KEYCHAIN_PASSWORD=""
 
 # Paths for Windows installer build
 NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
