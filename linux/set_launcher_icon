@@ -7,6 +7,7 @@
 APPDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ -w "$APPDIR"/zotero.desktop ]; then
 	sed -i -e "s@^Icon=.*@Icon=$APPDIR/chrome/icons/default/default256.png@" "$APPDIR"/zotero.desktop
+	cp ${APPDIR}/zotero.desktop ${$XDG_DATA_HOME:-${HOME}/.local/share}/applications/
 else
 	echo "$APPDIR"/zotero.desktop is not writable
 	exit 1
