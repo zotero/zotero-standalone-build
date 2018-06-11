@@ -254,8 +254,8 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -R "$CALLDIR/pdftools/poppler-data" "$CONTENTSDIR/Resources/"
 
 	# Modify Info.plist
-	perl -pi -e "s/{{VERSION}}/$VERSION/" "$CONTENTSDIR/Info.plist"
-	perl -pi -e "s/{{VERSION_NUMERIC}}/$VERSION_NUMERIC/" "$CONTENTSDIR/Info.plist"
+	perl -pi -e "s/\{\{VERSION\}\}/$VERSION/" "$CONTENTSDIR/Info.plist"
+	perl -pi -e "s/\{\{VERSION_NUMERIC\}\}/$VERSION_NUMERIC/" "$CONTENTSDIR/Info.plist"
 	# Needed for "monkeypatch" Windows builds: 
 	# http://www.nntp.perl.org/group/perl.perl5.porters/2010/08/msg162834.html
 	rm -f "$CONTENTSDIR/Info.plist.bak"
