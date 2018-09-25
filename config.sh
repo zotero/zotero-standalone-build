@@ -1,9 +1,9 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Version of Gecko to build with
-GECKO_VERSION_MAC="60.1.0esr"
-GECKO_VERSION_LINUX="60.1.0esr"
-GECKO_VERSION_WIN="60.1.0esr"
+GECKO_VERSION_MAC="60.2.1esr"
+GECKO_VERSION_LINUX="60.2.1esr"
+GECKO_VERSION_WIN="60.2.1esr"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
