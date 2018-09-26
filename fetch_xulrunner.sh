@@ -122,7 +122,12 @@ if [ $BUILD_MAC == 1 ]; then
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
 	rm -rf Firefox.app
 	
-	curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+	if [ -e "Firefox-Modified-$GECKO_VERSION.dmg" ]; then
+		echo "Using Firefox-Modified-$GECKO_VERSION.dmg"
+		cp "Firefox-Modified-$GECKO_VERSION.dmg" "Firefox%20$GECKO_VERSION.dmg"
+	else
+		curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+	fi
 	set +e
 	hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
 	set -e

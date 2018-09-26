@@ -17,6 +17,106 @@ diff --git a/browser/app/nsBrowserApp.cpp b/browser/app/nsBrowserApp.cpp
    if (appDataFile && *appDataFile) {
      rv = XRE_GetFileFromPath(appDataFile, getter_AddRefs(appini));
      if (NS_FAILED(rv)) {
+diff --git a/widget/cocoa/nsCocoaFeatures.h b/widget/cocoa/nsCocoaFeatures.h
+--- a/widget/cocoa/nsCocoaFeatures.h
++++ b/widget/cocoa/nsCocoaFeatures.h
+@@ -21,6 +21,7 @@ public:
+   static bool OnYosemiteOrLater();
+   static bool OnElCapitanOrLater();
+   static bool OnSierraOrLater();
++  static bool OnMojaveOrLater();
+ 
+   static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix=0);
+ 
+diff --git a/widget/cocoa/nsCocoaFeatures.mm b/widget/cocoa/nsCocoaFeatures.mm
+--- a/widget/cocoa/nsCocoaFeatures.mm
++++ b/widget/cocoa/nsCocoaFeatures.mm
+@@ -19,6 +19,7 @@
+ #define MAC_OS_X_VERSION_10_10_HEX 0x000010A0
+ #define MAC_OS_X_VERSION_10_11_HEX 0x000010B0
+ #define MAC_OS_X_VERSION_10_12_HEX 0x000010C0
++#define MAC_OS_X_VERSION_10_14_HEX 0x000010E0
+ 
+ #include "nsCocoaFeatures.h"
+ #include "nsCocoaUtils.h"
+@@ -168,6 +169,12 @@ nsCocoaFeatures::OnSierraOrLater()
+ }
+ 
+ /* static */ bool
++nsCocoaFeatures::OnMojaveOrLater()
++{
++    return (OSXVersion() >= MAC_OS_X_VERSION_10_14_HEX);
++}
++
++/* static */ bool
+ nsCocoaFeatures::IsAtLeastVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix)
+ {
+     return OSXVersion() >= GetVersion(aMajor, aMinor, aBugFix);
+diff --git a/widget/cocoa/nsCocoaWindow.mm b/widget/cocoa/nsCocoaWindow.mm
+--- a/widget/cocoa/nsCocoaWindow.mm
++++ b/widget/cocoa/nsCocoaWindow.mm
+@@ -810,15 +810,17 @@ NS_IMETHODIMP nsCocoaWindow::Show(bool b
+       }
+     }
+     else if (mWindowType == eWindowType_popup) {
+-      // If a popup window is shown after being hidden, it needs to be "reset"
+-      // for it to receive any mouse events aside from mouse-moved events
+-      // (because it was removed from the "window cache" when it was hidden
+-      // -- see below).  Setting the window number to -1 and then back to its
+-      // original value seems to accomplish this.  The idea was "borrowed"
+-      // from the Java Embedding Plugin.
+-      NSInteger windowNumber = [mWindow windowNumber];
+-      [mWindow _setWindowNumber:-1];
+-      [mWindow _setWindowNumber:windowNumber];
++      if (!nsCocoaFeatures::OnMojaveOrLater()) {
++        // If a popup window is shown after being hidden, it needs to be "reset"
++        // for it to receive any mouse events aside from mouse-moved events
++        // (because it was removed from the "window cache" when it was hidden
++        // -- see below).  Setting the window number to -1 and then back to its
++        // original value seems to accomplish this.  The idea was "borrowed"
++        // from the Java Embedding Plugin. This is fixed on macOS 10.14+.
++        NSInteger windowNumber = [mWindow windowNumber];
++        [mWindow _setWindowNumber:-1];
++        [mWindow _setWindowNumber:windowNumber];
++      }
+       // For reasons that aren't yet clear, calls to [NSWindow orderFront:] or
+       // [NSWindow makeKeyAndOrderFront:] can sometimes trigger "Error (1000)
+       // creating CGSWindow", which in turn triggers an internal inconsistency
+@@ -951,18 +953,22 @@ NS_IMETHODIMP nsCocoaWindow::Show(bool b
+         [nativeParentWindow removeChildWindow:mWindow];
+ 
+       [mWindow orderOut:nil];
+-      // Unless it's explicitly removed from NSApp's "window cache", a popup
+-      // window will keep receiving mouse-moved events even after it's been
+-      // "ordered out" (instead of the browser window that was underneath it,
+-      // until you click on that window).  This is bmo bug 378645, but it's
+-      // surely an Apple bug.  The "window cache" is an undocumented subsystem,
+-      // all of whose methods are included in the NSWindowCache category of
+-      // the NSApplication class (in header files generated using class-dump).
+-      // This workaround was "borrowed" from the Java Embedding Plugin (which
+-      // uses it for a different purpose).
+-      if (mWindowType == eWindowType_popup)
+-        [NSApp _removeWindowFromCache:mWindow];
+-
++
++      if (!nsCocoaFeatures::OnMojaveOrLater()) {
++        // Unless it's explicitly removed from NSApp's "window cache", a popup
++        // window will keep receiving mouse-moved events even after it's been
++        // "ordered out" (instead of the browser window that was underneath it,
++        // until you click on that window).  This is bmo bug 378645, but it's
++        // surely an Apple bug.  The "window cache" is an undocumented
++        // subsystem, all of whose methods are included in the NSWindowCache
++        // category of the NSApplication class (in header files generated using
++        // class-dump). This workaround was "borrowed" from the Java Embedding
++        // Plugin (which uses it for a different purpose). This is fixed on
++        // macOS 10.14+.
++        if (mWindowType == eWindowType_popup) {
++          [NSApp _removeWindowFromCache:mWindow];
++        }
++      }
+       // If our popup window is a non-native context menu, tell the OS (and
+       // other programs) that a menu has closed.
+       if ([mWindow isKindOfClass:[PopupWindow class]] &&
 diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
 --- a/xpcom/build/BinaryPath.h
 +++ b/xpcom/build/BinaryPath.h
