@@ -112,6 +112,20 @@ function modify_omni {
 	perl -pi -e 's/updateType_minor=Security Update/updateType_minor=New Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/update for &brandShortName; as soon as possible/update as soon as possible/' chrome/en-US/locale/en-US/mozapps/update/updates.dtd
 	
+	# Modify Add-ons window
+	echo >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	echo '#category-theme { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	echo '#category-plugin { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	# Hide add-on warning in list view unless explicitly allowed (in standalone.js)
+	echo '.addon > .warning:not(.allowed-warning) image { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	echo '.addon > .warning:not(.allowed-warning) label[anonid="warning"] { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	# Always hide add-on warning text link, since it would go to Mozilla
+	echo '.addon > .warning .text-link { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	# Always hide add-on warning in detail view
+	echo '.detail-view-container #warning-container { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	# Hide legacy label
+	echo '.legacy-warning { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
 	cd ..
