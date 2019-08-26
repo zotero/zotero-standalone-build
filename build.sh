@@ -284,6 +284,11 @@ if [ $BUILD_MAC == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
 	done
+	# Default preferenes are no longer read from built-in extensions in Firefox 60
+	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
 	echo
 	
 	# Delete extraneous files
@@ -385,6 +390,12 @@ if [ $BUILD_WIN32 == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/$ext/install.rdf"
 		rm -rf "$APPDIR/extensions/$ext/.git"
 	done
+	# Default preferenes are no longer read from built-in extensions in Firefox 60
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
 	echo
 
 	# Delete extraneous files
@@ -533,6 +544,10 @@ if [ $BUILD_LINUX == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		echo
 		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git"
+		# Default preferenes are no longer read from built-in extensions in Firefox 60
+		echo >> "$APPDIR/defaults/preferences/prefs.js"
+		cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+		echo >> "$APPDIR/defaults/preferences/prefs.js"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
