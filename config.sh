@@ -59,9 +59,12 @@ BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
 
 if [ "`uname`" = "Darwin" ]; then
-        alias mktemp='mktemp -t tmp'
-        shopt -s expand_aliases
+	alias mktemp='mktemp -t tmp'
+	shopt -s expand_aliases
 fi
+
+# Make utilities (mar/mbsdiff) available in the path
+PATH="$DIR/xulrunner/bin:$PATH"
 
 if [ -f "$DIR/config-custom.sh" ]; then
 	. "$DIR/config-custom.sh"
