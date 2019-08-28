@@ -22,6 +22,9 @@ DEVELOPER_ID=F0F1FE48DB909B263AC51C8215374D87FDC12121
 # Keychain and keychain password, if not building via the GUI
 KEYCHAIN=""
 KEYCHAIN_PASSWORD=""
+NOTARIZATION_BUNDLE_ID=""
+NOTARIZATION_USER=""
+NOTARIZATION_PASSWORD=""
 
 # Paths for Windows installer build
 NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
@@ -54,6 +57,11 @@ DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
 
 BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
+
+if [ "`uname`" = "Darwin" ]; then
+        alias mktemp='mktemp -t tmp'
+        shopt -s expand_aliases
+fi
 
 if [ -f "$DIR/config-custom.sh" ]; then
 	. "$DIR/config-custom.sh"
