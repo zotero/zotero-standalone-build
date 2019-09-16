@@ -122,6 +122,48 @@
     WriteRegStr SHCTX "Software\Classes\.csl"  "" "ZoteroCSL"
     WriteRegStr SHCTX "Software\Classes\.csl"   "Content Type" "text/x-csl"
   ${EndIf}
+
+; Associate MIME types
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-research-info-systems" "Extension"
+  ${If} "$6" != ".ris"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-research-info-systems" "Extension" ".ris"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/mods+xml" "Extension"
+  ${If} "$6" != ".mods"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/mods+xml" "Extension" ".mods"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-inst-for-Scientific-info" "Extension"
+  ${If} "$6" != ".isi"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-inst-for-Scientific-info" "Extension" ".isi"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/rdf+xml" "Extension"
+  ${If} "$6" != ".rdf"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/rdf+xml" "Extension" ".rdf"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-bibtex" "Extension"
+  ${If} "$6" == ""
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/x-bibtex" "Extension" ".bib"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/marc" "Extension"
+  ${If} "$6" != ".marc"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/marc" "Extension" ".marc"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\text/x-csl" "Extension"
+  ${If} "$6" != ".csl"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\text/x-csl" "Extension" ".csl"
+  ${EndIf}
+
+  ReadRegStr $6 SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/vnd.citationstyles.style+xml" "Extension"
+  ${If} "$6" != ".csl"
+    WriteRegStr SHCTX "SOFTWARE\Classes\MIME\Database\Content Type\application/vnd.citationstyles.style+xml" "Extension" ".csl"
+  ${EndIf}
+
 !macroend
 !define SetHandlers "!insertmacro SetHandlers"
 
