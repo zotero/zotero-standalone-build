@@ -63,6 +63,8 @@ fi
 # Make various modifications to omni.ja
 #
 function modify_omni {
+	local platform=$1
+	
 	mkdir omni
 	mv omni.ja omni
 	cd omni
@@ -95,6 +97,12 @@ function modify_omni {
 	perl -pi -e 's/updateType_major=New Version/updateType_major=New Major Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/updateType_minor=Security Update/updateType_minor=New Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/update for &brandShortName; as soon as possible/update as soon as possible/' chrome/en-US/locale/en-US/mozapps/update/updates.dtd
+	
+	# Force Lucida Grande on non-Retina displays, since San Francisco is used otherwise starting in
+	# Catalina, and it looks terrible
+	if [[ $platform == 'mac' ]]; then
+		echo "@media (max-resolution: 1.0dppx) { * { font-family: Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, -apple-system, sans-serif !important; } }" >> chrome/toolkit/skin/classic/global/global.css
+	fi
 	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
@@ -136,7 +144,7 @@ if [ $BUILD_MAC == 1 ]; then
 	hdiutil detach -quiet /Volumes/Firefox
 	
 	pushd Firefox.app/Contents/Resources
-	modify_omni
+	modify_omni mac
 	extract_devtools
 	popd
 	
@@ -159,7 +167,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 	mv $XDIR-core $XDIR
 	
 	cd $XDIR
-	modify_omni
+	modify_omni win32
 	extract_devtools
 	cd ..
 	
@@ -176,7 +184,7 @@ if [ $BUILD_LINUX == 1 ]; then
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-i686
 	cd firefox-i686
-	modify_omni
+	modify_omni linux32
 	extract_devtools
 	cd ..
 	rm "firefox-$GECKO_VERSION.tar.bz2"
@@ -186,7 +194,7 @@ if [ $BUILD_LINUX == 1 ]; then
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-x86_64
 	cd firefox-x86_64
-	modify_omni
+	modify_omni linux64
 	extract_devtools
 	cd ..
 	rm "firefox-$GECKO_VERSION.tar.bz2"
