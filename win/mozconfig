@@ -1,0 +1,15 @@
+# These probably don't all affect the stub, but they can't hurt
+export BUILDING_RELEASE=1
+export MOZILLA_OFFICIAL=1
+export MOZ_TELEMETRY_REPORTING=0
+ac_add_options --enable-official-branding
+ac_add_options --disable-tests
+ac_add_options --disable-debug
+
+# Uncomment to build the 64-bit version
+#ac_add_options --target=x86_64-pc-mingw32
+#ac_add_options --host=x86_64-pc-mingw32
+
+# Stylo packages are missing when skipping hg and building from a downloaded zip with the specific revision,
+# but the stub shouldn't be affected either
+ac_add_options --disable-stylo

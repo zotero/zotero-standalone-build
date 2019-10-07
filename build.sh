@@ -388,15 +388,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Copy relevant assets from Firefox
 	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
-	
-	# Copy zotero.exe, which is xulrunner-stub from https://github.com/duanyao/xulrunner-stub
-	# modified with ReplaceVistaIcon.exe and edited with Resource Hacker
+
+	# Copy zotero_win32.exe, which is built directly from Firefox source
 	#
-	#   "$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" \
-	#       "`cygpath -w \"$APPDIR/zotero.exe\"`" \
-	#       "`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
-	#
-	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
+	# After the initial build the temporary resource in "C:\mozilla-source\obj-i686-pc-mingw32\browser\app\module.res"
+	# is modified with Visual Studio resource editor where icon and file details are changed.
+	# Then firefox.exe is rebuilt again
+	cp "$CALLDIR/win/zotero_win32.exe" "$APPDIR/zotero.exe"
 
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
