@@ -33,7 +33,7 @@ DONE
 }
 
 BUILD_MAC=0
-BUILD_WIN32=0
+BUILD_WIN=0
 BUILD_LINUX=0
 skip_download=0
 while getopts "p:s" opt; do
@@ -43,7 +43,7 @@ while getopts "p:s" opt; do
 			do
 				case ${OPTARG:i:1} in
 					m) BUILD_MAC=1;;
-					w) BUILD_WIN32=1;;
+					w) BUILD_WIN=1;;
 					l) BUILD_LINUX=1;;
 					*)
 						echo "$0: Invalid platform option ${OPTARG:i:1}"
@@ -61,7 +61,7 @@ while getopts "p:s" opt; do
 done
 
 # Require at least one platform
-if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
+if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
 	usage
 fi
 
@@ -178,10 +178,13 @@ if [ $BUILD_MAC == 1 ]; then
 	fi
 fi
 
-if [ $BUILD_WIN32 == 1 ]; then
+if [ $BUILD_WIN == 1 ]; then
 	GECKO_VERSION="$GECKO_VERSION_WIN"
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
 	
+	#
+	# 32-bit Windows
+	#
 	XDIR=firefox-win32
 	
 	if [ $skip_download -eq 0 ]; then
@@ -189,6 +192,32 @@ if [ $BUILD_WIN32 == 1 ]; then
 		mkdir $XDIR
 		
 		curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+		
+		7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
+		mv $XDIR/core $XDIR-core
+		rm -rf $XDIR
+		mv $XDIR-core $XDIR
+	fi
+	
+	cd $XDIR
+	modify_omni
+	extract_devtools
+	cd ..
+	
+	if [ $skip_download -eq 0 ]; then
+		rm "Firefox%20Setup%20$GECKO_VERSION.exe"
+	fi
+	
+	#
+	# 64-bit Windows
+	#
+	XDIR=firefox-win64
+	
+	if [ $skip_download -eq 0 ]; then
+		rm -rf $XDIR
+		mkdir $XDIR
+		
+		curl -O "$DOWNLOAD_URL/win64/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
 		
 		7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
 		mv $XDIR/core $XDIR-core

@@ -60,11 +60,10 @@ fi
 
 if [ "`uname`" = "Darwin" ]; then
 	command="Zotero.app/Contents/MacOS/zotero"
-# TODO: 32-bit
 elif [ "`uname`" = "Linux" ]; then
 	command="Zotero_linux-x86_64/zotero"
 elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
-	command="Zotero_win32/zotero.exe"
+	command="Zotero_win64/zotero.exe"
 else
 	echo "Unknown platform" >&2
 	exit 1

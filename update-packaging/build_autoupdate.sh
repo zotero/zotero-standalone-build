@@ -43,7 +43,7 @@ BUILD_INCREMENTAL=0
 FROM=""
 CHANNEL=""
 BUILD_MAC=0
-BUILD_WIN32=0
+BUILD_WIN=0
 BUILD_LINUX=0
 USE_LOCAL_TO=0
 while getopts "i:c:p:fl" opt; do
@@ -60,7 +60,7 @@ while getopts "i:c:p:fl" opt; do
 			do
 				case ${OPTARG:i:1} in
 					m) BUILD_MAC=1;;
-					w) BUILD_WIN32=1;;
+					w) BUILD_WIN=1;;
 					l) BUILD_LINUX=1;;
 					*)
 						echo "$0: Invalid platform option ${OPTARG:i:1}"
@@ -99,7 +99,7 @@ if [[ $BUILD_INCREMENTAL -eq 1 ]] && [[ -z "$CHANNEL" ]]; then
 fi
 
 # Require at least one platform
-if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
+if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
 	usage
 fi
 
@@ -142,7 +142,8 @@ for version in "$FROM" "$TO"; do
 	cd "$versiondir"
 	
 	MAC_ARCHIVE="Zotero-${version}.dmg"
-	WIN_ARCHIVE="Zotero-${version}_win32.zip"
+	WIN32_ARCHIVE="Zotero-${version}_win32.zip"
+	WIN64_ARCHIVE="Zotero-${version}_win64.zip"
 	LINUX_X86_ARCHIVE="Zotero-${version}_linux-i686.tar.bz2"
 	LINUX_X86_64_ARCHIVE="Zotero-${version}_linux-x86_64.tar.bz2"
 	
@@ -151,11 +152,14 @@ for version in "$FROM" "$TO"; do
 		mkdir "$CACHE_DIR"
 	fi
 	
-	for archive in "$MAC_ARCHIVE" "$WIN_ARCHIVE" "$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE"; do
+	for archive in "$MAC_ARCHIVE" "$WIN32_ARCHIVE" "$WIN64_ARCHIVE" "$LINUX_X86_ARCHIVE" "$LINUX_X86_64_ARCHIVE"; do
 		if [[ $archive = "$MAC_ARCHIVE" ]] && [[ $BUILD_MAC != 1 ]]; then
 			continue
 		fi
-		if [[ $archive = "$WIN_ARCHIVE" ]] && [[ $BUILD_WIN32 != 1 ]]; then
+		if [[ $archive = "$WIN32_ARCHIVE" ]] && [[ $BUILD_WIN != 1 ]]; then
+			continue
+		fi
+		if [[ $archive = "$WIN64_ARCHIVE" ]] && [[ $BUILD_WIN != 1 ]]; then
 			continue
 		fi
 		if [[ $archive = "$LINUX_X86_ARCHIVE" ]] && [[ $BUILD_LINUX != 1 ]]; then
@@ -226,14 +230,16 @@ for version in "$FROM" "$TO"; do
 		fi
 	fi
 	
-	# Unpack Win32 zip
-	if [ $BUILD_WIN32 == 1 ]; then
-		if [ -f "$WIN_ARCHIVE" ]; then
-			unzip -q "$WIN_ARCHIVE"
-			rm "$WIN_ARCHIVE"
+	# Unpack Windows zips
+	if [ $BUILD_WIN == 1 ]; then
+		if [[ -f "$WIN32_ARCHIVE" ]] && [[ -f "$WIN64_ARCHIVE" ]]; then
+			for build in "$WIN32_ARCHIVE" "$WIN64_ARCHIVE"; do
+				unzip -q "$build"
+				rm "$build"
+			done
 			INCREMENTALS_FOUND=1
 		else
-			echo "$WIN_ARCHIVE not found"
+			echo "$WIN32_ARCHIVE/$WIN64_ARCHIVE not found"
 		fi
 	fi
 	
@@ -254,14 +260,14 @@ for version in "$FROM" "$TO"; do
 done
 
 CHANGES_MADE=0
-for build in "mac" "win32" "linux-i686" "linux-x86_64"; do
+for build in "mac" "win32" "win64" "linux-i686" "linux-x86_64"; do
 	if [[ $build == "mac" ]]; then
 		if [[ $BUILD_MAC == 0 ]]; then
 			continue
 		fi
 		dir="Zotero.app"
 	else
-		if [[ $build == "win32" ]] && [[ $BUILD_WIN32 == 0 ]]; then
+		if [[ $build == "win32" ]] || [[ $build == "win64" ]] && [[ $BUILD_WIN == 0 ]]; then
 			continue
 		fi
 		if [[ $build == "linux-i686" ]] || [[ $build == "linux-x86_64" ]] && [[ $BUILD_LINUX == 0 ]]; then
