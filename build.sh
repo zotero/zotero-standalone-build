@@ -462,6 +462,18 @@ if [ $BUILD_WIN == 1 ]; then
 				
 				# Build and sign uninstaller
 				perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$installer_build_dir/defines.nsi"
+				
+				# Set architecture for installer
+				if [ $arch == "win64" ]; then
+					perl -pi -e "s/\{\{BITS}}/64/" "$installer_build_dir/defines.nsi"
+					perl -pi -e "s/\{\{ARCH}}/x64/" "$installer_build_dir/defines.nsi"
+					perl -pi -e "s/\{\{MIN_SUPPORTED_VERSION}}/Microsoft Windows 7 x64/" "$installer_build_dir/defines.nsi"
+				else
+					perl -pi -e "s/\{\{BITS}}/32/" "$installer_build_dir/defines.nsi"
+					perl -pi -e "s/\{\{ARCH}}/x86/" "$installer_build_dir/defines.nsi"
+					perl -pi -e "s/\{\{MIN_SUPPORTED_VERSION}}/Microsoft Windows 7/" "$installer_build_dir/defines.nsi"
+				fi
+				
 				"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$installer_build_dir/uninstaller.nsi\"`"
 				mkdir "$APPDIR/uninstall"
 				mv "$installer_build_dir/helper.exe" "$APPDIR/uninstall"
