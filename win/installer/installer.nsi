@@ -888,7 +888,7 @@ Function .onInit
     ; This doesn't actually wait, since the uninstaller copies itself to a temp folder, runs that,
     ; and exits, so give it a few seconds to finish
     ExecWait '"$2" /S'
-    Sleep 3000
+    Sleep 5000
     
     ; Files that were added by an in-app update won't be automatically deleted by the 4.0 uninstaller,
     ; so manually delete everything we know about as long as the directory name begins with "Zotero".
