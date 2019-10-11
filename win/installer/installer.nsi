@@ -103,6 +103,9 @@ VIAddVersionKey "OriginalFilename" "setup.exe"
 !insertmacro LeaveOptionsCommon
 !insertmacro OnEndCommon
 
+!insertmacro GetSingleInstallPath
+Var PreviousInstallDir
+
 Name "${BrandFullName}"
 OutFile "setup.exe"
 !ifdef HAVE_64BIT_BUILD
@@ -916,6 +919,38 @@ Function .onInit
     RMDir /REBOOTOK $3
   continue_installation:
   ; End uninstallation
+
+
+  ; Require elevation if the user can elevate
+  ${ElevateUAC}
+
+  ; If we have any existing installation, use its location as the default
+  ; path for this install, even if it's not the same architecture.
+  SetRegView 32
+  SetShellVarContext all ; Set SHCTX to HKLM
+  ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
+
+  ${If} "$R9" == "false"
+    ; Not supported in NSIS 2.46.5
+    ;${If} ${IsNativeAMD64}
+    ;${OrIf} ${IsNativeARM64}
+    ${If} ${RunningX64}
+      SetRegView 64
+      ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
+    ${EndIf}
+  ${EndIf}
+
+  ${If} "$R9" == "false"
+    SetShellVarContext current ; Set SHCTX to HKCU
+    ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
+  ${EndIf}
+
+  StrCpy $PreviousInstallDir ""
+  ${If} "$R9" != "false"
+    StrCpy $PreviousInstallDir "$R9"
+    StrCpy $INSTDIR "$PreviousInstallDir"
+  ${EndIf}
+
 
 
   !insertmacro InitInstallOptionsFile "options.ini"

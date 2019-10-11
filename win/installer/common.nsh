@@ -4327,9 +4327,25 @@ FunctionEnd
     Function LeaveOptionsCommon
       Push $R9
 
+      StrCpy $R9 "false"
+
 !ifndef NO_INSTDIR_FROM_REG
       SetShellVarContext all      ; Set SHCTX to HKLM
+
+      ; Not supported in NSIS 2.46.5
+      ;${If} ${IsNativeAMD64}
+      ;${OrIf} ${IsNativeARM64}
+      ${If} ${RunningX64}
+        SetRegView 64
+        ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
+        SetRegView lastused
+      ${EndIf}
+
+      StrCmp "$R9" "false" +1 finish_get_install_dir
+
+      SetRegView 32
       ${GetSingleInstallPath} "Software\Zotero\${BrandFullNameInternal}" $R9
+      SetRegView lastused
 
       StrCmp "$R9" "false" +1 finish_get_install_dir
 
