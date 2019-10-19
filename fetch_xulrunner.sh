@@ -95,7 +95,8 @@ function modify_omni {
 	fi
 	
 	# Update URL for built-in add-ons list
-	perl -pi -e 's/const BUILT_IN_ADDONS_URI.+/const BUILT_IN_ADDONS_URI = "chrome:\/\/zotero\/content\/built_in_addons.json";/' modules/addons/XPIProvider.jsm
+	echo '{"system": []}' > modules/addons/built_in_addons.json
+	perl -pi -e 's/const BUILT_IN_ADDONS_URI.+/const BUILT_IN_ADDONS_URI = "resource:\/\/gre\/modules\/addons\/built_in_addons.json";/' modules/addons/XPIProvider.jsm
 	
 	# Disable transaction timeout
 	perl -pi -e 's/let timeoutPromise/\/*let timeoutPromise/' modules/Sqlite.jsm

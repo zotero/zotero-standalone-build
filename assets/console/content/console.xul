@@ -7,7 +7,6 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?> 
 <?xml-stylesheet href="chrome://global/skin/console/console.css" type="text/css"?> 
 <?xml-stylesheet href="chrome://global/content/console.css" type="text/css"?> 
-<?xul-overlay href="chrome://global/content/editMenuOverlay.xul"?>
 
 <!DOCTYPE window [
   <!ENTITY % console SYSTEM "chrome://global/locale/console.dtd"> %console;
