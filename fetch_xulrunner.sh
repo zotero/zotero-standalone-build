@@ -118,7 +118,7 @@ function modify_omni {
 	# Force Lucida Grande on non-Retina displays, since San Francisco is used otherwise starting in
 	# Catalina, and it looks terrible
 	if [[ $platform == 'mac' ]]; then
-		echo "@media (max-resolution: 1.0dppx) { * { font-family: Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, -apple-system, sans-serif !important; } }" >> chrome/toolkit/skin/classic/global/global.css
+		echo "* { font-family: Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, -apple-system, sans-serif !important; }" >> chrome/toolkit/skin/classic/global/global.css
 	fi
 	
 	# Modify Add-ons window
