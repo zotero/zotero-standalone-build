@@ -16,6 +16,10 @@ pref("dom.max_chrome_script_run_time", 0);
 // Use OS locale
 pref("intl.locale.matchOS", true);
 
+// Fix error initializing login manager after this was changed in Firefox 57
+// Could also disable this with MOZ_LOADER_SHARE_GLOBAL, supposedly
+pref("jsloader.shareGlobal", false);
+
 // Needed due to https://bugzilla.mozilla.org/show_bug.cgi?id=1181977
 pref("browser.hiddenWindowChromeURL", "chrome://zotero/content/standalone/hiddenWindow.xul");
 // Use basicViewer for opening new DOM windows from content (for TinyMCE)
@@ -62,7 +66,8 @@ pref("security.enterprise_roots.enabled", true);
 
 // Disable add-on signature checking with unbranded Firefox build
 pref("xpinstall.signatures.required", false);
-
+// Allow legacy extensions (though this might not be necessary)
+pref("extensions.legacy.enabled", true);
 // Allow installing XPIs from any host
 pref("xpinstall.whitelist.required", false);
 // Allow installing XPIs when using a custom CA
@@ -71,6 +76,8 @@ pref("extensions.update.requireBuiltInCerts", false);
 
 // Don't connect to the Mozilla extensions blocklist
 pref("extensions.blocklist.enabled", false);
+// Avoid warning in console when opening Tools -> Add-ons
+pref("extensions.getAddons.link.url", "");
 
 // Disable places
 pref("places.history.enabled", false);

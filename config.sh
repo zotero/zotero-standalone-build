@@ -1,9 +1,9 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Version of Gecko to build with
-GECKO_VERSION_MAC="52.9.0esr"
-GECKO_VERSION_LINUX="52.9.0esr"
-GECKO_VERSION_WIN="52.9.0esr"
+GECKO_VERSION_MAC="60.8.0esr"
+GECKO_VERSION_LINUX="60.8.0esr"
+GECKO_VERSION_WIN="60.8.0esr"
 
 # Paths to Gecko runtimes
 MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
@@ -22,6 +22,9 @@ DEVELOPER_ID=F0F1FE48DB909B263AC51C8215374D87FDC12121
 # Keychain and keychain password, if not building via the GUI
 KEYCHAIN=""
 KEYCHAIN_PASSWORD=""
+NOTARIZATION_BUNDLE_ID=""
+NOTARIZATION_USER=""
+NOTARIZATION_PASSWORD=""
 
 # Paths for Windows installer build
 NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
@@ -54,6 +57,14 @@ DEPLOY_CMD="ssh $DEPLOY_HOST update-site-files"
 
 BUILD_PLATFORMS=""
 NUM_INCREMENTALS=6
+
+if [ "`uname`" = "Darwin" ]; then
+	alias mktemp='mktemp -t tmp'
+	shopt -s expand_aliases
+fi
+
+# Make utilities (mar/mbsdiff) available in the path
+PATH="$DIR/xulrunner/bin:$PATH"
 
 if [ -f "$DIR/config-custom.sh" ]; then
 	. "$DIR/config-custom.sh"

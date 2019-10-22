@@ -284,6 +284,11 @@ if [ $BUILD_MAC == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
 	done
+	# Default preferenes are no longer read from built-in extensions in Firefox 60
+	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
 	echo
 	
 	# Delete extraneous files
@@ -300,27 +305,67 @@ if [ $BUILD_MAC == 1 ]; then
 	if [ $SIGN == 1 ]; then
 		# Unlock keychain if a password is provided (necessary for building from a shell)
 		if [ -n "$KEYCHAIN_PASSWORD" ]; then
-			security -v unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/$KEYCHAIN.keychain
+			security -v unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/$KEYCHAIN.keychain-db
 		fi
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/pdftotext"
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/pdfinfo"
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/XUL"
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
-		find "$APPDIR/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --sign "$DEVELOPER_ID" {} \;
-		find "$APPDIR/Contents" -name '*.app' -exec /usr/bin/codesign --force --sign "$DEVELOPER_ID" {} \;
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
-		/usr/bin/codesign --force --sign "$DEVELOPER_ID" "$APPDIR"
+		# Clear extended attributes, which can cause codesign to fail
+		/usr/bin/xattr -cr "$APPDIR"
+		entitlements_file="$CALLDIR/mac/entitlements.xml"
+		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" \
+			"$APPDIR/Contents/MacOS/pdftotext" \
+			"$APPDIR/Contents/MacOS/pdfinfo" \
+			"$APPDIR/Contents/MacOS/XUL" \
+			"$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
+		find "$APPDIR/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
+		find "$APPDIR/Contents" -name '*.app' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
+		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
+		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR"
 		/usr/bin/codesign --verify -vvvv "$APPDIR"
 	fi
 	
-	# Build disk image
+	# Build and notarize disk image
 	if [ $PACKAGE == 1 ]; then
 		if [ $MAC_NATIVE == 1 ]; then
-			echo 'Creating Mac installer'
+			echo "Creating Mac installer"
+			dmg="$DIST_DIR/Zotero-$VERSION.dmg"
 			"$CALLDIR/mac/pkg-dmg" --source "$STAGE_DIR/Zotero.app" \
-				--target "$DIST_DIR/Zotero-$VERSION.dmg" \
+				--target "$dmg" \
 				--sourcefile --volname Zotero --copy "$CALLDIR/mac/DSStore:/.DS_Store" \
 				--symlink /Applications:"/Drag Here to Install" > /dev/null
+			
+			# Upload disk image to Apple
+			output=$("$CALLDIR/scripts/notarize_mac_app" "$dmg")
+			echo
+			echo "$output"
+			echo
+			id=$(echo "$output" | plutil -extract notarization-upload.RequestUUID xml1 -o - - | sed -n "s/.*<string>\(.*\)<\/string>.*/\1/p")
+			echo "Notarization request identifier: $id"
+			echo
+			
+			sleep 60
+			
+			# Check back every 30 seconds, for up to an hour
+			i="0"
+			while [ $i -lt 120 ]
+			do
+				status=$("$CALLDIR/scripts/notarization_status" $id)
+				if [[ $status != "in progress" ]]; then
+					break
+				fi
+				echo "Notarization in progress"
+				sleep 30
+				i=$[$i+1]
+			done
+			
+			# Staple notarization info to disk image
+			if [ $status == "success" ]; then
+				"$CALLDIR/scripts/notarization_stapler" "$dmg"
+			else
+				echo "Notarization failed!"
+				"$CALLDIR/scripts/notarization_status" $id
+				exit 1
+			fi
+			
+			echo "Notarization complete"
 		else
 			echo 'Not building on Mac; creating Mac distribution as a zip file'
 			rm -f "$DIST_DIR/Zotero_mac.zip"
@@ -343,15 +388,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Copy relevant assets from Firefox
 	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
-	
-	# Copy zotero.exe, which is xulrunner-stub from https://github.com/duanyao/xulrunner-stub
-	# modified with ReplaceVistaIcon.exe and edited with Resource Hacker
+
+	# Copy zotero_win32.exe, which is built directly from Firefox source
 	#
-	#   "$CALLDIR/win/ReplaceVistaIcon/ReplaceVistaIcon.exe" \
-	#       "`cygpath -w \"$APPDIR/zotero.exe\"`" \
-	#       "`cygpath -w \"$CALLDIR/assets/icons/default/main-window.ico\"`"
-	#
-	cp "$CALLDIR/win/zotero.exe" "$APPDIR"
+	# After the initial build the temporary resource in "C:\mozilla-source\obj-i686-pc-mingw32\browser\app\module.res"
+	# is modified with Visual Studio resource editor where icon and file details are changed.
+	# Then firefox.exe is rebuilt again
+	cp "$CALLDIR/win/zotero_win32.exe" "$APPDIR/zotero.exe"
 
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
@@ -385,6 +428,12 @@ if [ $BUILD_WIN32 == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/$ext/install.rdf"
 		rm -rf "$APPDIR/extensions/$ext/.git"
 	done
+	# Default preferenes are no longer read from built-in extensions in Firefox 60
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
+	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	echo >> "$APPDIR/defaults/preferences/prefs.js"
 	echo
 
 	# Delete extraneous files
@@ -533,6 +582,10 @@ if [ $BUILD_LINUX == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		echo
 		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git"
+		# Default preferenes are no longer read from built-in extensions in Firefox 60
+		echo >> "$APPDIR/defaults/preferences/prefs.js"
+		cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+		echo >> "$APPDIR/defaults/preferences/prefs.js"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;

@@ -103,10 +103,10 @@ echo "Checking distribution requirements:"
 echo
 
 echo -n "Checking for Mozilla ARchive (MAR) tool: "
-which mar || { $FAIL_CMD; FAILED=1; echo "  -- Install mar from https://wiki.mozilla.org/UpdateGeneration"; }
+which mar || { $FAIL_CMD; FAILED=1; echo "  -- Install with fetch_mar_tools"; }
 
 echo -n "Checking for mbsdiff: "
-which mbsdiff || { $FAIL_CMD; FAILED=1; echo "  -- Install mbsdiff from https://wiki.mozilla.org/UpdateGeneration"; }
+which mbsdiff || { $FAIL_CMD; FAILED=1; echo "  -- Install with fetch_mar_tools"; }
 
 echo -n "Checking for rsync: "
 which rsync || { $FAIL_CMD; FAILED=1; }
