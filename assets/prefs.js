@@ -14,7 +14,7 @@ pref("network.prefetch-next", false);
 pref("dom.max_chrome_script_run_time", 0);
 
 // Use OS locale
-pref("intl.locale.matchOS", true);
+pref("intl.regional_prefs.use_os_locales", true);
 
 // Fix error initializing login manager after this was changed in Firefox 57
 // Could also disable this with MOZ_LOADER_SHARE_GLOBAL, supposedly

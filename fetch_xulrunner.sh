@@ -115,6 +115,9 @@ function modify_omni {
 	perl -pi -e 's/updateType_minor=Security Update/updateType_minor=New Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/update for &brandShortName; as soon as possible/update as soon as possible/' chrome/en-US/locale/en-US/mozapps/update/updates.dtd
 	
+	# Set available locales
+	cp "$CALLDIR/assets/multilocale.txt" res/multilocale.txt
+	
 	# Force Lucida Grande on non-Retina displays, since San Francisco is used otherwise starting in
 	# Catalina, and it looks terrible
 	if [[ $platform == 'mac' ]]; then
