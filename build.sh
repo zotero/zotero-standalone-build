@@ -309,6 +309,19 @@ if [ $BUILD_MAC == 1 ]; then
 		fi
 		# Clear extended attributes, which can cause codesign to fail
 		/usr/bin/xattr -cr "$APPDIR"
+
+		# Bundle and sign Safari App Extension
+		#
+		# Even though it's signed by Xcode, we sign it again to make sure it matches the parent app signature
+		if [[ -n "$SAFARI_APPEX" ]] && [[ -d "$SAFARI_APPEX" ]]; then
+			# Extract entitlements, which differ from parent app
+			/usr/bin/codesign -d --entitlements :"$BUILD_DIR/safari-entitlements.plist" $SAFARI_APPEX
+			mkdir "$APPDIR/Contents/PlugIns"
+			cp -R $SAFARI_APPEX "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
+			/usr/bin/codesign --force --options runtime --entitlements "$BUILD_DIR/safari-entitlements.plist" --sign "$DEVELOPER_ID" "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
+		fi
+
+		# Sign app
 		entitlements_file="$CALLDIR/mac/entitlements.xml"
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" \
 			"$APPDIR/Contents/MacOS/pdftotext" \
