@@ -142,7 +142,8 @@ fi
 
 cd "$BUILD_DIR/zotero"
 
-VERSION=`perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' install.rdf`
+VERSION=`perl -ne 'print and last if s/.*<em:version>(.+)<\/em:version>.*/\1/;' install.rdf`
+VERSION_NUMERIC=`perl -ne 'print and last if s/.*<em:version>(\d+\.\d+\.\d+).*<\/em:version>.*/\1/;' install.rdf`
 if [ -z "$VERSION" ]; then
 	echo "Version number not found in install.rdf"
 	exit 1
