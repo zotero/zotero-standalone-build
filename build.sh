@@ -604,7 +604,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
 		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		echo
-		echo -n "$ext Version: "
+		echo -n "zoteroOpenOfficeIntegration@zotero.org Version: "
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		echo
 		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git"
