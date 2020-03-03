@@ -323,17 +323,6 @@ if [ $BUILD_MAC == 1 ]; then
 		# Clear extended attributes, which can cause codesign to fail
 		/usr/bin/xattr -cr "$APPDIR"
 
-		# Bundle and sign Safari App Extension
-		#
-		# Even though it's signed by Xcode, we sign it again to make sure it matches the parent app signature
-		if [[ -n "$SAFARI_APPEX" ]] && [[ -d "$SAFARI_APPEX" ]]; then
-			# Extract entitlements, which differ from parent app
-			/usr/bin/codesign -d --entitlements :"$BUILD_DIR/safari-entitlements.plist" $SAFARI_APPEX
-			mkdir "$APPDIR/Contents/PlugIns"
-			cp -R $SAFARI_APPEX "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
-			/usr/bin/codesign --force --options runtime --entitlements "$BUILD_DIR/safari-entitlements.plist" --sign "$DEVELOPER_ID" "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
-		fi
-
 		# Sign app
 		entitlements_file="$CALLDIR/mac/entitlements.xml"
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" \
@@ -344,8 +333,35 @@ if [ $BUILD_MAC == 1 ]; then
 		find "$APPDIR/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		find "$APPDIR/Contents" -name '*.app' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
+		
+		# Bundle and sign Safari App Extension
+		#
+		# Even though it's signed by Xcode, we sign it again to make sure it matches the parent app signature
+		if [[ -n "$SAFARI_APPEX" ]] && [[ -d "$SAFARI_APPEX" ]]; then
+			echo
+			# Extract entitlements, which differ from parent app
+			/usr/bin/codesign -d --entitlements :"$BUILD_DIR/safari-entitlements.plist" $SAFARI_APPEX
+			mkdir "$APPDIR/Contents/PlugIns"
+			cp -R $SAFARI_APPEX "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
+			# Add suffix to appex bundle identifier
+			if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ] || [ $UPDATE_CHANNEL == "source" ]; then
+				perl -pi -e "s/org\.zotero\.SafariExtensionApp\.SafariExtension/org.zotero.SafariExtensionApp.SafariExtension-$UPDATE_CHANNEL/" "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex/Contents/Info.plist"
+			fi
+			find "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
+			/usr/bin/codesign --force --options runtime --entitlements "$BUILD_DIR/safari-entitlements.plist" --sign "$DEVELOPER_ID" "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
+		fi
+		
+		# Sign final app package
+		echo
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR"
+		
+		# Verify app
 		/usr/bin/codesign --verify -vvvv "$APPDIR"
+		# Verify Safari App Extension
+		if [[ -n "$SAFARI_APPEX" ]] && [[ -d "$SAFARI_APPEX" ]]; then
+			echo
+			/usr/bin/codesign --verify -vvvv "$APPDIR/Contents/PlugIns/ZoteroSafariExtension.appex"
+		fi
 	fi
 	
 	# Build and notarize disk image
