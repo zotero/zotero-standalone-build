@@ -109,6 +109,9 @@ function modify_omni {
 	cat components/components.manifest | grep -vi telemetry > components/components2.manifest
 	mv components/components2.manifest components/components.manifest
 	
+	# Allow proxy password saving
+	perl -pi -e 's/get _inPrivateBrowsing\(\) {/get _inPrivateBrowsing() {if (true) { return false; }/' components/nsLoginManagerPrompter.js
+	
 	# Change text in update dialog
 	perl -pi -e 's/A security and stability update for/A new version of/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
 	perl -pi -e 's/updateType_major=New Version/updateType_major=New Major Version/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
