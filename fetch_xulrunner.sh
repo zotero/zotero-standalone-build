@@ -110,7 +110,7 @@ function modify_omni {
 	mv components/components2.manifest components/components.manifest
 	
 	# Allow proxy password saving
-	perl -pi -e 's/get _inPrivateBrowsing\(\) {/get _inPrivateBrowsing() {if (true) { return false; }/' components/nsLoginManagerPrompter.js
+	perl -pi -e 's/get _inPrivateBrowsing\(\) \{/get _inPrivateBrowsing() {if (true) { return false; }/' components/nsLoginManagerPrompter.js
 	
 	# Change text in update dialog
 	perl -pi -e 's/A security and stability update for/A new version of/' chrome/en-US/locale/en-US/mozapps/update/updates.properties
