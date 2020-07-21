@@ -121,11 +121,14 @@ fi
 if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ]; then
 	DEVTOOLS=1
 fi
-
+if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 BUILD_ID=`date +%Y%m%d%H%M%S`
 
+base_dir="$BUILD_DIR/base"
+app_dir="$BUILD_DIR/base/app"
+
 shopt -s extglob
-mkdir -p "$BUILD_DIR/zotero"
+mkdir -p "$app_dir"
 rm -rf "$STAGE_DIR"
 mkdir "$STAGE_DIR"
 rm -rf "$DIST_DIR"
@@ -134,18 +137,98 @@ mkdir "$DIST_DIR"
 # Save build id, which is needed for updates manifest
 echo $BUILD_ID > "$DIST_DIR/build_id"
 
-if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
+cd "$app_dir"
 
+# Copy 'browser' files from Firefox
+set +e
+if [ $BUILD_MAC == 1 ]; then
+	unzip "$MAC_RUNTIME_PATH"/Contents/Resources/browser/omni.ja -d "$app_dir"
+elif [ $BUILD_WIN32 == 1 ]; then
+	unzip "$WIN32_RUNTIME_PATH"/browser/omni.ja -d "$app_dir"
+elif [ $BUILD_LINUX == 1 ]; then
+	# Non-arch-specific files, so just use 64-bit version
+	unzip "$LINUX_x86_64_RUNTIME_PATH"/browser/omni.ja -d "$app_dir"
+fi
+set -e
+# Move some Firefox files that would be overwritten out of the way
+mv chrome.manifest chrome.manifest-fx
+mv components components-fx
+mv defaults defaults-fx
+
+# Extract Zotero files
 if [ -n "$ZIP_FILE" ]; then
 	ZIP_FILE="`abspath $ZIP_FILE`"
 	echo "Building from $ZIP_FILE"
-	unzip -q $ZIP_FILE -d "$BUILD_DIR/zotero"
+	unzip -q $ZIP_FILE -d "$app_dir"
 else
 	# TODO: Could probably just mv instead, at least if these repos are merged
-	rsync -a "$SOURCE_DIR/" "$BUILD_DIR/zotero/"
+	rsync -a "$SOURCE_DIR/" ./
 fi
 
-cd "$BUILD_DIR/zotero"
+#
+# Merge preserved files from Firefox
+#
+# components
+mv components/* components-fx
+rmdir components
+mv components-fx components
+
+# defaults
+cp "$CALLDIR/assets/prefs.js" defaults-fx/preferences/zotero.js
+cat defaults/preferences/zotero.js >> defaults-fx/preferences/zotero.js
+
+# Remove telemetry prefs
+grep -v telemetry defaults-fx/preferences/firefox.js > defaults-fx/preferences/firefox.js.tmp
+mv defaults-fx/preferences/firefox.js.tmp defaults-fx/preferences/firefox.js
+
+prefs_file=defaults/preferences/zotero.js
+rm $prefs_file
+rmdir defaults/preferences
+rmdir defaults
+mv defaults-fx defaults
+
+# Platform-specific prefs
+if [ $BUILD_MAC == 1 ]; then
+	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' $prefs_file
+	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_MAC"'/g' $prefs_file
+	# Fix horizontal mousewheel scrolling (this is set to 4 in the Fx60 .app greprefs.js, but
+	# defaults to 1 in later versions of Firefox, and needs to be 1 to work on macOS)
+	echo 'pref("mousewheel.with_shift.action", 1);' >> $prefs_file
+elif [ $BUILD_WIN32 == 1 ]; then
+	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_WIN"'/g' $prefs_file
+elif [ $BUILD_LINUX == 1 ]; then
+	# Modify platform-specific prefs
+	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' $prefs_file
+	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_LINUX"'/g' $prefs_file
+fi
+
+# Clear list of built-in add-ons
+echo '{"dictionaries": {"en-US": "dictionaries/en-US.dic"}, "system": []}' > chrome/browser/content/browser/built_in_addons.json
+
+# chrome.manifest
+mv chrome.manifest zotero.manifest
+mv chrome.manifest-fx chrome.manifest
+# TEMP
+#echo "manifest zotero.manifest" >> "$base_dir/chrome.manifest"
+cat zotero.manifest >> chrome.manifest
+rm zotero.manifest
+
+# Update channel
+perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' $prefs_file
+echo -n "Channel: "
+grep app.update.channel $prefs_file
+echo
+
+# Add devtools prefs
+if [ $DEVTOOLS -eq 1 ]; then
+	echo >> $prefs_file
+	echo "// Dev Tools" >> $prefs_file
+	echo 'pref("devtools.debugger.remote-enabled", true);' >> $prefs_file
+	echo 'pref("devtools.debugger.remote-port", 6100);' >> $prefs_file
+	if [ $UPDATE_CHANNEL != "beta" ]; then
+		echo 'pref("devtools.debugger.prompt-connection", false);' >> $prefs_file
+	fi
+fi
 
 # 5.0.96.3 / 5.0.97-beta.37+ddc7be75c
 VERSION=`perl -ne 'print and last if s/.*<em:version>(.+)<\/em:version>.*/\1/;' install.rdf`
@@ -164,70 +247,54 @@ echo "Version: $VERSION"
 rm -rf META-INF
 
 # Copy branding
-cp -R "$CALLDIR/assets/branding" "$BUILD_DIR/zotero/chrome/branding"
+cp -R "$CALLDIR/assets/branding" chrome/branding
+rm -rf chrome/browser/content/branding/*
+cp -R "$CALLDIR"/assets/branding/content/* chrome/browser/content/branding/
+cp "$CALLDIR/assets/branding/locale/brand.ftl" localization/en-US/branding/brand.ftl
 
 # Add to chrome manifest
-echo "" >> "$BUILD_DIR/zotero/chrome.manifest"
-cat "$CALLDIR/assets/chrome.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
+echo "" >> chrome.manifest
+cat "$CALLDIR/assets/chrome.manifest" >> chrome.manifest
 
-# Copy Error Console files
-cp "$CALLDIR/assets/console/jsconsole-clhandler.js" "$BUILD_DIR/zotero/components/"
-echo >> "$BUILD_DIR/zotero/chrome.manifest"
-cat "$CALLDIR/assets/console/jsconsole-clhandler.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
-cp -R "$CALLDIR/assets/console/content" "$BUILD_DIR/zotero/chrome/console"
-cp -R "$CALLDIR/assets/console/skin/osx" "$BUILD_DIR/zotero/chrome/console/skin"
-cp -R "$CALLDIR/assets/console/locale/en-US" "$BUILD_DIR/zotero/chrome/console/locale"
-cat "$CALLDIR/assets/console/jsconsole.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
-
-# Delete files that shouldn't be distributed
-find "$BUILD_DIR/zotero/chrome" -name .DS_Store -exec rm -f {} \;
-
-# Zip chrome into JAR
-cd "$BUILD_DIR/zotero"
-zip -r -q zotero.jar chrome deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
-rm -rf "chrome/"* install.rdf deleted.txt resource styles.zip translators.index translators.zip styles translators.json translators
-
-# Copy updater.ini
-cp "$CALLDIR/assets/updater.ini" "$BUILD_DIR/zotero"
-
-# Adjust chrome.manifest
-perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILD_DIR/zotero/chrome.manifest"
-
-# Adjust connector pref
-perl -pi -e 's/pref\("extensions\.zotero\.httpServer\.enabled", false\);/pref("extensions.zotero.httpServer.enabled", true);/g' "$BUILD_DIR/zotero/defaults/preferences/zotero.js"
-perl -pi -e 's/pref\("extensions\.zotero\.connector\.enabled", false\);/pref("extensions.zotero.connector.enabled", true);/g' "$BUILD_DIR/zotero/defaults/preferences/zotero.js"
-
-# Copy icons
-cp -r "$CALLDIR/assets/icons" "$BUILD_DIR/zotero/chrome/icons"
-
-# Copy application.ini and modify
-cp "$CALLDIR/assets/application.ini" "$BUILD_DIR/application.ini"
-perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/application.ini"
-perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
-
-# Copy prefs.js and modify
-cp "$CALLDIR/assets/prefs.js" "$BUILD_DIR/zotero/defaults/preferences"
-perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-
-# Add devtools manifest and prefs
-if [ $DEVTOOLS -eq 1 ]; then
-	# Adjust paths for .jar
-	cat "$CALLDIR/assets/devtools.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
-	perl -pi -e 's/chrome\/locale\/en-US\/devtools\//jar:devtools.jar!\/locale\/en-US\/devtools\//' "$BUILD_DIR/zotero/chrome.manifest"
-	perl -pi -e 's/chrome\/devtools\//jar:devtools.jar!\//' "$BUILD_DIR/zotero/chrome.manifest"
-	
-	echo 'pref("devtools.debugger.remote-enabled", true);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	echo 'pref("devtools.debugger.remote-port", 6100);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	echo 'pref("devtools.debugger.prompt-connection", false);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+# Copy platform-specific assets
+if [ $BUILD_MAC == 1 ]; then
+	rsync -a "$CALLDIR/assets/mac/" ./
+elif [ $BUILD_WIN32 == 1 ]; then
+	rsync -a "$CALLDIR/assets/win/" ./
+elif [ $BUILD_LINUX == 1 ]; then
+	rsync -a "$CALLDIR/assets/unix/" ./
 fi
 
-echo -n "Channel: "
-grep app.update.channel "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-echo
+if [ $BUILD_MAC == 1 ]; then
+	mv chrome/content/zotero/standalone/hiddenWindow.xul chrome/browser/content/browser/hiddenWindowMac.xhtml
+fi
+
+# Delete files that shouldn't be distributed
+find chrome -name .DS_Store -exec rm -f {} \;
+
+# Zip browser and Zotero files into omni.ja
+zip -qr9XD omni.ja *
+python3 "$CALLDIR/scripts/optimizejars.py" --optimize ./ ./ ./
+rm -rf "$app_dir/"!(omni.ja)
+
+# Copy updater.ini
+cp "$CALLDIR/assets/updater.ini" "$base_dir"
+
+# Adjust chrome.manifest
+#perl -pi -e 's^(chrome|resource)/^jar:zotero.jar\!/$1/^g' "$BUILD_DIR/zotero/chrome.manifest"
+
+# Copy icons
+mkdir "$base_dir/chrome"
+cp -R "$CALLDIR/assets/icons" "$base_dir/chrome/icons"
+
+# Copy application.ini and modify
+cp "$CALLDIR/assets/application.ini" "$app_dir/application.ini"
+perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$app_dir/application.ini"
+perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$app_dir/application.ini"
 
 # Remove unnecessary files
 find "$BUILD_DIR" -name .DS_Store -exec rm -f {} \;
-rm -rf "$BUILD_DIR/zotero/test"
+rm -rf "$base_dir/test"
 
 cd "$CALLDIR"
 
@@ -243,21 +310,13 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r "$CALLDIR/mac/Contents" "$APPDIR"
 	CONTENTSDIR="$APPDIR/Contents"
 	
-	# Modify platform-specific prefs
-	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_MAC"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	# Fix horizontal mousewheel scrolling (this is set to 4 in the Fx60 .app greprefs.js, but
-	# defaults to 1 in later versions of Firefox, and needs to be 1 to work on macOS)
-	echo 'pref("mousewheel.with_shift.action", 1);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
 	cp -r "$MAC_RUNTIME_PATH/Contents/MacOS/"!(firefox|firefox-bin|crashreporter.app|pingsender|updater.app) "$CONTENTSDIR/MacOS"
-	cp -r "$MAC_RUNTIME_PATH/Contents/Resources/"!(application.ini|updater.ini|update-settings.ini|browser|devtools-files|precomplete|removed-files|webapprt*|*.icns|defaults|*.lproj) "$CONTENTSDIR/Resources"
+	cp -r "$MAC_RUNTIME_PATH/Contents/Resources/"!(application.ini|browser|defaults|precomplete|removed-files|updater.ini|update-settings.ini|webapprt*|*.icns|*.lproj) "$CONTENTSDIR/Resources"
 
 	# Use our own launcher
 	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
-	cp "$BUILD_DIR/application.ini" "$CONTENTSDIR/Resources"
 
 	# TEMP: Modified versions of some Firefox components for Big Sur, placed in xulrunner/MacOS
 	cp "$MAC_RUNTIME_PATH/../MacOS/"{libc++.1.dylib,libnss3.dylib,XUL} "$CONTENTSDIR/MacOS/"
@@ -290,28 +349,24 @@ if [ $BUILD_MAC == 1 ]; then
 	grep -A 1 CFBundleVersion "$CONTENTSDIR/Info.plist"
 	echo
 	
-	# Add components
-	cp -R "$BUILD_DIR/zotero/"* "$CONTENTSDIR/Resources"
-	
-	# Add Mac-specific Standalone assets
-	cd "$CALLDIR/assets/mac"
-	zip -r -q "$CONTENTSDIR/Resources/zotero.jar" *
+	# Copy app files
+	rsync -a "$base_dir/" "$CONTENTSDIR/Resources/"
 	
 	# Add devtools
-	if [ $DEVTOOLS -eq 1 ]; then
-		# Create devtools.jar
-		cd "$BUILD_DIR"
-		mkdir -p devtools/locale
-		cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/devtools/* devtools/
-		cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/locale/* devtools/locale/
-		cd devtools
-		zip -r -q ../devtools.jar *
-		cd ..
-		rm -rf devtools
-		mv devtools.jar "$CONTENTSDIR/Resources/"
-		
-		cp "$MAC_RUNTIME_PATH/Contents/Resources/devtools-files/components/interfaces.xpt" "$CONTENTSDIR/Resources/components/"
-	fi
+	#if [ $DEVTOOLS -eq 1 ]; then
+	#	# Create devtools.jar
+	#	cd "$BUILD_DIR"
+	#	mkdir -p devtools/locale
+	#	cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/devtools/* devtools/
+	#	cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/locale/* devtools/locale/
+	#	cd devtools
+	#	zip -r -q ../devtools.jar *
+	#	cd ..
+	#	rm -rf devtools
+	#	mv devtools.jar "$CONTENTSDIR/Resources/"
+	#	
+	#	cp "$MAC_RUNTIME_PATH/Contents/Resources/devtools-files/components/interfaces.xpt" "$CONTENTSDIR/Resources/components/"
+	#fi
 	
 	# Add word processor plug-ins
 	mkdir "$CONTENTSDIR/Resources/extensions"
@@ -325,11 +380,11 @@ if [ $BUILD_MAC == 1 ]; then
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git" "$CONTENTSDIR/Resources/extensions/$ext/.github"
 	done
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
-	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	echo
+	#echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	#cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	#echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
+	#echo
 	
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
@@ -454,9 +509,6 @@ if [ $BUILD_WIN32 == 1 ]; then
 	rm -rf "$APPDIR"
 	mkdir "$APPDIR"
 	
-	# Modify platform-specific prefs
-	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_WIN"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-	
 	# Copy relevant assets from Firefox
 	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
 
@@ -486,27 +538,24 @@ if [ $BUILD_WIN32 == 1 ]; then
 	cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
 	cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 	
-	cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
-	
-	# Add Windows-specific Standalone assets
-	cd "$CALLDIR/assets/win"
-	zip -r -q "$APPDIR/zotero.jar" *
+	# Copy app files
+	rsync -a "$base_dir/" "$APPDIR/"
 	
 	# Add devtools
-	if [ $DEVTOOLS -eq 1 ]; then
-		# Create devtools.jar
-		cd "$BUILD_DIR"
-		mkdir -p devtools/locale
-		cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
-		cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
-		cd devtools
-		zip -r -q ../devtools.jar *
-		cd ..
-		rm -rf devtools
-		mv devtools.jar "$APPDIR"
-		
-		cp "$WIN32_RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
-	fi
+	#if [ $DEVTOOLS -eq 1 ]; then
+	#	# Create devtools.jar
+	#	cd "$BUILD_DIR"
+	#	mkdir -p devtools/locale
+	#	cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
+	#	cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
+	#	cd devtools
+	#	zip -r -q ../devtools.jar *
+	#	cd ..
+	#	rm -rf devtools
+	#	mv devtools.jar "$APPDIR"
+	#	
+	#	cp "$WIN32_RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
+	#fi
 	
 	# Add word processor plug-ins
 	mkdir "$APPDIR/extensions"
@@ -520,12 +569,12 @@ if [ $BUILD_WIN32 == 1 ]; then
 		rm -rf "$APPDIR/extensions/$ext/.git" "$APPDIR/extensions/$ext/.github"
 	done
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
-	echo >> "$APPDIR/defaults/preferences/prefs.js"
-	cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-	echo >> "$APPDIR/defaults/preferences/prefs.js"
-	cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-	echo >> "$APPDIR/defaults/preferences/prefs.js"
-	echo
+	#echo >> "$APPDIR/defaults/preferences/prefs.js"
+	#cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	#echo >> "$APPDIR/defaults/preferences/prefs.js"
+	#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+	#echo >> "$APPDIR/defaults/preferences/prefs.js"
+	#echo
 
 	# Delete extraneous files
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
@@ -669,10 +718,10 @@ if [ $BUILD_LINUX == 1 ]; then
 		mkdir "$APPDIR"
 		
 		# Merge relevant assets from Firefox
-		cp -r "$RUNTIME_PATH/"!(application.ini|browser|defaults|devtools-files|crashreporter|crashreporter.ini|firefox-bin|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
+		cp -r "$RUNTIME_PATH/"!(application.ini|browser|defaults|devtools-files|crashreporter|crashreporter.ini|firefox|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
 		
 		# Use our own launcher that calls the original Firefox executable with -app
-		mv "$APPDIR"/firefox "$APPDIR"/zotero-bin
+		mv "$APPDIR"/firefox-bin "$APPDIR"/zotero-bin
 		cp "$CALLDIR/linux/zotero" "$APPDIR"/zotero
 		
 		# Copy Ubuntu launcher files
@@ -687,31 +736,24 @@ if [ $BUILD_LINUX == 1 ]; then
 		cp "$CALLDIR/pdftools/pdfinfo-linux-$arch" "$APPDIR/pdfinfo"
 		cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
 		
-		cp -R "$BUILD_DIR/zotero/"* "$BUILD_DIR/application.ini" "$APPDIR"
-		
-		# Modify platform-specific prefs
-		perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-		perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_LINUX"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
-		
-		# Add Unix-specific Standalone assets
-		cd "$CALLDIR/assets/unix"
-		zip -0 -r -q "$APPDIR/zotero.jar" *
+		# Copy app files
+		rsync -a "$base_dir/" "$APPDIR/"
 		
 		# Add devtools
-		if [ $DEVTOOLS -eq 1 ]; then
-			# Create devtools.jar
-			cd "$BUILD_DIR"
-			mkdir -p devtools/locale
-			cp -r "$RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
-			cp -r "$RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
-			cd devtools
-			zip -r -q ../devtools.jar *
-			cd ..
-			rm -rf devtools
-			mv devtools.jar "$APPDIR"
-			
-			cp "$RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
-		fi
+		#if [ $DEVTOOLS -eq 1 ]; then
+		#	# Create devtools.jar
+		#	cd "$BUILD_DIR"
+		#	mkdir -p devtools/locale
+		#	cp -r "$RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
+		#	cp -r "$RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
+		#	cd devtools
+		#	zip -r -q ../devtools.jar *
+		#	cd ..
+		#	rm -rf devtools
+		#	mv devtools.jar "$APPDIR"
+		#	
+		#	cp "$RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
+		#fi
 		
 		# Add word processor plug-ins
 		mkdir "$APPDIR/extensions"
@@ -723,9 +765,9 @@ if [ $BUILD_LINUX == 1 ]; then
 		echo
 		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.github"
 		# Default preferenes are no longer read from built-in extensions in Firefox 60
-		echo >> "$APPDIR/defaults/preferences/prefs.js"
-		cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-		echo >> "$APPDIR/defaults/preferences/prefs.js"
+		#echo >> "$APPDIR/defaults/preferences/prefs.js"
+		#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
+		#echo >> "$APPDIR/defaults/preferences/prefs.js"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
