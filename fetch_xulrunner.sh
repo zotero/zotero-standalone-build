@@ -168,19 +168,18 @@ if [ $BUILD_MAC == 1 ]; then
 	if [ $skip_download -eq 0 ]; then
 		rm -rf Firefox.app
 		
-		if [ -e "Firefox-Modified-$GECKO_VERSION.dmg" ]; then
-			echo "Using Firefox-Modified-$GECKO_VERSION.dmg"
-			cp "Firefox-Modified-$GECKO_VERSION.dmg" "Firefox%20$GECKO_VERSION.dmg"
+		if [ -e "Firefox $GECKO_VERSION.app.zip" ]; then
+			echo "Using Firefox $GECKO_VERSION.app.zip"
+			unzip "Firefox $GECKO_VERSION.app.zip"
 		else
 			curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+			set +e
+			hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
+			set -e
+			hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
+			cp -a /Volumes/Firefox/Firefox.app .
+			hdiutil detach -quiet /Volumes/Firefox
 		fi
-		
-		set +e
-		hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
-		set -e
-		hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
-		cp -a /Volumes/Firefox/Firefox.app .
-		hdiutil detach -quiet /Volumes/Firefox
 	fi
 	
 	pushd Firefox.app/Contents/Resources
@@ -188,7 +187,7 @@ if [ $BUILD_MAC == 1 ]; then
 	extract_devtools
 	popd
 	
-	if [ $skip_download -eq 0 ]; then
+	if [[ $skip_download -eq 0 ]] && [[ ! -e "Firefox $GECKO_VERSION.app.zip" ]]; then
 		rm "Firefox%20$GECKO_VERSION.dmg"
 	fi
 fi
