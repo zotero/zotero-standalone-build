@@ -1,11 +1,11 @@
-diff --git a/browser/app/nsBrowserApp.cpp b/browser/app/nsBrowserApp.cpp
---- a/browser/app/nsBrowserApp.cpp
-+++ b/browser/app/nsBrowserApp.cpp
-@@ -165,7 +165,13 @@ static int do_main(int argc, char* argv[
- {
+diff -r d8dd10ac5430 browser/app/nsBrowserApp.cpp
+--- a/browser/app/nsBrowserApp.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/browser/app/nsBrowserApp.cpp	Sun Jul 26 19:05:20 2020 -0400
+@@ -147,7 +147,13 @@
+ static int do_main(int argc, char* argv[], char* envp[]) {
    // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
    // Note that -app must be the *first* argument.
--  const char *appDataFile = getenv("XUL_APP_FILE");
+-  const char* appDataFile = getenv("XUL_APP_FILE");
 +  UniqueFreePtr<char> iniPath = BinaryPath::GetApplicationIni();
 +  if (!iniPath) {
 +    Output("Couldn't find application.ini.\n");
@@ -13,13 +13,591 @@ diff --git a/browser/app/nsBrowserApp.cpp b/browser/app/nsBrowserApp.cpp
 +  }
 +  char *appDataFile = iniPath.get();
 +
-   if ((!appDataFile || !*appDataFile) &&
-       (argc > 1 && IsArg(argv[1], "app"))) {
+   if ((!appDataFile || !*appDataFile) && (argc > 1 && IsArg(argv[1], "app"))) {
      if (argc == 2) {
-diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
---- a/xpcom/build/BinaryPath.h
-+++ b/xpcom/build/BinaryPath.h
-@@ -139,6 +139,46 @@ private:
+       Output("Incorrect number of arguments passed to -app");
+diff -r d8dd10ac5430 nsprpub/pr/src/linking/prlink.c
+--- a/nsprpub/pr/src/linking/prlink.c	Thu Aug 22 09:31:51 2019 +0200
++++ b/nsprpub/pr/src/linking/prlink.c	Sun Jul 26 19:05:20 2020 -0400
+@@ -778,6 +778,9 @@
+     int dl_flags = 0;
+ #endif
+     void *h = NULL;
++#if defined(DARWIN)
++    PRBool okToLoad = PR_FALSE;
++#endif
+ 
+     if (flags & PR_LD_LAZY) {
+         dl_flags |= RTLD_LAZY;
+@@ -792,13 +795,37 @@
+         dl_flags |= RTLD_LOCAL;
+     }
+ #if defined(DARWIN)
+-    /* ensure the file exists if it contains a slash character i.e. path */
+-    /* DARWIN's dlopen ignores the provided path and checks for the */
+-    /* plain filename in DYLD_LIBRARY_PATH */
+-    if (strchr(name, PR_DIRECTORY_SEPARATOR) == NULL ||
+-        PR_Access(name, PR_ACCESS_EXISTS) == PR_SUCCESS) {
+-            h = dlopen(name, dl_flags);
++    /* If the file contains an absolute or relative path (slash)
++     * and the path doesn't look like a System path, then require
++     * the file exists.
++     * The reason is that DARWIN's dlopen ignores the provided path
++     * and checks for the plain filename in DYLD_LIBRARY_PATH,
++     * which could load an unexpected version of a library. */
++    if (strchr(name, PR_DIRECTORY_SEPARATOR) == NULL) {
++        /* no slash, allow to load from any location */
++        okToLoad = PR_TRUE;
++    } else {
++        const char systemPrefix1[] = "/System/";
++        const size_t systemPrefixLen1 = strlen(systemPrefix1);
++        const char systemPrefix2[] = "/usr/lib/";
++        const size_t systemPrefixLen2 = strlen(systemPrefix2);
++        const name_len = strlen(name);
++        if (((name_len > systemPrefixLen1) &&
++             (strncmp(name, systemPrefix1, systemPrefixLen1) == 0)) ||
++           ((name_len > systemPrefixLen2) &&
++             (strncmp(name, systemPrefix2, systemPrefixLen2) == 0))) {
++            /* found at beginning, it's a system library.
++             * Skip filesystem check (required for macOS 11),
++             * allow loading from any location */
++            okToLoad = PR_TRUE;
++        } else if (PR_Access(name, PR_ACCESS_EXISTS) == PR_SUCCESS) {
++            /* file exists, allow to load */
++            okToLoad = PR_TRUE;
+         }
++    }
++    if (okToLoad) {
++        h = dlopen(name, dl_flags);
++    }
+ #else
+     h = dlopen(name, dl_flags);
+ #endif
+diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.h
+--- a/widget/cocoa/VibrancyManager.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/VibrancyManager.h	Sun Jul 26 19:05:20 2020 -0400
+@@ -77,14 +77,6 @@
+   bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
+ 
+   /**
+-   * Clear the vibrant areas that we know about.
+-   * The clearing happens in the current NSGraphicsContext. If you call this
+-   * from within an -[NSView drawRect:] implementation, the currrent
+-   * NSGraphicsContext is already correctly set to the window drawing context.
+-   */
+-  void ClearVibrantAreas() const;
+-
+-  /**
+    * Return the fill color that should be drawn on top of the cleared window
+    * parts. Usually this would be drawn by -[NSVisualEffectView drawRect:].
+    * The returned color is opaque if the system-wide "Reduce transparency"
+@@ -112,8 +104,6 @@
+   static NSView* CreateEffectView(VibrancyType aType, BOOL aIsContainer = NO);
+ 
+  protected:
+-  void ClearVibrantRegion(const LayoutDeviceIntRegion& aVibrantRegion) const;
+-
+   const nsChildView& mCoordinateConverter;
+   NSView* mContainerView;
+   nsClassHashtable<nsUint32HashKey, ViewRegion> mVibrantRegions;
+diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.mm
+--- a/widget/cocoa/VibrancyManager.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/VibrancyManager.mm	Sun Jul 26 19:05:20 2020 -0400
+@@ -24,24 +24,6 @@
+   });
+ }
+ 
+-void
+-VibrancyManager::ClearVibrantAreas() const
+-{
+-  for (auto iter = mVibrantRegions.ConstIter(); !iter.Done(); iter.Next()) {
+-    ClearVibrantRegion(iter.UserData()->Region());
+-  }
+-}
+-
+-void
+-VibrancyManager::ClearVibrantRegion(const LayoutDeviceIntRegion& aVibrantRegion) const
+-{
+-  [[NSColor clearColor] set];
+-
+-  for (auto iter = aVibrantRegion.RectIter(); !iter.Done(); iter.Next()) {
+-    NSRectFill(mCoordinateConverter.DevPixelsToCocoaPoints(iter.Get()));
+-  }
+-}
+-
+ @interface NSView(CurrentFillColor)
+ - (NSColor*)_currentFillColor;
+ @end
+@@ -65,27 +47,13 @@
+   NSView* view = mVibrantRegions.LookupOrAdd(uint32_t(aType))->GetAnyView();
+ 
+   if (view && [view respondsToSelector:@selector(_currentFillColor)]) {
+-    // -[NSVisualEffectView _currentFillColor] is the color that our view
+-    // would draw during its drawRect implementation, if we hadn't
+-    // disabled that.
++    // -[NSVisualEffectView _currentFillColor] is the color that the view
++    // draws in its drawRect implementation.
+     return AdjustedColor([view _currentFillColor], aType);
+   }
+   return [NSColor whiteColor];
+ }
+ 
+-static void
+-DrawRectNothing(id self, SEL _cmd, NSRect aRect)
+-{
+-  // The super implementation would clear the background.
+-  // That's fine for views that are placed below their content, but our
+-  // setup is different: Our drawn content is drawn to mContainerView, which
+-  // sits below this EffectView. So we must not clear the background here,
+-  // because we'd erase that drawn content.
+-  // Of course the regular content drawing still needs to clear the background
+-  // behind vibrant areas. This is taken care of by having nsNativeThemeCocoa
+-  // return true from NeedToClearBackgroundBehindWidget for vibrant widgets.
+-}
+-
+ static NSView*
+ HitTestNil(id self, SEL _cmd, NSPoint aPoint)
+ {
+@@ -103,21 +71,19 @@
+ static Class
+ CreateEffectViewClass(BOOL aForegroundVibrancy, BOOL aIsContainer)
+ {
+-  // Create a class called EffectView that inherits from NSVisualEffectView
+-  // and overrides the methods -[NSVisualEffectView drawRect:] and
+-  // -[NSView hitTest:].
++  // Create a class that inherits from NSVisualEffectView and overrides the
++  // methods -[NSView hitTest:] and  -[NSVisualEffectView allowsVibrancy].
+   Class NSVisualEffectViewClass = NSClassFromString(@"NSVisualEffectView");
+   const char* className = aForegroundVibrancy
+     ? "EffectViewWithForegroundVibrancy" : "EffectViewWithoutForegroundVibrancy";
+   Class EffectViewClass = objc_allocateClassPair(NSVisualEffectViewClass, className, 0);
+-  class_addMethod(EffectViewClass, @selector(drawRect:), (IMP)DrawRectNothing,
+-                  "v@:{CGRect={CGPoint=dd}{CGSize=dd}}");
+   if (!aIsContainer) {
++    // Make this view transparent to mouse events.
+     class_addMethod(EffectViewClass, @selector(hitTest:), (IMP)HitTestNil,
+                     "@@:{CGPoint=dd}");
+   }
+   if (aForegroundVibrancy) {
+-    // Also override the -[NSView allowsVibrancy] method to return YES.
++    // Override the -[NSView allowsVibrancy] method to return YES.
+     class_addMethod(EffectViewClass, @selector(allowsVibrancy), (IMP)AllowsVibrancyYes, "I@:");
+   }
+   return EffectViewClass;
+@@ -206,12 +172,19 @@
+ /* static */ NSView*
+ VibrancyManager::CreateEffectView(VibrancyType aType, BOOL aIsContainer)
+ {
+-  static Class EffectViewClasses[2][2] = {
+-    { CreateEffectViewClass(NO, NO), CreateEffectViewClass(NO, YES) },
+-    { CreateEffectViewClass(YES, NO), CreateEffectViewClass(YES, YES) }
+-  };
++  static Class EffectViewWithoutForegroundVibrancy = CreateEffectViewClass(NO, NO);
++  static Class EffectViewWithForegroundVibrancy = CreateEffectViewClass(YES, NO);
++  static Class EffectViewContainer = CreateEffectViewClass(NO, YES);
+ 
+-  Class EffectViewClass = EffectViewClasses[HasVibrantForeground(aType)][aIsContainer];
++  // Pick the right NSVisualEffectView subclass for the desired vibrancy mode.
++  // For "container" views, never use foreground vibrancy, because returning
++  // YES from allowsVibrancy forces on foreground vibrancy for all descendant
++  // views which can have unintended effects.
++  Class EffectViewClass = aIsContainer
++                              ? EffectViewContainer
++                              : (HasVibrantForeground(aType) ? EffectViewWithForegroundVibrancy
++                                                             : EffectViewWithoutForegroundVibrancy);
++
+   NSView* effectView = [[EffectViewClass alloc] initWithFrame:NSZeroRect];
+   [effectView performSelector:@selector(setAppearance:)
+                    withObject:AppearanceForVibrancyType(aType)];
+diff -r d8dd10ac5430 widget/cocoa/nsChildView.h
+--- a/widget/cocoa/nsChildView.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsChildView.h	Sun Jul 26 19:05:20 2020 -0400
+@@ -57,6 +57,8 @@
+ }  // namespace widget
+ }  // namespace mozilla
+ 
++@class PixelHostingView;
++
+ @interface NSEvent (Undocumented)
+ 
+ // Return Cocoa event's corresponding Carbon event.  Not initialized (on
+@@ -205,6 +207,15 @@
+   // CGContext painting (i.e. non-accelerated).
+   CGImageRef mTopLeftCornerMask;
+ 
++  // Subviews of self, which act as container views for vibrancy views and
++  // non-draggable views.
++  NSView* mVibrancyViewsContainer;      // [STRONG]
++  NSView* mNonDraggableViewsContainer;  // [STRONG]
++
++  // The view that does our drawing. This is a subview of self so that it can
++  // be ordered on top of mVibrancyViewsContainer.
++  PixelHostingView* mPixelHostingView;
++
+   // Last pressure stage by trackpad's force click
+   NSInteger mLastPressureStage;
+ }
+@@ -233,6 +244,10 @@
+ - (bool)preRender:(NSOpenGLContext*)aGLContext;
+ - (void)postRender:(NSOpenGLContext*)aGLContext;
+ 
++- (NSView*)vibrancyViewsContainer;
++- (NSView*)nonDraggableViewsContainer;
++- (NSView*)pixelHostingView;
++
+ - (BOOL)isCoveringTitlebar;
+ 
+ - (void)viewWillStartLiveResize;
+@@ -470,7 +485,6 @@
+ 
+   mozilla::widget::TextInputHandler* GetTextInputHandler() { return mTextInputHandler; }
+ 
+-  void ClearVibrantAreas();
+   NSColor* VibrancyFillColorForThemeGeometryType(nsITheme::ThemeGeometryType aThemeGeometryType);
+   NSColor* VibrancyFontSmoothingBackgroundColorForThemeGeometryType(
+       nsITheme::ThemeGeometryType aThemeGeometryType);
+diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
+--- a/widget/cocoa/nsChildView.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsChildView.mm	Sun Jul 26 19:05:20 2020 -0400
+@@ -162,6 +162,11 @@
+ static NSMutableDictionary* sNativeKeyEventsMap =
+   [NSMutableDictionary dictionary];
+ 
++// The view that will do our drawing or host our NSOpenGLContext or Core Animation layer.
++@interface PixelHostingView : NSView {
++}
++@end
++
+ @interface ChildView(Private)
+ 
+ // sets up our view, attaching it to its owning gecko view
+@@ -1004,8 +1009,9 @@
+     [mView setFrame:DevPixelsToCocoaPoints(mBounds)];
+   });
+ 
+-  if (mVisible && aRepaint)
+-    [mView setNeedsDisplay:YES];
++  if (mVisible && aRepaint) {
++    [[mView pixelHostingView] setNeedsDisplay:YES];
++  }
+ 
+   NotifyRollupGeometryChange();
+   ReportSizeEvent();
+@@ -1042,8 +1048,9 @@
+     [mView setFrame:DevPixelsToCocoaPoints(mBounds)];
+   });
+ 
+-  if (mVisible && aRepaint)
+-    [mView setNeedsDisplay:YES];
++  if (mVisible && aRepaint) {
++    [[mView pixelHostingView] setNeedsDisplay:YES];
++  }
+ 
+   NotifyRollupGeometryChange();
+   if (isMoving) {
+@@ -1409,10 +1416,10 @@
+   if ([NSView focusView]) {
+     // if a view is focussed (i.e. being drawn), then postpone the invalidate so that we
+     // don't lose it.
+-    [mView setNeedsPendingDisplayInRect:DevPixelsToCocoaPoints(aRect)];
++    [[mView pixelHostingView] setNeedsPendingDisplayInRect:DevPixelsToCocoaPoints(aRect)];
+   }
+   else {
+-    [mView setNeedsDisplayInRect:DevPixelsToCocoaPoints(aRect)];
++    [[mView pixelHostingView] setNeedsDisplayInRect:DevPixelsToCocoaPoints(aRect)];
+   }
+ 
+   NS_OBJC_END_TRY_ABORT_BLOCK;
+@@ -2659,14 +2666,6 @@
+   vm.UpdateVibrantRegion(VibrancyType::ACTIVE_SOURCE_LIST_SELECTION, activeSourceListSelectionRegion);
+ }
+ 
+-void
+-nsChildView::ClearVibrantAreas()
+-{
+-  if (VibrancyManager::SystemSupportsVibrancy()) {
+-    EnsureVibrancyManager().ClearVibrantAreas();
+-  }
+-}
+-
+ NSColor*
+ nsChildView::VibrancyFillColorForThemeGeometryType(nsITheme::ThemeGeometryType aThemeGeometryType)
+ {
+@@ -2684,7 +2683,7 @@
+ {
+   MOZ_ASSERT(mView, "Only call this once we have a view!");
+   if (!mVibrancyManager) {
+-    mVibrancyManager = MakeUnique<VibrancyManager>(*this, mView);
++    mVibrancyManager = MakeUnique<VibrancyManager>(*this, [mView vibrancyViewsContainer]);
+   }
+   return *mVibrancyManager;
+ }
+@@ -2855,9 +2854,10 @@
+ 
+   // Suppress calls to setNeedsDisplay during NSView geometry changes.
+   ManipulateViewWithoutNeedingDisplay(mView, ^() {
+-    changed = mNonDraggableRegion.UpdateRegion(nonDraggable, *this, mView, ^() {
+-      return [[NonDraggableView alloc] initWithFrame:NSZeroRect];
+-    });
++    changed = mNonDraggableRegion.UpdateRegion(
++        nonDraggable, *this, [mView nonDraggableViewsContainer], ^() {
++          return [[NonDraggableView alloc] initWithFrame:NSZeroRect];
++        });
+   });
+ 
+   if (changed) {
+@@ -3241,6 +3241,32 @@
+ 
+ #pragma mark -
+ 
++// ViewRegionContainerView is a view class for certain subviews of ChildView
++// which contain the NSViews created for ViewRegions (see ViewRegion.h).
++// It doesn't do anything interesting, it only acts as a container so that it's
++// easier for ChildView to control the z order of its children.
++@interface ViewRegionContainerView : NSView {
++}
++@end
++
++@implementation ViewRegionContainerView
++
++- (NSView*)hitTest:(NSPoint)aPoint {
++  return nil;  // Be transparent to mouse events.
++}
++
++- (BOOL)isFlipped {
++  return [[self superview] isFlipped];
++}
++
++- (BOOL)mouseDownCanMoveWindow {
++  return [[self superview] mouseDownCanMoveWindow];
++}
++
++@end
++;
++
++
+ @implementation ChildView
+ 
+ // globalDragPboard is non-null during native drag sessions that did not originate
+@@ -3313,6 +3339,20 @@
+     mCancelSwipeAnimation = nil;
+ #endif
+ 
++    mNonDraggableViewsContainer = [[ViewRegionContainerView alloc] initWithFrame:[self bounds]];
++    mVibrancyViewsContainer = [[ViewRegionContainerView alloc] initWithFrame:[self bounds]];
++
++    [mNonDraggableViewsContainer setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
++    [mVibrancyViewsContainer setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
++
++    [self addSubview:mNonDraggableViewsContainer];
++    [self addSubview:mVibrancyViewsContainer];
++
++    mPixelHostingView = [[PixelHostingView alloc] initWithFrame:[self bounds]];
++    [mPixelHostingView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
++
++    [self addSubview:mPixelHostingView];
++
+     mTopLeftCornerMask = NULL;
+     mLastPressureStage = 0;
+   }
+@@ -3340,7 +3380,7 @@
+   [[NSNotificationCenter defaultCenter] addObserver:self
+                                            selector:@selector(_surfaceNeedsUpdate:)
+                                                name:NSViewGlobalFrameDidChangeNotification
+-                                             object:self];
++                                             object:mPixelHostingView];
+ 
+   return self;
+ 
+@@ -3425,6 +3465,18 @@
+   NS_OBJC_END_TRY_ABORT_BLOCK;
+ }
+ 
++- (NSView*)vibrancyViewsContainer {
++  return mVibrancyViewsContainer;
++}
++
++- (NSView*)nonDraggableViewsContainer {
++  return mNonDraggableViewsContainer;
++}
++
++- (NSView*)pixelHostingView {
++  return mPixelHostingView;
++}
++
+ - (void)dealloc
+ {
+   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+@@ -3439,6 +3491,12 @@
+ 
+   [[NSNotificationCenter defaultCenter] removeObserver:self];
+   [[NSDistributedNotificationCenter defaultCenter] removeObserver:self];
++  [mVibrancyViewsContainer removeFromSuperview];
++  [mVibrancyViewsContainer release];
++  [mNonDraggableViewsContainer removeFromSuperview];
++  [mNonDraggableViewsContainer release];
++  [mPixelHostingView removeFromSuperview];
++  [mPixelHostingView release];
+ 
+   [super dealloc];
+ 
+@@ -3577,11 +3635,6 @@
+   return YES;
+ }
+ 
+-- (BOOL)isOpaque
+-{
+-  return [[self window] isOpaque];
+-}
+-
+ // We accept key and mouse events, so don't keep passing them up the chain. Allow
+ // this to be a 'focused' widget for event dispatch.
+ - (BOOL)acceptsFirstResponder
+@@ -3633,7 +3686,7 @@
+ 
+ -(void)updateGLContext
+ {
+-  [mGLContext setView:self];
++  [mGLContext setView:mPixelHostingView];
+   [mGLContext update];
+ }
+ 
+@@ -3646,11 +3699,6 @@
+   }
+ }
+ 
+-- (BOOL)wantsBestResolutionOpenGLSurface
+-{
+-  return nsCocoaUtils::HiDPIEnabled() ? YES : NO;
+-}
+-
+ - (void)viewDidChangeBackingProperties
+ {
+   [super viewDidChangeBackingProperties];
+@@ -3704,7 +3752,7 @@
+   LayoutDeviceIntRect boundingRect = mGeckoChild->CocoaPointsToDevPixels(aRect);
+   const NSRect *rects;
+   NSInteger count;
+-  [self getRectsBeingDrawn:&rects count:&count];
++  [mPixelHostingView getRectsBeingDrawn:&rects count:&count];
+ 
+   if (count > MAX_RECTS_IN_REGION) {
+     return boundingRect;
+@@ -3720,14 +3768,13 @@
+ 
+ // The display system has told us that a portion of our view is dirty. Tell
+ // gecko to paint it
+-- (void)drawRect:(NSRect)aRect
+-{
++// This method is called from mPixelHostingView's drawRect handler.
++- (void)doDrawRect:(NSRect)aRect {
+   CGContextRef cgContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+-  [self drawRect:aRect inContext:cgContext];
+-}
+-
+-- (void)drawRect:(NSRect)aRect inContext:(CGContextRef)aContext
+-{
++  [self doDrawRect:aRect inContext:cgContext];
++}
++
++- (void)doDrawRect:(NSRect)aRect inContext:(CGContextRef)aContext {
+   if (!NS_IsMainThread()) {
+     // In the presence of CoreAnimation, this method can sometimes be called on
+     // a non-main thread. Ignore those calls because Gecko can only react to
+@@ -3757,15 +3804,6 @@
+     // Paints that come through here are triggered by something that Cocoa
+     // controls, for example by window resizing or window focus changes.
+ 
+-    // Since this view is usually declared as opaque, the window's pixel
+-    // buffer may now contain garbage which we need to prevent from reaching
+-    // the screen. The only place where garbage can show is in the window
+-    // corners and the vibrant regions of the window - the rest of the window
+-    // is covered by opaque content in our OpenGL surface.
+-    // So we need to clear the pixel buffer contents in these areas.
+-    mGeckoChild->ClearVibrantAreas();
+-    [self clearCorners];
+-
+     // Do GL composition and return.
+     [self drawUsingOpenGL];
+     return;
+@@ -3791,7 +3829,7 @@
+   // CocoaPoints again.
+   CGContextRestoreGState(aContext);
+ 
+-  if (!painted && [self isOpaque]) {
++  if (!painted && [mPixelHostingView isOpaque]) {
+     // Gecko refused to draw, but we've claimed to be opaque, so we have to
+     // draw something--fill with white.
+     CGContextSetRGBFillColor(aContext, 1, 1, 1, 1);
+@@ -3883,36 +3921,6 @@
+   CGLUnlockContext((CGLContextObj)[mGLContext CGLContextObj]);
+ }
+ 
+-// Accelerated windows have two NSSurfaces:
+-//  (1) The window's pixel buffer in the back and
+-//  (2) the OpenGL view in the front.
+-// These two surfaces are composited by the window manager. Drawing into the
+-// CGContext which is provided by drawRect ends up in (1).
+-// When our window has rounded corners, the OpenGL view has transparent pixels
+-// in the corners. In these places the contents of the window's pixel buffer
+-// can show through. So we need to make sure that the pixel buffer is
+-// transparent in the corners so that no garbage reaches the screen.
+-// The contents of the pixel buffer in the rest of the window don't matter
+-// because they're covered by opaque pixels of the OpenGL context.
+-// Making the corners transparent works even though our window is
+-// declared "opaque" (in the NSWindow's isOpaque method).
+-- (void)clearCorners
+-{
+-  CGFloat radius = [self cornerRadius];
+-  CGFloat w = [self bounds].size.width, h = [self bounds].size.height;
+-  [[NSColor clearColor] set];
+-
+-  if ([self isCoveringTitlebar]) {
+-    NSRectFill(NSMakeRect(0, 0, radius, radius));
+-    NSRectFill(NSMakeRect(w - radius, 0, radius, radius));
+-  }
+-
+-  if ([self hasRoundedBottomCorners]) {
+-    NSRectFill(NSMakeRect(0, h - radius, radius, radius));
+-    NSRectFill(NSMakeRect(w - radius, h - radius, radius, radius));
+-  }
+-}
+-
+ // This is the analog of nsChildView::MaybeDrawRoundedCorners for CGContexts.
+ // We only need to mask the top corners here because Cocoa does the masking
+ // for the window's bottom corners automatically (starting with 10.7).
+@@ -6845,6 +6853,27 @@
+ 
+ @end
+ 
++@implementation PixelHostingView
++
++- (BOOL)isFlipped {
++  return YES;
++}
++
++- (NSView*)hitTest:(NSPoint)aPoint {
++  return nil;
++}
++
++- (void)drawRect:(NSRect)aRect {
++  [(ChildView*)[self superview] doDrawRect:aRect];
++}
++
++- (BOOL)wantsBestResolutionOpenGLSurface {
++  return nsCocoaUtils::HiDPIEnabled() ? YES : NO;
++}
++
++@end
++
++
+ #pragma mark -
+ 
+ void
+diff -r d8dd10ac5430 xpcom/build/BinaryPath.h
+--- a/xpcom/build/BinaryPath.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/xpcom/build/BinaryPath.h	Sun Jul 26 19:05:20 2020 -0400
+@@ -133,6 +133,45 @@
      return rv;
    }
  
@@ -31,8 +609,7 @@ diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
 +      return NS_ERROR_FAILURE;
 +    }
 +
-+    CFStringRef iniFilename = CFSTR("application.ini");
-+    CFURLRef iniURL = CFBundleCopyResourceURL(appBundle, iniFilename, NULL, NULL);
++    CFURLRef iniURL = CFBundleCopyResourceURL(appBundle, CFSTR("application.ini"), NULL, NULL);
 +    if (!iniURL) {
 +      return NS_ERROR_FAILURE;
 +    }
@@ -64,9 +641,9 @@ diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
 +  }
 +
  #elif defined(ANDROID)
-   static nsresult Get(char aResult[MAXPATHLEN])
-   {
-@@ -273,6 +313,19 @@ public:
+   static nsresult Get(char aResult[MAXPATHLEN]) {
+     // On Android, we use the GRE_HOME variable that is set by the Java
+@@ -261,6 +300,19 @@
      return result;
    }
  
@@ -84,5 +661,5 @@ diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
 +#endif
 +
  #ifdef MOZILLA_INTERNAL_API
-   static nsresult GetFile(nsIFile** aResult)
-   {
+   static nsresult GetFile(nsIFile** aResult) {
+     nsCOMPtr<nsIFile> lf;
