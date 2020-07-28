@@ -169,7 +169,7 @@ if [ $BUILD_MAC == 1 ]; then
 		set +e
 		hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
 		set -e
-		hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
+		hdiutil attach -quiet Firefox.dmg
 		cp -a /Volumes/Firefox/Firefox.app .
 		hdiutil detach -quiet /Volumes/Firefox
 	fi
