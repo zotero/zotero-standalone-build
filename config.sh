@@ -33,8 +33,7 @@ NOTARIZATION_PASSWORD=""
 NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
 
 # Paths for Windows installer build only necessary for signed binaries
-#SIGNTOOL='C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\signtool.exe'
-SIGNTOOL='C:\Program Files (x86)\Windows Kits\8.0\bin\x86\signtool.exe'
+SIGNTOOL='C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\signtool.exe'
 SIGNATURE_URL='https://www.zotero.org/'
 SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
 
