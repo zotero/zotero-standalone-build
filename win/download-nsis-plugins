@@ -41,7 +41,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 mkdir -p Plugins
 cd Plugins
-plugins="AccessControl AppAssocReg ApplicationID ShellLink UAC"
+plugins="AccessControl AppAssocReg ApplicationID InvokeShellVerb ShellLink UAC"
 for plugin in $plugins; do
 	curl https://hg.mozilla.org/mozilla-central/raw-file/052d53200cf8/other-licenses/nsis/Plugins/$plugin.dll > $plugin.dll
 done
