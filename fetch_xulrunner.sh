@@ -172,7 +172,7 @@ if [ $BUILD_MAC == 1 ]; then
 			echo "Using Firefox $GECKO_VERSION.app.zip"
 			unzip "Firefox $GECKO_VERSION.app.zip"
 		else
-			curl -O "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+			curl -o Firefox.dmg "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
 			set +e
 			hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
 			set -e
@@ -182,13 +182,30 @@ if [ $BUILD_MAC == 1 ]; then
 		fi
 	fi
 	
+	# Download custom components
+	echo
+	rm -rf MacOS
+	if [ -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
+		echo "Using Firefox $GECKO_VERSION MacOS.zip"
+		unzip "Firefox $GECKO_VERSION MacOS.zip"
+	else
+		echo "Downloading Firefox $GECKO_VERSION MacOS.zip"
+		curl -o MacOS.zip "${custom_components_url}Firefox%20$GECKO_VERSION%20MacOS.zip"
+		unzip MacOS.zip
+	fi
+	echo
+	
 	pushd Firefox.app/Contents/Resources
 	modify_omni mac
 	extract_devtools
 	popd
 	
 	if [[ $skip_download -eq 0 ]] && [[ ! -e "Firefox $GECKO_VERSION.app.zip" ]]; then
-		rm "Firefox%20$GECKO_VERSION.dmg"
+		rm "Firefox.dmg"
+	fi
+	
+	if [ ! -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
+		rm "MacOS.zip"
 	fi
 fi
 
