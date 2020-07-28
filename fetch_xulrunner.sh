@@ -27,7 +27,6 @@ function usage {
 Usage: $0 -p platforms [-s]
 Options
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
- -s                  Skip download; Firefox must already be extracted in xulrunner/ directory
 DONE
 	exit 1
 }
@@ -35,7 +34,6 @@ DONE
 BUILD_MAC=0
 BUILD_WIN32=0
 BUILD_LINUX=0
-skip_download=0
 while getopts "p:s" opt; do
 	case $opt in
 		p)
@@ -51,10 +49,6 @@ while getopts "p:s" opt; do
 						;;
 				esac
 			done
-			;;
-		
-		s)
-			skip_download=1
 			;;
 	esac
 	shift $((OPTIND-1)); OPTIND=1
@@ -165,21 +159,19 @@ cd xulrunner
 if [ $BUILD_MAC == 1 ]; then
 	GECKO_VERSION="$GECKO_VERSION_MAC"
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
-	if [ $skip_download -eq 0 ]; then
-		rm -rf Firefox.app
-		
-		if [ -e "Firefox $GECKO_VERSION.app.zip" ]; then
-			echo "Using Firefox $GECKO_VERSION.app.zip"
-			unzip "Firefox $GECKO_VERSION.app.zip"
-		else
-			curl -o Firefox.dmg "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
-			set +e
-			hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
-			set -e
-			hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
-			cp -a /Volumes/Firefox/Firefox.app .
-			hdiutil detach -quiet /Volumes/Firefox
-		fi
+	rm -rf Firefox.app
+	
+	if [ -e "Firefox $GECKO_VERSION.app.zip" ]; then
+		echo "Using Firefox $GECKO_VERSION.app.zip"
+		unzip "Firefox $GECKO_VERSION.app.zip"
+	else
+		curl -o Firefox.dmg "$DOWNLOAD_URL/mac/en-US/Firefox%20$GECKO_VERSION.dmg"
+		set +e
+		hdiutil detach -quiet /Volumes/Firefox 2>/dev/null
+		set -e
+		hdiutil attach -quiet "Firefox%20$GECKO_VERSION.dmg"
+		cp -a /Volumes/Firefox/Firefox.app .
+		hdiutil detach -quiet /Volumes/Firefox
 	fi
 	
 	# Download custom components
@@ -200,7 +192,7 @@ if [ $BUILD_MAC == 1 ]; then
 	extract_devtools
 	popd
 	
-	if [[ $skip_download -eq 0 ]] && [[ ! -e "Firefox $GECKO_VERSION.app.zip" ]]; then
+	if [ ! -e "Firefox $GECKO_VERSION.app.zip" ]; then
 		rm "Firefox.dmg"
 	fi
 	
@@ -215,63 +207,53 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	XDIR=firefox-win32
 	
-	if [ $skip_download -eq 0 ]; then
-		rm -rf $XDIR
-		mkdir $XDIR
-		
-		curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
-		
-		7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
-		mv $XDIR/core $XDIR-core
-		rm -rf $XDIR
-		mv $XDIR-core $XDIR
-	fi
+	rm -rf $XDIR
+	mkdir $XDIR
+	
+	curl -O "$DOWNLOAD_URL/win32/en-US/Firefox%20Setup%20$GECKO_VERSION.exe"
+	
+	7z x Firefox%20Setup%20$GECKO_VERSION.exe -o$XDIR 'core/*'
+	mv $XDIR/core $XDIR-core
+	rm -rf $XDIR
+	mv $XDIR-core $XDIR
 	
 	cd $XDIR
 	modify_omni win32
 	extract_devtools
 	cd ..
 	
-	if [ $skip_download -eq 0 ]; then
-		rm "Firefox%20Setup%20$GECKO_VERSION.exe"
-	fi
+	rm "Firefox%20Setup%20$GECKO_VERSION.exe"
 fi
 
 if [ $BUILD_LINUX == 1 ]; then
 	GECKO_VERSION="$GECKO_VERSION_LINUX"
 	DOWNLOAD_URL="https://ftp.mozilla.org/pub/firefox/releases/$GECKO_VERSION"
 	
-	if [ $skip_download -eq 0 ]; then
-		rm -rf firefox
-		
-		curl -O "$DOWNLOAD_URL/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
-		rm -rf firefox-i686
-		tar xvf firefox-$GECKO_VERSION.tar.bz2
-		mv firefox firefox-i686
-	fi
+	rm -rf firefox
+	
+	curl -O "$DOWNLOAD_URL/linux-i686/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	rm -rf firefox-i686
+	tar xvf firefox-$GECKO_VERSION.tar.bz2
+	mv firefox firefox-i686
 	
 	cd firefox-i686
 	modify_omni linux32
 	extract_devtools
 	cd ..
 	
-	if [ $skip_download -eq 0 ]; then
-		rm "firefox-$GECKO_VERSION.tar.bz2"
-		
-		curl -O "$DOWNLOAD_URL/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
-		rm -rf firefox-x86_64
-		tar xvf firefox-$GECKO_VERSION.tar.bz2
-		mv firefox firefox-x86_64
-	fi
+	rm "firefox-$GECKO_VERSION.tar.bz2"
+	
+	curl -O "$DOWNLOAD_URL/linux-x86_64/en-US/firefox-$GECKO_VERSION.tar.bz2"
+	rm -rf firefox-x86_64
+	tar xvf firefox-$GECKO_VERSION.tar.bz2
+	mv firefox firefox-x86_64
 	
 	cd firefox-x86_64
 	modify_omni linux64
 	extract_devtools
 	cd ..
 	
-	if [ $skip_download -eq 0 ]; then
-		rm "firefox-$GECKO_VERSION.tar.bz2"
-	fi
+	rm "firefox-$GECKO_VERSION.tar.bz2"
 fi
 
 echo Done
