@@ -171,17 +171,17 @@ if [ $BUILD_MAC == 1 ]; then
 	fi
 	
 	# Download custom components
-	echo
-	rm -rf MacOS
-	if [ -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
-		echo "Using Firefox $GECKO_VERSION MacOS.zip"
-		unzip "Firefox $GECKO_VERSION MacOS.zip"
-	else
-		echo "Downloading Firefox $GECKO_VERSION MacOS.zip"
-		curl -o MacOS.zip "${custom_components_url}Firefox%20$GECKO_VERSION%20MacOS.zip"
-		unzip MacOS.zip
-	fi
-	echo
+	#echo
+	#rm -rf MacOS
+	#if [ -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
+	#	echo "Using Firefox $GECKO_VERSION MacOS.zip"
+	#	unzip "Firefox $GECKO_VERSION MacOS.zip"
+	#else
+	#	echo "Downloading Firefox $GECKO_VERSION MacOS.zip"
+	#	curl -o MacOS.zip "${custom_components_url}Firefox%20$GECKO_VERSION%20MacOS.zip"
+	#	unzip MacOS.zip
+	#fi
+	#echo
 	
 	pushd Firefox.app/Contents/Resources
 	modify_omni mac
@@ -191,9 +191,9 @@ if [ $BUILD_MAC == 1 ]; then
 		rm "Firefox.dmg"
 	fi
 	
-	if [ ! -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
-		rm "MacOS.zip"
-	fi
+	#if [ ! -e "Firefox $GECKO_VERSION MacOS.zip" ]; then
+	#	rm "MacOS.zip"
+	#fi
 fi
 
 if [ $BUILD_WIN32 == 1 ]; then
