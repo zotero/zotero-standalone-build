@@ -1,6 +1,6 @@
 diff -r d8dd10ac5430 browser/app/nsBrowserApp.cpp
 --- a/browser/app/nsBrowserApp.cpp	Thu Aug 22 09:31:51 2019 +0200
-+++ b/browser/app/nsBrowserApp.cpp	Sun Jul 26 19:05:20 2020 -0400
++++ b/browser/app/nsBrowserApp.cpp	Sun Oct 25 04:26:20 2020 -0400
 @@ -147,7 +147,13 @@
  static int do_main(int argc, char* argv[], char* envp[]) {
    // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
@@ -16,9 +16,146 @@ diff -r d8dd10ac5430 browser/app/nsBrowserApp.cpp
    if ((!appDataFile || !*appDataFile) && (argc > 1 && IsArg(argv[1], "app"))) {
      if (argc == 2) {
        Output("Incorrect number of arguments passed to -app");
+diff -r d8dd10ac5430 dom/xul/nsXULElement.cpp
+--- a/dom/xul/nsXULElement.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/dom/xul/nsXULElement.cpp	Sun Oct 25 04:26:20 2020 -0400
+@@ -1051,24 +1051,11 @@
+           MaybeUpdatePrivateLifetime();
+         }
+       }
+-      // title, (in)activetitlebarcolor and drawintitlebar are settable on
++      // title and drawintitlebar are settable on
+       // any root node (windows, dialogs, etc)
+       if (document && document->GetRootElement() == this) {
+         if (aName == nsGkAtoms::title) {
+           document->NotifyPossibleTitleChange(false);
+-        } else if ((aName == nsGkAtoms::activetitlebarcolor ||
+-                    aName == nsGkAtoms::inactivetitlebarcolor)) {
+-          nscolor color = NS_RGBA(0, 0, 0, 0);
+-          if (aValue->Type() == nsAttrValue::eColor) {
+-            aValue->GetColorValue(color);
+-          } else {
+-            nsAutoString tmp;
+-            nsAttrValue attrValue;
+-            aValue->ToString(tmp);
+-            attrValue.ParseColor(tmp);
+-            attrValue.GetColorValue(color);
+-          }
+-          SetTitlebarColor(color, aName == nsGkAtoms::activetitlebarcolor);
+         } else if (aName == nsGkAtoms::drawintitlebar) {
+           SetDrawsInTitlebar(
+               aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
+@@ -1110,12 +1097,7 @@
+ 
+       nsIDocument* doc = GetUncomposedDoc();
+       if (doc && doc->GetRootElement() == this) {
+-        if ((aName == nsGkAtoms::activetitlebarcolor ||
+-             aName == nsGkAtoms::inactivetitlebarcolor)) {
+-          // Use 0, 0, 0, 0 as the "none" color.
+-          SetTitlebarColor(NS_RGBA(0, 0, 0, 0),
+-                           aName == nsGkAtoms::activetitlebarcolor);
+-        } else if (aName == nsGkAtoms::localedir) {
++        if (aName == nsGkAtoms::localedir) {
+           // if the localedir changed on the root element, reset the document
+           // direction
+           XULDocument* xuldoc = doc->AsXULDocument();
+@@ -1698,13 +1680,6 @@
+   return nullptr;
+ }
+ 
+-void nsXULElement::SetTitlebarColor(nscolor aColor, bool aActive) {
+-  nsIWidget* mainWidget = GetWindowWidget();
+-  if (mainWidget) {
+-    mainWidget->SetWindowTitlebarColor(aColor, aActive);
+-  }
+-}
+-
+ class SetDrawInTitleBarEvent : public Runnable {
+  public:
+   SetDrawInTitleBarEvent(nsIWidget* aWidget, bool aState)
+diff -r d8dd10ac5430 dom/xul/nsXULElement.h
+--- a/dom/xul/nsXULElement.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/dom/xul/nsXULElement.h	Sun Oct 25 04:26:20 2020 -0400
+@@ -625,7 +625,6 @@
+   nsresult HideWindowChrome(bool aShouldHide);
+   void SetChromeMargins(const nsAttrValue* aValue);
+   void ResetChromeMargins();
+-  void SetTitlebarColor(nscolor aColor, bool aActive);
+ 
+   void SetDrawsInTitlebar(bool aState);
+   void SetDrawsTitle(bool aState);
+diff -r d8dd10ac5430 gfx/gl/GLContext.cpp
+--- a/gfx/gl/GLContext.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/gfx/gl/GLContext.cpp	Sun Oct 25 04:26:20 2020 -0400
+@@ -699,17 +699,6 @@
+       MarkUnsupported(GLFeature::framebuffer_multisample);
+     }
+ 
+-#ifdef XP_MACOSX
+-    // The Mac Nvidia driver, for versions up to and including 10.8,
+-    // don't seem to properly support this.  See 814839
+-    // this has been fixed in Mac OS X 10.9. See 907946
+-    // and it also works in 10.8.3 and higher.  See 1094338.
+-    if (Vendor() == gl::GLVendor::NVIDIA &&
+-        !nsCocoaFeatures::IsAtLeastVersion(10, 8, 3)) {
+-      MarkUnsupported(GLFeature::depth_texture);
+-    }
+-#endif
+-
+     const auto versionStr = (const char*)fGetString(LOCAL_GL_VERSION);
+     if (strstr(versionStr, "Mesa")) {
+       // DrawElementsInstanced hangs the driver.
+@@ -831,8 +820,8 @@
+   raw_fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, mMaxViewportDims);
+ 
+ #ifdef XP_MACOSX
+-  if (mWorkAroundDriverBugs && nsCocoaFeatures::OSXVersionMajor() == 10 &&
+-      nsCocoaFeatures::OSXVersionMinor() < 12) {
++  if (mWorkAroundDriverBugs && nsCocoaFeatures::macOSVersionMajor() == 10 &&
++      nsCocoaFeatures::macOSVersionMinor() < 12) {
+     if (mVendor == GLVendor::Intel) {
+       // see bug 737182 for 2D textures, bug 684882 for cube map textures.
+       mMaxTextureSize = std::min(mMaxTextureSize, 4096);
+@@ -1646,8 +1635,8 @@
+     // textures with glCompressedTexSubImage2D. Works on Intel HD 4000
+     // and Intel HD 5000/Iris that I tested.
+     // Bug 1124996: Appears to be the same on OSX Yosemite (10.10)
+-    if (nsCocoaFeatures::OSXVersionMajor() == 10 &&
+-        nsCocoaFeatures::OSXVersionMinor() >= 9 &&
++    if (nsCocoaFeatures::macOSVersionMajor() == 10 &&
++        nsCocoaFeatures::macOSVersionMinor() >= 9 &&
+         Renderer() == GLRenderer::IntelHD3000) {
+       MarkExtensionUnsupported(EXT_texture_compression_s3tc);
+     }
+diff -r d8dd10ac5430 ipc/testshell/XPCShellEnvironment.cpp
+--- a/ipc/testshell/XPCShellEnvironment.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/ipc/testshell/XPCShellEnvironment.cpp	Sun Oct 25 04:26:20 2020 -0400
+@@ -55,7 +55,7 @@
+ static const char kDefaultRuntimeScriptFilename[] = "xpcshell.js";
+ 
+ inline XPCShellEnvironment*
+-Environment(Handle<JSObject*> global)
++Environment(JS::Handle<JSObject*> global)
+ {
+     AutoJSAPI jsapi;
+     if (!jsapi.Init(global)) {
+diff -r d8dd10ac5430 netwerk/protocol/http/nsHttpHandler.cpp
+--- a/netwerk/protocol/http/nsHttpHandler.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/netwerk/protocol/http/nsHttpHandler.cpp	Sun Oct 25 04:26:20 2020 -0400
+@@ -1039,8 +1039,8 @@
+ #elif defined(__i386__) || defined(__x86_64__)
+   mOscpu.AssignLiteral("Intel Mac OS X");
+ #endif
+-  SInt32 majorVersion = nsCocoaFeatures::OSXVersionMajor();
+-  SInt32 minorVersion = nsCocoaFeatures::OSXVersionMinor();
++  SInt32 majorVersion = nsCocoaFeatures::macOSVersionMajor();
++  SInt32 minorVersion = nsCocoaFeatures::macOSVersionMinor();
+   mOscpu += nsPrintfCString(" %d.%d", static_cast<int>(majorVersion),
+                             static_cast<int>(minorVersion));
+ #elif defined(XP_UNIX)
 diff -r d8dd10ac5430 nsprpub/pr/src/linking/prlink.c
 --- a/nsprpub/pr/src/linking/prlink.c	Thu Aug 22 09:31:51 2019 +0200
-+++ b/nsprpub/pr/src/linking/prlink.c	Sun Jul 26 19:05:20 2020 -0400
++++ b/nsprpub/pr/src/linking/prlink.c	Sun Oct 25 04:26:20 2020 -0400
 @@ -778,6 +778,9 @@
      int dl_flags = 0;
  #endif
@@ -73,9 +210,21 @@ diff -r d8dd10ac5430 nsprpub/pr/src/linking/prlink.c
  #else
      h = dlopen(name, dl_flags);
  #endif
+diff -r d8dd10ac5430 widget/cocoa/GfxInfo.mm
+--- a/widget/cocoa/GfxInfo.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/GfxInfo.mm	Sun Oct 25 04:26:20 2020 -0400
+@@ -113,7 +113,7 @@
+ 
+   AddCrashReportAnnotations();
+ 
+-  mOSXVersion = nsCocoaFeatures::OSXVersion();
++  mOSXVersion = nsCocoaFeatures::macOSVersion();
+ 
+   return rv;
+ }
 diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.h
 --- a/widget/cocoa/VibrancyManager.h	Thu Aug 22 09:31:51 2019 +0200
-+++ b/widget/cocoa/VibrancyManager.h	Sun Jul 26 19:05:20 2020 -0400
++++ b/widget/cocoa/VibrancyManager.h	Sun Oct 25 04:26:20 2020 -0400
 @@ -77,14 +77,6 @@
    bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
  
@@ -102,7 +251,7 @@ diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.h
    nsClassHashtable<nsUint32HashKey, ViewRegion> mVibrantRegions;
 diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.mm
 --- a/widget/cocoa/VibrancyManager.mm	Thu Aug 22 09:31:51 2019 +0200
-+++ b/widget/cocoa/VibrancyManager.mm	Sun Jul 26 19:05:20 2020 -0400
++++ b/widget/cocoa/VibrancyManager.mm	Sun Oct 25 04:26:20 2020 -0400
 @@ -24,24 +24,6 @@
    });
  }
@@ -209,9 +358,24 @@ diff -r d8dd10ac5430 widget/cocoa/VibrancyManager.mm
    NSView* effectView = [[EffectViewClass alloc] initWithFrame:NSZeroRect];
    [effectView performSelector:@selector(setAppearance:)
                     withObject:AppearanceForVibrancyType(aType)];
+diff -r d8dd10ac5430 widget/cocoa/nsAppShell.mm
+--- a/widget/cocoa/nsAppShell.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsAppShell.mm	Sun Oct 25 04:26:20 2020 -0400
+@@ -361,9 +361,8 @@
+   // The bug that this works around was introduced in OS X 10.10.0
+   // and fixed in OS X 10.10.2. Order these version checks so as
+   // few as possible will actually end up running.
+-  if (nsCocoaFeatures::OSXVersionMinor() == 10 &&
+-      nsCocoaFeatures::OSXVersionBugFix() < 2 &&
+-      nsCocoaFeatures::OSXVersionMajor() == 10) {
++  if (nsCocoaFeatures::macOSVersionMinor() == 10 && nsCocoaFeatures::macOSVersionBugFix() < 2 &&
++      nsCocoaFeatures::macOSVersionMajor() == 10) {
+     // Explicitly turn off CGEvent logging.  This works around bug 1092855.
+     // If there are already CGEvents in the log, turning off logging also
+     // causes those events to be written to disk.  But at this point no
 diff -r d8dd10ac5430 widget/cocoa/nsChildView.h
 --- a/widget/cocoa/nsChildView.h	Thu Aug 22 09:31:51 2019 +0200
-+++ b/widget/cocoa/nsChildView.h	Sun Jul 26 19:05:20 2020 -0400
++++ b/widget/cocoa/nsChildView.h	Sun Oct 25 04:26:20 2020 -0400
 @@ -57,6 +57,8 @@
  }  // namespace widget
  }  // namespace mozilla
@@ -258,7 +422,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.h
        nsITheme::ThemeGeometryType aThemeGeometryType);
 diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
 --- a/widget/cocoa/nsChildView.mm	Thu Aug 22 09:31:51 2019 +0200
-+++ b/widget/cocoa/nsChildView.mm	Sun Jul 26 19:05:20 2020 -0400
++++ b/widget/cocoa/nsChildView.mm	Sun Oct 25 04:26:20 2020 -0400
 @@ -162,6 +162,11 @@
  static NSMutableDictionary* sNativeKeyEventsMap =
    [NSMutableDictionary dictionary];
@@ -346,7 +510,53 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
    });
  
    if (changed) {
-@@ -3241,6 +3241,32 @@
+@@ -3029,37 +3029,6 @@
+   }
+ }
+ 
+-// When using 10.11, calling showDefinitionForAttributedString causes the
+-// following exception on LookupViewService. (rdar://26476091)
+-//
+-// Exception: decodeObjectForKey: class "TitlebarAndBackgroundColor" not
+-// loaded or does not exist
+-//
+-// So we set temporary color that is NSColor before calling it.
+-
+-class MOZ_RAII AutoBackgroundSetter final {
+-public:
+-  explicit AutoBackgroundSetter(NSView* aView) {
+-    if (nsCocoaFeatures::OnElCapitanOrLater() &&
+-        [[aView window] isKindOfClass:[ToolbarWindow class]]) {
+-      mWindow = [(ToolbarWindow*)[aView window] retain];
+-      [mWindow setTemporaryBackgroundColor];
+-    } else {
+-      mWindow = nullptr;
+-    }
+-  }
+-
+-  ~AutoBackgroundSetter() {
+-    if (mWindow) {
+-      [mWindow restoreBackgroundColor];
+-      [mWindow release];
+-    }
+-  }
+-
+-private:
+-  ToolbarWindow* mWindow; // strong
+-};
+-
+ void
+ nsChildView::LookUpDictionary(
+                const nsAString& aText,
+@@ -3085,7 +3054,6 @@
+     }
+   }
+ 
+-  AutoBackgroundSetter setter(mView);
+   [mView showDefinitionForAttributedString:attrStr atPoint:pt];
+ 
+   NS_OBJC_END_TRY_ABORT_BLOCK;
+@@ -3241,6 +3209,32 @@
  
  #pragma mark -
  
@@ -379,7 +589,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  @implementation ChildView
  
  // globalDragPboard is non-null during native drag sessions that did not originate
-@@ -3313,6 +3339,20 @@
+@@ -3313,6 +3307,20 @@
      mCancelSwipeAnimation = nil;
  #endif
  
@@ -400,7 +610,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
      mTopLeftCornerMask = NULL;
      mLastPressureStage = 0;
    }
-@@ -3340,7 +3380,7 @@
+@@ -3340,7 +3348,7 @@
    [[NSNotificationCenter defaultCenter] addObserver:self
                                             selector:@selector(_surfaceNeedsUpdate:)
                                                 name:NSViewGlobalFrameDidChangeNotification
@@ -409,7 +619,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  
    return self;
  
-@@ -3425,6 +3465,18 @@
+@@ -3425,6 +3433,18 @@
    NS_OBJC_END_TRY_ABORT_BLOCK;
  }
  
@@ -428,7 +638,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  - (void)dealloc
  {
    NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-@@ -3439,6 +3491,12 @@
+@@ -3439,6 +3459,12 @@
  
    [[NSNotificationCenter defaultCenter] removeObserver:self];
    [[NSDistributedNotificationCenter defaultCenter] removeObserver:self];
@@ -441,7 +651,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  
    [super dealloc];
  
-@@ -3577,11 +3635,6 @@
+@@ -3577,11 +3603,6 @@
    return YES;
  }
  
@@ -453,7 +663,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  // We accept key and mouse events, so don't keep passing them up the chain. Allow
  // this to be a 'focused' widget for event dispatch.
  - (BOOL)acceptsFirstResponder
-@@ -3633,7 +3686,7 @@
+@@ -3633,7 +3654,7 @@
  
  -(void)updateGLContext
  {
@@ -462,7 +672,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
    [mGLContext update];
  }
  
-@@ -3646,11 +3699,6 @@
+@@ -3646,11 +3667,6 @@
    }
  }
  
@@ -474,7 +684,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  - (void)viewDidChangeBackingProperties
  {
    [super viewDidChangeBackingProperties];
-@@ -3704,7 +3752,7 @@
+@@ -3704,7 +3720,7 @@
    LayoutDeviceIntRect boundingRect = mGeckoChild->CocoaPointsToDevPixels(aRect);
    const NSRect *rects;
    NSInteger count;
@@ -483,7 +693,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  
    if (count > MAX_RECTS_IN_REGION) {
      return boundingRect;
-@@ -3720,14 +3768,13 @@
+@@ -3720,14 +3736,13 @@
  
  // The display system has told us that a portion of our view is dirty. Tell
  // gecko to paint it
@@ -504,7 +714,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
    if (!NS_IsMainThread()) {
      // In the presence of CoreAnimation, this method can sometimes be called on
      // a non-main thread. Ignore those calls because Gecko can only react to
-@@ -3757,15 +3804,6 @@
+@@ -3757,15 +3772,6 @@
      // Paints that come through here are triggered by something that Cocoa
      // controls, for example by window resizing or window focus changes.
  
@@ -520,7 +730,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
      // Do GL composition and return.
      [self drawUsingOpenGL];
      return;
-@@ -3791,7 +3829,7 @@
+@@ -3791,7 +3797,7 @@
    // CocoaPoints again.
    CGContextRestoreGState(aContext);
  
@@ -529,7 +739,18 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
      // Gecko refused to draw, but we've claimed to be opaque, so we have to
      // draw something--fill with white.
      CGContextSetRGBFillColor(aContext, 1, 1, 1, 1);
-@@ -3883,36 +3921,6 @@
+@@ -3844,6 +3850,10 @@
+ 
+   mWaitingForPaint = NO;
+ 
++  // Make sure the window's "drawRect" buffer does not interfere with our
++  // OpenGL drawing's rounded corners.
++  [self clearCorners];
++
+   LayoutDeviceIntRect geckoBounds = mGeckoChild->GetBounds();
+   LayoutDeviceIntRegion region(geckoBounds);
+ 
+@@ -3883,21 +3893,23 @@
    CGLUnlockContext((CGLContextObj)[mGLContext CGLContextObj]);
  }
  
@@ -548,25 +769,27 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
 -// declared "opaque" (in the NSWindow's isOpaque method).
 -- (void)clearCorners
 -{
--  CGFloat radius = [self cornerRadius];
--  CGFloat w = [self bounds].size.width, h = [self bounds].size.height;
--  [[NSColor clearColor] set];
--
--  if ([self isCoveringTitlebar]) {
--    NSRectFill(NSMakeRect(0, 0, radius, radius));
--    NSRectFill(NSMakeRect(w - radius, 0, radius, radius));
--  }
--
--  if ([self hasRoundedBottomCorners]) {
--    NSRectFill(NSMakeRect(0, h - radius, radius, radius));
--    NSRectFill(NSMakeRect(w - radius, h - radius, radius, radius));
--  }
--}
--
- // This is the analog of nsChildView::MaybeDrawRoundedCorners for CGContexts.
- // We only need to mask the top corners here because Cocoa does the masking
- // for the window's bottom corners automatically (starting with 10.7).
-@@ -6845,6 +6853,27 @@
++// Our "accelerated" windows are NSWindows which are not CoreAnimation-backed
++// but contain an NSView with an attached NSOpenGLContext.
++// This means such windows have two WindowServer-level "surfaces" (NSSurface):
++//  (1) The window's "drawRect" contents (a main-memory backed buffer) in the
++//      back and
++//  (2) the OpenGL drawing in the front.
++// These two surfaces are composited by the window manager against our window's
++// backdrop, i.e. everything on the screen behind our window.
++// When our window has rounded corners, our OpenGL drawing respects those
++// rounded corners and will leave transparent pixels in the corners. In these
++// places the contents of the window's "drawRect" buffer can show through. So
++// we need to make sure that this buffer is transparent in the corners so that
++// the rounded corner anti-aliasing in the OpenGL context will blend directly
++// against the backdrop of the window.
++// We don't bother clearing parts of the window that are covered by opaque
++// pixels from the OpenGL context.
++- (void)clearCorners {
+   CGFloat radius = [self cornerRadius];
+   CGFloat w = [self bounds].size.width, h = [self bounds].size.height;
+   [[NSColor clearColor] set];
+@@ -6845,6 +6857,27 @@
  
  @end
  
@@ -594,9 +817,948 @@ diff -r d8dd10ac5430 widget/cocoa/nsChildView.mm
  #pragma mark -
  
  void
+diff -r d8dd10ac5430 widget/cocoa/nsCocoaFeatures.h
+--- a/widget/cocoa/nsCocoaFeatures.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsCocoaFeatures.h	Sun Oct 25 04:26:20 2020 -0400
+@@ -14,23 +14,25 @@
+ /// is the only call that returns the unadjusted values.
+ class nsCocoaFeatures {
+  public:
+-  static int32_t OSXVersion();
+-  static int32_t OSXVersionMajor();
+-  static int32_t OSXVersionMinor();
+-  static int32_t OSXVersionBugFix();
++  static int32_t macOSVersion();
++  static int32_t macOSVersionMajor();
++  static int32_t macOSVersionMinor();
++  static int32_t macOSVersionBugFix();
+   static bool OnYosemiteOrLater();
+   static bool OnElCapitanOrLater();
+   static bool OnSierraOrLater();
+   static bool OnHighSierraOrLater();
+   static bool OnMojaveOrLater();
++  static bool OnCatalinaOrLater();
++  static bool OnBigSurOrLater();
+ 
+   static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor,
+                                int32_t aBugFix = 0);
+ 
+   // These are utilities that do not change or depend on the value of
+-  // mOSXVersion and instead just encapsulate the encoding algorithm.  Note that
++  // mOSVersion and instead just encapsulate the encoding algorithm. Note that
+   // GetVersion actually adjusts to the lowest supported OS, so it will always
+-  // return a "supported" version.  GetSystemVersion does not make any
++  // return a "supported" version. GetSystemVersion does not make any
+   // modifications.
+   static void GetSystemVersion(int &aMajor, int &aMinor, int &aBugFix);
+   static int32_t GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix);
+@@ -39,9 +41,10 @@
+   static int32_t ExtractBugFixVersion(int32_t aVersion);
+ 
+  private:
++  nsCocoaFeatures() = delete;  // Prevent instantiation.
+   static void InitializeVersionNumbers();
+ 
+-  static int32_t mOSXVersion;
++  static int32_t mOSVersion;
+ };
+ 
+ // C-callable helper for cairo-quartz-font.c
+diff -r d8dd10ac5430 widget/cocoa/nsCocoaFeatures.mm
+--- a/widget/cocoa/nsCocoaFeatures.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsCocoaFeatures.mm	Sun Oct 25 04:26:20 2020 -0400
+@@ -3,24 +3,27 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+-// This file makes some assumptions about the versions of OS X.
+-// We are assuming that the minor and bugfix versions are less than 16.
++// This file makes some assumptions about the versions of macOS.
++// We are assuming that the major, minor and bugfix versions are each less than
++// 256.
+ // There are MOZ_ASSERTs for that.
+ 
+-// The formula for the version integer based on OS X version 10.minor.bugfix is
+-// 0x1000 + (minor << 4) + bugifix.  See AssembleVersion() below for major > 10.
+-// Major version < 10 is not allowed.
++// The formula for the version integer is (major << 16) + (minor << 8) + bugfix.
+ 
+-#define MAC_OS_X_VERSION_MASK      0x0000FFFF
+-#define MAC_OS_X_VERSION_10_0_HEX  0x00001000
+-#define MAC_OS_X_VERSION_10_7_HEX  0x00001070
+-#define MAC_OS_X_VERSION_10_8_HEX  0x00001080
+-#define MAC_OS_X_VERSION_10_9_HEX  0x00001090
+-#define MAC_OS_X_VERSION_10_10_HEX 0x000010A0
+-#define MAC_OS_X_VERSION_10_11_HEX 0x000010B0
+-#define MAC_OS_X_VERSION_10_12_HEX 0x000010C0
+-#define MAC_OS_X_VERSION_10_13_HEX 0x000010D0
+-#define MAC_OS_X_VERSION_10_14_HEX 0x000010E0
++#define MACOS_VERSION_MASK 0x00FFFFFF
++#define MACOS_MAJOR_VERSION_MASK 0x00FFFFFF
++#define MACOS_MINOR_VERSION_MASK 0x00FFFFFF
++#define MACOS_BUGFIX_VERSION_MASK 0x00FFFFFF
++#define MACOS_VERSION_10_0_HEX 0x000A0000
++#define MACOS_VERSION_10_9_HEX 0x000A0900
++#define MACOS_VERSION_10_10_HEX 0x000A0A00
++#define MACOS_VERSION_10_11_HEX 0x000A0B00
++#define MACOS_VERSION_10_12_HEX 0x000A0C00
++#define MACOS_VERSION_10_13_HEX 0x000A0D00
++#define MACOS_VERSION_10_14_HEX 0x000A0E00
++#define MACOS_VERSION_10_15_HEX 0x000A0F00
++#define MACOS_VERSION_10_16_HEX 0x000A1000
++#define MACOS_VERSION_11_0_HEX 0x000B0000
+ 
+ #include "nsCocoaFeatures.h"
+ #include "nsCocoaUtils.h"
+@@ -29,31 +32,31 @@
+ 
+ #import <Cocoa/Cocoa.h>
+ 
+-int32_t nsCocoaFeatures::mOSXVersion = 0;
++/*static*/ int32_t nsCocoaFeatures::mOSVersion = 0;
+ 
+ // This should not be called with unchecked aMajor, which should be >= 10.
+ inline int32_t AssembleVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix)
+ {
+     MOZ_ASSERT(aMajor >= 10);
+-    return MAC_OS_X_VERSION_10_0_HEX + (aMajor-10) * 0x100 + (aMinor << 4) + aBugFix;
++    return (aMajor << 16) + (aMinor << 8) + aBugFix;
+ }
+ 
+ int32_t nsCocoaFeatures::ExtractMajorVersion(int32_t aVersion)
+ {
+-    MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
+-    return ((aVersion & 0xFF00) - 0x1000) / 0x100 + 10;
++  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
++  return (aVersion & 0xFF0000) >> 16;
+ }
+ 
+ int32_t nsCocoaFeatures::ExtractMinorVersion(int32_t aVersion)
+ {
+-    MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
+-    return (aVersion & 0xF0) >> 4;
++  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
++  return (aVersion & 0xFF00) >> 8;
+ }
+ 
+ int32_t nsCocoaFeatures::ExtractBugFixVersion(int32_t aVersion)
+ {
+-    MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
+-    return aVersion & 0x0F;
++  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
++  return aVersion & 0xFF;
+ }
+ 
+ static int intAtStringIndex(NSArray *array, int index)
+@@ -67,6 +70,11 @@
+ 
+     NSString* versionString = [[NSDictionary dictionaryWithContentsOfFile:
+                                 @"/System/Library/CoreServices/SystemVersion.plist"] objectForKey:@"ProductVersion"];
++    if (!versionString) {
++      NS_ERROR("Couldn't read /System/Library/CoreServices/SystemVersion.plist to determine macOS "
++               "version.");
++      return;
++    }
+     NSArray* versions = [versionString componentsSeparatedByString:@"."];
+     NSUInteger count = [versions count];
+     if (count > 0) {
+@@ -82,26 +90,28 @@
+ 
+ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix)
+ {
+-    int32_t osxVersion;
++    int32_t macOSVersion;
+     if (aMajor < 10) {
+         aMajor = 10;
+-        NS_ERROR("Couldn't determine OS X version, assuming 10.7");
+-        osxVersion = MAC_OS_X_VERSION_10_7_HEX;
+-    } else if (aMinor < 7) {
+-        aMinor = 7;
+-        NS_ERROR("OS X version too old, assuming 10.7");
+-        osxVersion = MAC_OS_X_VERSION_10_7_HEX;
++        NS_ERROR("Couldn't determine macOS version, assuming 10.9");
++        macOSVersion = MACOS_VERSION_10_9_HEX;
++    } else if (aMajor == 10 && aMinor < 9) {
++        aMinor = 9;
++        NS_ERROR("macOS version too old, assuming 10.9");
++        macOSVersion = MACOS_VERSION_10_9_HEX;
+     } else {
+-        MOZ_ASSERT(aMajor == 10); // For now, even though we're ready...
+-        MOZ_ASSERT(aMinor < 16);
++        MOZ_ASSERT(aMajor >= 10);
++        MOZ_ASSERT(aMajor < 256);
++        MOZ_ASSERT(aMinor >= 0);
++        MOZ_ASSERT(aMinor < 256);
+         MOZ_ASSERT(aBugFix >= 0);
+-        MOZ_ASSERT(aBugFix < 16);
+-        osxVersion = AssembleVersion(aMajor, aMinor, aBugFix);
++        MOZ_ASSERT(aBugFix < 256);
++        macOSVersion = AssembleVersion(aMajor, aMinor, aBugFix);
+     }
+-    MOZ_ASSERT(aMajor == ExtractMajorVersion(osxVersion));
+-    MOZ_ASSERT(aMinor == ExtractMinorVersion(osxVersion));
+-    MOZ_ASSERT(aBugFix == ExtractBugFixVersion(osxVersion));
+-    return osxVersion;
++    MOZ_ASSERT(aMajor == ExtractMajorVersion(macOSVersion));
++    MOZ_ASSERT(aMinor == ExtractMinorVersion(macOSVersion));
++    MOZ_ASSERT(aBugFix == ExtractBugFixVersion(macOSVersion));
++    return macOSVersion;
+ }
+ 
+ /*static*/ void
+@@ -115,64 +125,55 @@
+ 
+     int major, minor, bugfix;
+     GetSystemVersion(major, minor, bugfix);
+-    mOSXVersion = GetVersion(major, minor, bugfix);
++    mOSVersion = GetVersion(major, minor, bugfix);
+ 
+     NS_OBJC_END_TRY_ABORT_BLOCK;
+ }
+ 
+-/* static */ int32_t
+-nsCocoaFeatures::OSXVersion()
+-{
++/* static */ int32_t nsCocoaFeatures::macOSVersion() {
+     // Don't let this be called while we're first setting the value...
+-    MOZ_ASSERT((mOSXVersion & MAC_OS_X_VERSION_MASK) >= 0);
+-    if (!mOSXVersion) {
+-        mOSXVersion = -1;
++    MOZ_ASSERT((mOSVersion & MACOS_VERSION_MASK) >= 0);
++    if (!mOSVersion) {
++        mOSVersion = -1;
+         InitializeVersionNumbers();
+     }
+-    return mOSXVersion;
++    return mOSVersion;
+ }
+ 
+-/* static */ int32_t
+-nsCocoaFeatures::OSXVersionMajor()
+-{
+-    MOZ_ASSERT((OSXVersion() & MAC_OS_X_VERSION_10_0_HEX) == MAC_OS_X_VERSION_10_0_HEX);
+-    return 10;
++/* static */ int32_t nsCocoaFeatures::macOSVersionMajor() {
++  return ExtractMajorVersion(macOSVersion());
+ }
+ 
+-/* static */ int32_t
+-nsCocoaFeatures::OSXVersionMinor()
+-{
+-    return ExtractMinorVersion(OSXVersion());
++/* static */ int32_t nsCocoaFeatures::macOSVersionMinor() {
++  return ExtractMinorVersion(macOSVersion());
+ }
+ 
+-/* static */ int32_t
+-nsCocoaFeatures::OSXVersionBugFix()
+-{
+-    return ExtractBugFixVersion(OSXVersion());
++/* static */ int32_t nsCocoaFeatures::macOSVersionBugFix() {
++  return ExtractBugFixVersion(macOSVersion());
+ }
+ 
+ /* static */ bool
+ nsCocoaFeatures::OnYosemiteOrLater()
+ {
+-    return (OSXVersion() >= MAC_OS_X_VERSION_10_10_HEX);
++    return (macOSVersion() >= MACOS_VERSION_10_10_HEX);
+ }
+ 
+ /* static */ bool
+ nsCocoaFeatures::OnElCapitanOrLater()
+ {
+-    return (OSXVersion() >= MAC_OS_X_VERSION_10_11_HEX);
++    return (macOSVersion() >= MACOS_VERSION_10_11_HEX);
+ }
+ 
+ /* static */ bool
+ nsCocoaFeatures::OnSierraOrLater()
+ {
+-    return (OSXVersion() >= MAC_OS_X_VERSION_10_12_HEX);
++    return (macOSVersion() >= MACOS_VERSION_10_12_HEX);
+ }
+ 
+ /* static */ bool
+ nsCocoaFeatures::OnHighSierraOrLater()
+ {
+-    return (OSXVersion() >= MAC_OS_X_VERSION_10_13_HEX);
++    return (macOSVersion() >= MACOS_VERSION_10_13_HEX);
+ }
+ 
+ /* Version of OnSierraOrLater as a global function callable from C (cairo) */
+@@ -185,11 +186,22 @@
+ /* static */ bool
+ nsCocoaFeatures::OnMojaveOrLater()
+ {
+-    return (OSXVersion() >= MAC_OS_X_VERSION_10_14_HEX);
++    return (macOSVersion() >= MACOS_VERSION_10_14_HEX);
++}
++
++/* static */ bool nsCocoaFeatures::OnCatalinaOrLater() {
++    return (macOSVersion() >= MACOS_VERSION_10_15_HEX);
++}
++
++/* static */ bool nsCocoaFeatures::OnBigSurOrLater() {
++  // Account for the version being 10.16 (which occurs when the
++  // application is linked with an older SDK) or 11.0 on Big Sur.
++  return ((macOSVersion() >= MACOS_VERSION_10_16_HEX) ||
++          (macOSVersion() >= MACOS_VERSION_11_0_HEX));
+ }
+ 
+ /* static */ bool
+ nsCocoaFeatures::IsAtLeastVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix)
+ {
+-    return OSXVersion() >= GetVersion(aMajor, aMinor, aBugFix);
++    return macOSVersion() >= GetVersion(aMajor, aMinor, aBugFix);
+ }
+diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.h
+--- a/widget/cocoa/nsCocoaWindow.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsCocoaWindow.h	Sun Oct 25 04:26:20 2020 -0400
+@@ -37,8 +37,6 @@
+   // Data Storage
+   NSMutableDictionary* mState;
+   BOOL mDrawsIntoWindowFrame;
+-  NSColor* mActiveTitlebarColor;
+-  NSColor* mInactiveTitlebarColor;
+ 
+   // Invalidation disabling
+   BOOL mDisabledNeedsDisplay;
+@@ -57,8 +55,6 @@
+ - (NSMutableDictionary*)exportState;
+ - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
+ - (BOOL)drawsContentsIntoWindowFrame;
+-- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive;
+-- (NSColor*)titlebarColorForActiveWindow:(BOOL)aActive;
+ 
+ - (void)mouseEntered:(NSEvent*)aEvent;
+ - (void)mouseExited:(NSEvent*)aEvent;
+@@ -170,15 +166,11 @@
+ 
+ // NSWindow subclass for handling windows with toolbars.
+ @interface ToolbarWindow : BaseWindow {
+-  TitlebarAndBackgroundColor* mColor;  // strong
+   CGFloat mUnifiedToolbarHeight;
+-  NSColor* mBackgroundColor;  // strong
+-  NSView* mTitlebarView;      // strong
++  CGFloat mSheetAttachmentPosition;
+   NSRect mWindowButtonsRect;
+   NSRect mFullScreenButtonRect;
+ }
+-// Pass nil here to get the default appearance.
+-- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive;
+ - (void)setUnifiedToolbarHeight:(CGFloat)aHeight;
+ - (CGFloat)unifiedToolbarHeight;
+ - (CGFloat)titlebarHeight;
+@@ -187,12 +179,11 @@
+ - (void)setTitlebarNeedsDisplayInRect:(NSRect)aRect;
+ - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
+ - (void)setSheetAttachmentPosition:(CGFloat)aY;
++- (CGFloat)sheetAttachmentPosition;
+ - (void)placeWindowButtons:(NSRect)aRect;
+ - (void)placeFullScreenButton:(NSRect)aRect;
+ - (NSPoint)windowButtonsPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
+ - (NSPoint)fullScreenButtonPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
+-- (void)setTemporaryBackgroundColor;
+-- (void)restoreBackgroundColor;
+ @end
+ 
+ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
+@@ -294,7 +285,6 @@
+   virtual void SetDrawsTitle(bool aDrawTitle) override;
+   virtual void SetUseBrightTitlebarForeground(bool aBrightForeground) override;
+   virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) override;
+-  virtual void SetWindowTitlebarColor(nscolor aColor, bool aActive) override;
+   virtual void SetDrawsInTitlebar(bool aState) override;
+   virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) override;
+   virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
+@@ -340,6 +330,7 @@
+                 bool aConstrainToCurrentScreen);
+ 
+   inline bool ShouldToggleNativeFullscreen(bool aFullScreen, bool aUseSystemTransition);
++  void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
+   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
+ 
+   virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
+diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
+--- a/widget/cocoa/nsCocoaWindow.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsCocoaWindow.mm	Sun Oct 25 04:26:20 2020 -0400
+@@ -1452,9 +1452,16 @@
+ }
+ @end
+ 
++static bool AlwaysUsesNativeFullScreen() {
++  return true;
++}
++
+ /* virtual */ bool
+ nsCocoaWindow::PrepareForFullscreenTransition(nsISupports** aData)
+ {
++  if (AlwaysUsesNativeFullScreen()) {
++    return false;
++  }
+   nsCOMPtr<nsIScreen> widgetScreen = GetWidgetScreen();
+   NSScreen* cocoaScreen = ScreenHelperCocoa::CocoaScreenForScreen(widgetScreen);
+ 
+@@ -1510,11 +1517,18 @@
+   if (mWidgetListener) {
+     mWidgetListener->FullscreenWillChange(aFullScreen);
+   }
++  // Update the state to full screen when we are entering, so that we switch to
++  // full screen view as soon as possible.
++  UpdateFullscreenState(aFullScreen, true);
+ }
+ 
+ void nsCocoaWindow::EnteredFullScreen(bool aFullScreen, bool aNativeMode)
+ {
+   mInFullScreenTransition = false;
++  UpdateFullscreenState(aFullScreen, aNativeMode);
++}
++
++void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
+   bool wasInFullscreen = mInFullScreenMode;
+   mInFullScreenMode = aFullScreen;
+   if (aNativeMode || mInNativeFullScreenMode) {
+@@ -1550,7 +1564,7 @@
+ nsresult
+ nsCocoaWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen)
+ {
+-  return DoMakeFullScreen(aFullScreen, false);
++  return DoMakeFullScreen(aFullScreen, AlwaysUsesNativeFullScreen());
+ }
+ 
+ nsresult
+@@ -2160,8 +2174,8 @@
+   //
+   // This is the same thing the windows widget does, but we probably should fix
+   // that, see bug 1445738.
+-  unsigned int features = [mWindow styleMask];
+-  NSRect inflatedRect = [NSWindow frameRectForContentRect:rect styleMask:features];
++  NSUInteger styleMask = [mWindow styleMask];
++  NSRect inflatedRect = [NSWindow frameRectForContentRect:rect styleMask:styleMask];
+   r = nsCocoaUtils::CocoaRectToGeckoRectDevPix(inflatedRect, backingScale);
+   return r.Size();
+ 
+@@ -2442,44 +2456,6 @@
+   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+ }
+ 
+-void
+-nsCocoaWindow::SetWindowTitlebarColor(nscolor aColor, bool aActive)
+-{
+-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+-
+-  if (!mWindow)
+-    return;
+-
+-  // If they pass a color with a complete transparent alpha component, use the
+-  // native titlebar appearance.
+-  if (NS_GET_A(aColor) == 0) {
+-    [mWindow setTitlebarColor:nil forActiveWindow:(BOOL)aActive]; 
+-  } else {
+-    // Transform from sRGBA to monitor RGBA. This seems like it would make trying
+-    // to match the system appearance lame, so probably we just shouldn't color 
+-    // correct chrome.
+-    if (gfxPlatform::GetCMSMode() == eCMSMode_All) {
+-      qcms_transform *transform = gfxPlatform::GetCMSRGBATransform();
+-      if (transform) {
+-        uint8_t color[3];
+-        color[0] = NS_GET_R(aColor);
+-        color[1] = NS_GET_G(aColor);
+-        color[2] = NS_GET_B(aColor);
+-        qcms_transform_data(transform, color, color, 1);
+-        aColor = NS_RGB(color[0], color[1], color[2]);
+-      }
+-    }
+-
+-    [mWindow setTitlebarColor:[NSColor colorWithDeviceRed:NS_GET_R(aColor)/255.0
+-                                                    green:NS_GET_G(aColor)/255.0
+-                                                     blue:NS_GET_B(aColor)/255.0
+-                                                    alpha:NS_GET_A(aColor)/255.0]
+-              forActiveWindow:(BOOL)aActive];
+-  }
+-
+-  NS_OBJC_END_TRY_ABORT_BLOCK;
+-}
+-
+ void nsCocoaWindow::SetDrawsInTitlebar(bool aState)
+ {
+   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+@@ -2673,6 +2649,23 @@
+   mGeckoWindow->ReportMoveEvent();
+ }
+ 
++// Don't use this for Zotero, since we don't play video and skipping the animation is jarring
++//
++//- (NSArray<NSWindow*>*)customWindowsToEnterFullScreenForWindow:(NSWindow*)window {
++//  //return AlwaysUsesNativeFullScreen() ? @[ window ] : nil;
++//  return AlwaysUsesNativeFullScreen() ? @[ window ] : nil;
++//}
++//
++//- (void)window:(NSWindow*)window
++//    startCustomAnimationToEnterFullScreenOnScreen:(NSScreen*)screen
++//                                     withDuration:(NSTimeInterval)duration {
++//  // Immediately switch to cover full screen, so we don't show the default
++//  // transition effect which stops video from playing.
++//  // XXX Is it possible to simulate the native transition effect without
++//  //     triggering content size change?
++//  [window setFrame:[screen frame] display:YES];
++//}
++
+ - (void)windowWillEnterFullScreen:(NSNotification *)notification
+ {
+   if (!mGeckoWindow) {
+@@ -2962,6 +2955,7 @@
+ - (NSPoint)FrameView__closeButtonOrigin;
+ - (NSPoint)FrameView__fullScreenButtonOrigin;
+ - (BOOL)FrameView__wantsFloatingTitlebar;
++- (NSRect)FrameView__unifiedToolbarFrame;
+ @end
+ 
+ @implementation NSView(FrameViewMethodSwizzling)
+@@ -2989,6 +2983,19 @@
+   return NO;
+ }
+ 
++- (NSRect)FrameView__unifiedToolbarFrame
++{
++  NSRect defaultFrame = [self FrameView__unifiedToolbarFrame];
++  if ([[self window] isKindOfClass:[ToolbarWindow class]]) {
++    CGFloat unifiedToolbarHeight = [(ToolbarWindow*)[self window] unifiedToolbarHeight];
++    CGFloat topEdge = NSMaxY(defaultFrame);
++    CGFloat bottomEdge = topEdge - unifiedToolbarHeight;
++    return NSMakeRect(defaultFrame.origin.x, bottomEdge,
++                      defaultFrame.size.width, unifiedToolbarHeight);
++  }
++  return defaultFrame;
++}
++
+ @end
+ 
+ static NSMutableSet *gSwizzledFrameViewClasses = nil;
+@@ -3066,6 +3073,9 @@
+   static IMP our_wantsFloatingTitlebar =
+     class_getMethodImplementation([NSView class],
+                                   @selector(FrameView__wantsFloatingTitlebar));
++  static IMP our_unifiedToolbarFrame =
++    class_getMethodImplementation([NSView class],
++                                  @selector(FrameView__unifiedToolbarFrame));
+ 
+   if (![gSwizzledFrameViewClasses containsObject:frameViewClass]) {
+     // Either of these methods might be implemented in both a subclass of
+@@ -3088,14 +3098,33 @@
+       nsToolkit::SwizzleMethods(frameViewClass, @selector(_fullScreenButtonOrigin),
+                                 @selector(FrameView__fullScreenButtonOrigin));
+     }
++    // Override the _wantsFloatingTitlebar method to return NO, because it works around multiple
++    // problems:
++    // When we're not using CoreAnimation, the "floating titlebar" overlaps in a glitchy way with
++    // the NSOpenGLContext when we're drawing in the titlebar. These glitches do not happen when we
++    // use CoreAnimation.
++    // An additional problem appears in builds that link against the 10.14 SDK: In windows where
++    // _wantsFloatingTitlebar returns YES, the root NSView contains an additional view that provides
++    // a window background. This confuses our setContentView override which will place the content
++    // view *below* that background view, effectively hiding the content view completely.
++    // The floating titlebar view also slightly clips the bottom of the window buttons which we
++    // forcefully move down with our override of _closeButtonOrigin.
++    // See bug 1576391 for the removal of the _wantsFloatingTitlebar override.
+     IMP _wantsFloatingTitlebar =
+-      class_getMethodImplementation(frameViewClass,
+-                                    @selector(_wantsFloatingTitlebar));
+-    if (_wantsFloatingTitlebar &&
+-        _wantsFloatingTitlebar != our_wantsFloatingTitlebar) {
++        class_getMethodImplementation(frameViewClass, @selector(_wantsFloatingTitlebar));
++    if (_wantsFloatingTitlebar && _wantsFloatingTitlebar != our_wantsFloatingTitlebar &&
++        !nsCocoaFeatures::OnBigSurOrLater()) {
+       nsToolkit::SwizzleMethods(frameViewClass, @selector(_wantsFloatingTitlebar),
+                                 @selector(FrameView__wantsFloatingTitlebar));
+     }
++    IMP _unifiedToolbarFrame =
++      class_getMethodImplementation(frameViewClass,
++                                    @selector(_unifiedToolbarFrame));
++    if (_unifiedToolbarFrame &&
++        _unifiedToolbarFrame != our_unifiedToolbarFrame) {
++      nsToolkit::SwizzleMethods(frameViewClass, @selector(_unifiedToolbarFrame),
++                                @selector(FrameView__unifiedToolbarFrame));
++    }
+     [gSwizzledFrameViewClasses addObject:frameViewClass];
+   }
+ 
+@@ -3107,8 +3136,6 @@
+   mDrawsIntoWindowFrame = NO;
+   [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag];
+   mState = nil;
+-  mActiveTitlebarColor = nil;
+-  mInactiveTitlebarColor = nil;
+   mDisabledNeedsDisplay = NO;
+   mTrackingArea = nil;
+   mDirtyRect = NSZeroRect;
+@@ -3198,8 +3225,6 @@
+ 
+ - (void)dealloc
+ {
+-  [mActiveTitlebarColor release];
+-  [mInactiveTitlebarColor release];
+   [self removeTrackingArea];
+   ChildViewMouseTracker::OnDestroyWindow(self);
+   [super dealloc];
+@@ -3207,8 +3232,6 @@
+ 
+ static const NSString* kStateTitleKey = @"title";
+ static const NSString* kStateDrawsContentsIntoWindowFrameKey = @"drawsContentsIntoWindowFrame";
+-static const NSString* kStateActiveTitlebarColorKey = @"activeTitlebarColor";
+-static const NSString* kStateInactiveTitlebarColorKey = @"inactiveTitlebarColor";
+ static const NSString* kStateShowsToolbarButton = @"showsToolbarButton";
+ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
+ 
+@@ -3218,8 +3241,6 @@
+     [self setTitle:title];
+   }
+   [self setDrawsContentsIntoWindowFrame:[[aState objectForKey:kStateDrawsContentsIntoWindowFrameKey] boolValue]];
+-  [self setTitlebarColor:[aState objectForKey:kStateActiveTitlebarColorKey] forActiveWindow:YES];
+-  [self setTitlebarColor:[aState objectForKey:kStateInactiveTitlebarColorKey] forActiveWindow:NO];
+   [self setShowsToolbarButton:[[aState objectForKey:kStateShowsToolbarButton] boolValue]];
+   [self setCollectionBehavior:[[aState objectForKey:kStateCollectionBehavior] unsignedIntValue]];
+ }
+@@ -3232,14 +3253,6 @@
+   }
+   [state setObject:[NSNumber numberWithBool:[self drawsContentsIntoWindowFrame]]
+             forKey:kStateDrawsContentsIntoWindowFrameKey];
+-  NSColor* activeTitlebarColor = [self titlebarColorForActiveWindow:YES];
+-  if (activeTitlebarColor) {
+-    [state setObject:activeTitlebarColor forKey:kStateActiveTitlebarColorKey];
+-  }
+-  NSColor* inactiveTitlebarColor = [self titlebarColorForActiveWindow:NO];
+-  if (inactiveTitlebarColor) {
+-    [state setObject:inactiveTitlebarColor forKey:kStateInactiveTitlebarColorKey];
+-  }
+   [state setObject:[NSNumber numberWithBool:[self showsToolbarButton]]
+             forKey:kStateShowsToolbarButton];
+   [state setObject:[NSNumber numberWithUnsignedInt: [self collectionBehavior]]
+@@ -3290,24 +3303,6 @@
+   return mBrightTitlebarForeground;
+ }
+ 
+-// Pass nil here to get the default appearance.
+-- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive
+-{
+-  [aColor retain];
+-  if (aActive) {
+-    [mActiveTitlebarColor release];
+-    mActiveTitlebarColor = aColor;
+-  } else {
+-    [mInactiveTitlebarColor release];
+-    mInactiveTitlebarColor = aColor;
+-  }
+-}
+-
+-- (NSColor*)titlebarColorForActiveWindow:(BOOL)aActive
+-{
+-  return aActive ? mActiveTitlebarColor : mInactiveTitlebarColor;
+-}
+-
+ - (NSView*)trackingAreaView
+ {
+   NSView* contentView = [self contentView];
+@@ -3542,19 +3537,7 @@
+ 
+ // This class allows us to exercise control over the window's title bar. This
+ // allows for a "unified toolbar" look without having to extend the content
+-// area into the title bar. It works like this:
+-// 1) We set the window's style to textured.
+-// 2) Because of this, the background color applies to the entire window, including
+-//     the titlebar area. For normal textured windows, the default pattern is a 
+-//    "brushed metal" image on Tiger and a unified gradient on Leopard.
+-// 3) We set the background color to a custom NSColor subclass that knows how tall the window is.
+-//    When -set is called on it, it sets a pattern (with a draw callback) as the fill. In that callback,
+-//    it paints the the titlebar and background colors in the correct areas of the context it's given,
+-//    which will fill the entire window (CG will tile it horizontally for us).
+-// 4) Whenever the window's main state changes and when [window display] is called,
+-//    Cocoa redraws the titlebar using the patternDraw callback function.
+-//
+-// This class also provides us with a pill button to show/hide the toolbar up to 10.6.
++// area into the title bar.
+ //
+ // Drawing the unified gradient in the titlebar and the toolbar works like this:
+ // 1) In the style sheet we set the toolbar's -moz-appearance to toolbar.
+@@ -3587,11 +3570,6 @@
+ 
+   aStyle = aStyle | NSTexturedBackgroundWindowMask;
+   if ((self = [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag])) {
+-    mColor = [[TitlebarAndBackgroundColor alloc] initWithWindow:self];
+-    // Bypass our guard method below.
+-    [super setBackgroundColor:mColor];
+-    mBackgroundColor = [[NSColor whiteColor] retain];
+-
+     mUnifiedToolbarHeight = 22.0f;
+     mWindowButtonsRect = NSZeroRect;
+     mFullScreenButtonRect = NSZeroRect;
+@@ -3609,47 +3587,6 @@
+   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+ }
+ 
+-- (void)dealloc
+-{
+-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+-
+-  [super setBackgroundColor:[NSColor whiteColor]];
+-  [mColor release];
+-  [mBackgroundColor release];
+-  [mTitlebarView release];
+-  [super dealloc];
+-
+-  NS_OBJC_END_TRY_ABORT_BLOCK;
+-}
+-
+-- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive
+-{
+-  [super setTitlebarColor:aColor forActiveWindow:aActive];
+-  [self setTitlebarNeedsDisplayInRect:[self titlebarRect]];
+-}
+-
+-- (void)setBackgroundColor:(NSColor*)aColor
+-{
+-  [aColor retain];
+-  [mBackgroundColor release];
+-  mBackgroundColor = aColor;
+-}
+-
+-- (NSColor*)windowBackgroundColor
+-{
+-  return mBackgroundColor;
+-}
+-
+-- (void)setTemporaryBackgroundColor
+-{
+-  [super setBackgroundColor:[NSColor whiteColor]];
+-}
+-
+-- (void)restoreBackgroundColor
+-{
+-  [super setBackgroundColor:mBackgroundColor];
+-}
+-
+ - (void)setTitlebarNeedsDisplayInRect:(NSRect)aRect
+ {
+   [self setTitlebarNeedsDisplayInRect:aRect sync:NO];
+@@ -3878,87 +3815,6 @@
+ 
+ @end
+ 
+-// Custom NSColor subclass where most of the work takes place for drawing in
+-// the titlebar area. Not used in drawsContentsIntoWindowFrame mode.
+-@implementation TitlebarAndBackgroundColor
+-
+-- (id)initWithWindow:(ToolbarWindow*)aWindow
+-{
+-  if ((self = [super init])) {
+-    mWindow = aWindow; // weak ref to avoid a cycle
+-  }
+-  return self;
+-}
+-
+-static void
+-DrawNativeTitlebar(CGContextRef aContext, CGRect aTitlebarRect,
+-                   CGFloat aUnifiedToolbarHeight, BOOL aIsMain)
+-{
+-  nsNativeThemeCocoa::DrawNativeTitlebar(aContext, aTitlebarRect, aUnifiedToolbarHeight, aIsMain, NO);
+-
+-  // The call to CUIDraw doesn't draw the top pixel strip at some window widths.
+-  // We don't want to have a flickering transparent line, so we overdraw it.
+-  CGContextSetRGBFillColor(aContext, 0.95, 0.95, 0.95, 1);
+-  CGContextFillRect(aContext, CGRectMake(0, CGRectGetMaxY(aTitlebarRect) - 1,
+-                                           aTitlebarRect.size.width, 1));
+-}
+-
+-// Pattern draw callback for standard titlebar gradients and solid titlebar colors
+-static void
+-TitlebarDrawCallback(void* aInfo, CGContextRef aContext)
+-{
+-  ToolbarWindow *window = (ToolbarWindow*)aInfo;
+-  if (![window drawsContentsIntoWindowFrame]) {
+-    NSRect titlebarRect = [window titlebarRect];
+-    BOOL isMain = [window isMainWindow];
+-    NSColor *titlebarColor = [window titlebarColorForActiveWindow:isMain];
+-    if (!titlebarColor) {
+-      // If the titlebar color is nil, draw the default titlebar shading.
+-      DrawNativeTitlebar(aContext, NSRectToCGRect(titlebarRect),
+-                         [window unifiedToolbarHeight], isMain);
+-    } else {
+-      // If the titlebar color is not nil, just set and draw it normally.
+-      [NSGraphicsContext saveGraphicsState];
+-      [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:aContext flipped:NO]];
+-      [titlebarColor set];
+-      NSRectFill(titlebarRect);
+-      [NSGraphicsContext restoreGraphicsState];
+-    }
+-  }
+-}
+-
+-- (void)setFill
+-{
+-  float patternWidth = [mWindow frame].size.width;
+-
+-  CGPatternCallbacks callbacks = {0, &TitlebarDrawCallback, NULL};
+-  CGPatternRef pattern = CGPatternCreate(mWindow, CGRectMake(0.0f, 0.0f, patternWidth, [mWindow frame].size.height),
+-                                         CGAffineTransformIdentity, patternWidth, [mWindow frame].size.height,
+-                                         kCGPatternTilingConstantSpacing, true, &callbacks);
+-
+-  // Set the pattern as the fill, which is what we were asked to do. All our
+-  // drawing will take place in the patternDraw callback.
+-  CGColorSpaceRef patternSpace = CGColorSpaceCreatePattern(NULL);
+-  CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
+-  CGContextSetFillColorSpace(context, patternSpace);
+-  CGColorSpaceRelease(patternSpace);
+-  CGFloat component = 1.0f;
+-  CGContextSetFillPattern(context, pattern, &component);
+-  CGPatternRelease(pattern);
+-}
+-
+-- (void)set
+-{
+-  [self setFill];
+-}
+-
+-- (NSString*)colorSpaceName
+-{
+-  return NSDeviceRGBColorSpace;
+-}
+-
+-@end
+-
+ @implementation PopupWindow
+ 
+ - (id)initWithContentRect:(NSRect)contentRect styleMask:(NSUInteger)styleMask
+diff -r d8dd10ac5430 widget/cocoa/nsNativeThemeCocoa.mm
+--- a/widget/cocoa/nsNativeThemeCocoa.mm	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/cocoa/nsNativeThemeCocoa.mm	Sun Oct 25 04:26:20 2020 -0400
+@@ -327,6 +327,13 @@
+   // 10.7 during drawing in order to determine which style to use.
+   for (nsIFrame* frame = mContext; frame; frame = frame->GetParent()) {
+     if (IsToolbarStyleContainer(frame)) {
++      // On earlier macOS versions, returning YES from it selects the style
++      // that's appropriate for search fields inside toolbars. On Big Sur,
++      // returning YES causes the search field to be drawn incorrectly, with
++      // the toolbar gradient appearing as the field background.
++      if (nsCocoaFeatures::OnBigSurOrLater()) {
++        return NO;
++      }
+       return YES;
+     }
+   }
+@@ -2445,6 +2452,20 @@
+       break;
+ 
+     case NS_THEME_MENUSEPARATOR: {
++      // Workaround for visual artifacts issues with
++      // HIThemeDrawMenuSeparator on macOS Big Sur.
++      if (nsCocoaFeatures::OnBigSurOrLater()) {
++        CGRect separatorRect = macRect;
++        separatorRect.size.height = 1;
++        separatorRect.size.width -= 42;
++        separatorRect.origin.x += 21;
++        // Use a gray color similar to the native separator
++        Color color = ToDeviceColor(NS_RGB(211, 211, 211));
++        CGContextSetRGBFillColor(cgContext, color.r, color.g, color.b, color.a);
++        CGContextFillRect(cgContext, separatorRect);
++        break;
++      }
++    
+       ThemeMenuState menuState;
+       if (IsDisabled(aFrame, eventState)) {
+         menuState = kThemeMenuDisabled;
+@@ -3169,6 +3190,7 @@
+ static const nsIntMargin kAquaDropdownBorder(1, 22, 2, 5);
+ static const nsIntMargin kAquaComboboxBorder(3, 20, 3, 4);
+ static const nsIntMargin kAquaSearchfieldBorder(3, 5, 2, 19);
++static const nsIntMargin kAquaSearchfieldBorderBigSur(5, 5, 4, 23);
+ 
+ NS_IMETHODIMP
+ nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aContext,
+@@ -3211,6 +3233,12 @@
+       *aResult = DirectionAwareMargin(kAquaDropdownBorder, aFrame);
+       break;
+ 
++    case NS_THEME_MENUARROW:
++      if (nsCocoaFeatures::OnBigSurOrLater()) {
++        aResult->SizeTo(0, 0, 0, 28);
++      }
++      break;
++
+     case NS_THEME_MENULIST_TEXTFIELD:
+       *aResult = DirectionAwareMargin(kAquaComboboxBorder, aFrame);
+       break;
+@@ -3235,7 +3263,10 @@
+       break;
+ 
+     case NS_THEME_SEARCHFIELD:
+-      *aResult = DirectionAwareMargin(kAquaSearchfieldBorder, aFrame);
++      *aResult = DirectionAwareMargin(
++        nsCocoaFeatures::OnBigSurOrLater() ? kAquaSearchfieldBorderBigSur : kAquaSearchfieldBorder,
++        aFrame
++      );
+       break;
+ 
+     case NS_THEME_LISTBOX:
+@@ -3310,6 +3341,16 @@
+     case NS_THEME_RADIO:
+       aResult->SizeTo(0, 0, 0, 0);
+       return true;
++
++    case NS_THEME_MENUARROW:
++    case NS_THEME_SEARCHFIELD:
++      if (nsCocoaFeatures::OnBigSurOrLater()) {
++        return true;
++      }
++      break;
++
++    default:
++      break;
+   }
+   return false;
+ }
+diff -r d8dd10ac5430 widget/nsBaseWidget.h
+--- a/widget/nsBaseWidget.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/nsBaseWidget.h	Sun Oct 25 04:26:20 2020 -0400
+@@ -260,7 +260,6 @@
+   }
+   virtual bool HasPendingInputEvent() override;
+   virtual void SetIcon(const nsAString& aIconSpec) override {}
+-  virtual void SetWindowTitlebarColor(nscolor aColor, bool aActive) override {}
+   virtual void SetDrawsInTitlebar(bool aState) override {}
+   virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) override;
+   virtual void FreeNativeData(void* data, uint32_t aDataType) override {}
+diff -r d8dd10ac5430 widget/nsIWidget.h
+--- a/widget/nsIWidget.h	Thu Aug 22 09:31:51 2019 +0200
++++ b/widget/nsIWidget.h	Sun Oct 25 04:26:20 2020 -0400
+@@ -1414,24 +1414,6 @@
+   virtual bool HasPendingInputEvent() = 0;
+ 
+   /**
+-   * Set the background color of the window titlebar for this widget. On Mac,
+-   * for example, this will remove the grey gradient and bottom border and
+-   * instead show a single, solid color.
+-   *
+-   * Ignored on any platform that does not support it. Ignored by widgets that
+-   * do not represent windows.
+-   *
+-   * @param aColor  The color to set the title bar background to. Alpha values
+-   *                other than fully transparent (0) are respected if possible
+-   *                on the platform. An alpha of 0 will cause the window to
+-   *                draw with the default style for the platform.
+-   *
+-   * @param aActive Whether the color should be applied to active or inactive
+-   *                windows.
+-   */
+-  virtual void SetWindowTitlebarColor(nscolor aColor, bool aActive) = 0;
+-
+-  /**
+    * If set to true, the window will draw its contents into the titlebar
+    * instead of below it.
+    *
 diff -r d8dd10ac5430 xpcom/build/BinaryPath.h
 --- a/xpcom/build/BinaryPath.h	Thu Aug 22 09:31:51 2019 +0200
-+++ b/xpcom/build/BinaryPath.h	Sun Jul 26 19:05:20 2020 -0400
++++ b/xpcom/build/BinaryPath.h	Sun Oct 25 04:26:20 2020 -0400
 @@ -133,6 +133,45 @@
      return rv;
    }
@@ -663,3 +1825,17 @@ diff -r d8dd10ac5430 xpcom/build/BinaryPath.h
  #ifdef MOZILLA_INTERNAL_API
    static nsresult GetFile(nsIFile** aResult) {
      nsCOMPtr<nsIFile> lf;
+diff -r d8dd10ac5430 xpcom/components/ManifestParser.cpp
+--- a/xpcom/components/ManifestParser.cpp	Thu Aug 22 09:31:51 2019 +0200
++++ b/xpcom/components/ManifestParser.cpp	Sun Oct 25 04:26:20 2020 -0400
+@@ -488,8 +488,8 @@
+   }
+ #pragma warning(pop)
+ #elif defined(MOZ_WIDGET_COCOA)
+-  SInt32 majorVersion = nsCocoaFeatures::OSXVersionMajor();
+-  SInt32 minorVersion = nsCocoaFeatures::OSXVersionMinor();
++  SInt32 majorVersion = nsCocoaFeatures::macOSVersionMajor();
++  SInt32 minorVersion = nsCocoaFeatures::macOSVersionMinor();
+   nsTextFormatter::ssprintf(osVersion, u"%ld.%ld", majorVersion, minorVersion);
+ #elif defined(MOZ_WIDGET_GTK)
+   nsTextFormatter::ssprintf(osVersion, u"%ld.%ld", gtk_major_version,
