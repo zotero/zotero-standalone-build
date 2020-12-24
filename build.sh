@@ -235,6 +235,9 @@ if [ $BUILD_MAC == 1 ]; then
 	# Modify platform-specific prefs
 	perl -pi -e 's/pref\("browser\.preferences\.instantApply", false\);/pref\("browser\.preferences\.instantApply", true);/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_MAC"'/g' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
+	# Fix horizontal mousewheel scrolling (this is set to 4 in the Fx60 .app greprefs.js, but
+	# defaults to 1 in later versions of Firefox, and needs to be 1 to work on macOS)
+	echo 'pref("mousewheel.with_shift.action", 1);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	
 	# Merge relevant assets from Firefox
 	mkdir "$CONTENTSDIR/MacOS"
