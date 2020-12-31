@@ -1182,7 +1182,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.h
    virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
 diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
 --- a/widget/cocoa/nsCocoaWindow.mm	Thu Aug 22 09:31:51 2019 +0200
-+++ b/widget/cocoa/nsCocoaWindow.mm	Sun Oct 25 04:26:20 2020 -0400
++++ b/widget/cocoa/nsCocoaWindow.mm	Thu Dec 31 15:26:50 2020 -0500
 @@ -1452,9 +1452,16 @@
  }
  @end
@@ -1284,7 +1284,25 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  void nsCocoaWindow::SetDrawsInTitlebar(bool aState)
  {
    NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-@@ -2673,6 +2649,23 @@
+@@ -2667,12 +2643,41 @@
+   if ([window respondsToSelector:@selector(backingScaleFactor)]) {
+     if (GetBackingScaleFactor(window) != mGeckoWindow->BackingScaleFactor()) {
+       mGeckoWindow->BackingScaleFactorChanged();
++    // Change by Zotero: The backing scale doesn't show as changed on Big Sur,
++    // so resize the window to force it to recompute
++    } else if (nsCocoaFeatures::OnBigSurOrLater()) {
++      NSRect newFrame = [window frame];
++      if (newFrame.size.height > 0) {
++        newFrame.size.height = newFrame.size.height - 1;
++        //NSLog(@"NEW HEIGHT: %@", @(newFrame.size.height));
++        [window setFrame:newFrame display:YES];
++        newFrame.size.height = newFrame.size.height + 1;
++        //NSLog(@"NEXT HEIGHT: %@", @(newFrame.size.height));
++        [window setFrame:newFrame display:YES];
++      }
+     }
+   }
+ 
    mGeckoWindow->ReportMoveEvent();
  }
  
@@ -1308,7 +1326,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  - (void)windowWillEnterFullScreen:(NSNotification *)notification
  {
    if (!mGeckoWindow) {
-@@ -2962,6 +2955,7 @@
+@@ -2962,6 +2967,7 @@
  - (NSPoint)FrameView__closeButtonOrigin;
  - (NSPoint)FrameView__fullScreenButtonOrigin;
  - (BOOL)FrameView__wantsFloatingTitlebar;
@@ -1316,7 +1334,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  @end
  
  @implementation NSView(FrameViewMethodSwizzling)
-@@ -2989,6 +2983,19 @@
+@@ -2989,6 +2995,19 @@
    return NO;
  }
  
@@ -1336,7 +1354,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  @end
  
  static NSMutableSet *gSwizzledFrameViewClasses = nil;
-@@ -3066,6 +3073,9 @@
+@@ -3066,6 +3085,9 @@
    static IMP our_wantsFloatingTitlebar =
      class_getMethodImplementation([NSView class],
                                    @selector(FrameView__wantsFloatingTitlebar));
@@ -1346,7 +1364,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  
    if (![gSwizzledFrameViewClasses containsObject:frameViewClass]) {
      // Either of these methods might be implemented in both a subclass of
-@@ -3088,14 +3098,33 @@
+@@ -3088,14 +3110,33 @@
        nsToolkit::SwizzleMethods(frameViewClass, @selector(_fullScreenButtonOrigin),
                                  @selector(FrameView__fullScreenButtonOrigin));
      }
@@ -1384,7 +1402,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
      [gSwizzledFrameViewClasses addObject:frameViewClass];
    }
  
-@@ -3107,8 +3136,6 @@
+@@ -3107,8 +3148,6 @@
    mDrawsIntoWindowFrame = NO;
    [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag];
    mState = nil;
@@ -1393,7 +1411,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
    mDisabledNeedsDisplay = NO;
    mTrackingArea = nil;
    mDirtyRect = NSZeroRect;
-@@ -3198,8 +3225,6 @@
+@@ -3198,8 +3237,6 @@
  
  - (void)dealloc
  {
@@ -1402,7 +1420,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
    [self removeTrackingArea];
    ChildViewMouseTracker::OnDestroyWindow(self);
    [super dealloc];
-@@ -3207,8 +3232,6 @@
+@@ -3207,8 +3244,6 @@
  
  static const NSString* kStateTitleKey = @"title";
  static const NSString* kStateDrawsContentsIntoWindowFrameKey = @"drawsContentsIntoWindowFrame";
@@ -1411,7 +1429,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  static const NSString* kStateShowsToolbarButton = @"showsToolbarButton";
  static const NSString* kStateCollectionBehavior = @"collectionBehavior";
  
-@@ -3218,8 +3241,6 @@
+@@ -3218,8 +3253,6 @@
      [self setTitle:title];
    }
    [self setDrawsContentsIntoWindowFrame:[[aState objectForKey:kStateDrawsContentsIntoWindowFrameKey] boolValue]];
@@ -1420,7 +1438,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
    [self setShowsToolbarButton:[[aState objectForKey:kStateShowsToolbarButton] boolValue]];
    [self setCollectionBehavior:[[aState objectForKey:kStateCollectionBehavior] unsignedIntValue]];
  }
-@@ -3232,14 +3253,6 @@
+@@ -3232,14 +3265,6 @@
    }
    [state setObject:[NSNumber numberWithBool:[self drawsContentsIntoWindowFrame]]
              forKey:kStateDrawsContentsIntoWindowFrameKey];
@@ -1435,7 +1453,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
    [state setObject:[NSNumber numberWithBool:[self showsToolbarButton]]
              forKey:kStateShowsToolbarButton];
    [state setObject:[NSNumber numberWithUnsignedInt: [self collectionBehavior]]
-@@ -3290,24 +3303,6 @@
+@@ -3290,24 +3315,6 @@
    return mBrightTitlebarForeground;
  }
  
@@ -1460,7 +1478,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  - (NSView*)trackingAreaView
  {
    NSView* contentView = [self contentView];
-@@ -3542,19 +3537,7 @@
+@@ -3542,19 +3549,7 @@
  
  // This class allows us to exercise control over the window's title bar. This
  // allows for a "unified toolbar" look without having to extend the content
@@ -1481,7 +1499,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  //
  // Drawing the unified gradient in the titlebar and the toolbar works like this:
  // 1) In the style sheet we set the toolbar's -moz-appearance to toolbar.
-@@ -3587,11 +3570,6 @@
+@@ -3587,11 +3582,6 @@
  
    aStyle = aStyle | NSTexturedBackgroundWindowMask;
    if ((self = [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag])) {
@@ -1493,7 +1511,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
      mUnifiedToolbarHeight = 22.0f;
      mWindowButtonsRect = NSZeroRect;
      mFullScreenButtonRect = NSZeroRect;
-@@ -3609,47 +3587,6 @@
+@@ -3609,47 +3599,6 @@
    NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
  }
  
@@ -1541,7 +1559,7 @@ diff -r d8dd10ac5430 widget/cocoa/nsCocoaWindow.mm
  - (void)setTitlebarNeedsDisplayInRect:(NSRect)aRect
  {
    [self setTitlebarNeedsDisplayInRect:aRect sync:NO];
-@@ -3878,87 +3815,6 @@
+@@ -3878,87 +3827,6 @@
  
  @end
  
