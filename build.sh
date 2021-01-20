@@ -300,6 +300,9 @@ if [ $BUILD_MAC == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
 	done
+	# Add Mac Word plugin's XPC Service
+	mkdir -p "$CONTENTSDIR/XPCServices"
+	mv "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org/resource/ZoteroWordIntegrationService.xpc" "$CONTENTSDIR/XPCServices"
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
 	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
 	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
