@@ -303,6 +303,9 @@ if [ $BUILD_MAC == 1 ]; then
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
 	done
+	# Add Mac Word plugin's XPC Service
+	mkdir -p "$CONTENTSDIR/XPCServices"
+	mv "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org/resource/ZoteroWordIntegrationService.xpc" "$CONTENTSDIR/XPCServices"
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
 	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
 	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
@@ -335,7 +338,9 @@ if [ $BUILD_MAC == 1 ]; then
 			"$APPDIR/Contents/MacOS/pdftotext" \
 			"$APPDIR/Contents/MacOS/pdfinfo" \
 			"$APPDIR/Contents/MacOS/XUL" \
-			"$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
+			"$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater" \
+			"$APPDIR/Contents/XPCServices/ZoteroWordIntegrationService.xpc/Contents/MacOS/ZoteroWordIntegrationService" \
+			"$APPDIR/Contents/XPCServices/ZoteroWordIntegrationService.xpc"
 		find "$APPDIR/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		find "$APPDIR/Contents" -name '*.app' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
