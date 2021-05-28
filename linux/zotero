@@ -10,4 +10,4 @@
 ulimit -n 4096
 
 CALLDIR="$(dirname "$(readlink -f "$0")")"
-"$CALLDIR/zotero-bin" -app "$CALLDIR/application.ini" "$@"
+exec "$CALLDIR/zotero-bin" -app "$CALLDIR/application.ini" "$@"
