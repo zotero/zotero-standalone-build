@@ -509,31 +509,55 @@ if [ $BUILD_WIN32 == 1 ]; then
 			mkdir "$APPDIR/uninstall"
 			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
 			
-			# Sign zotero.exe, dlls, updater, uninstaller and PDF tools
+			# Sign zotero.exe, updater, uninstaller and PDF tools
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "Zotero" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC" \
+					/du "$SIGNATURE_URL" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					/td SHA256 \
 					"`cygpath -w \"$APPDIR/zotero.exe\"`"
-				for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
-					"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" /d "Zotero" \
-						/du "$SIGNATURE_URL" "`cygpath -w \"$dll\"`"
-				done
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "Zotero Updater" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				#
+				# Windows doesn't check DLL signatures
+				#
+				#for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
+				#	"`cygpath -u \"$SIGNTOOL\"`" \
+				#		sign /n "$SIGNTOOL_CERT_SUBJECT" \
+				#		/d "$SIGNATURE_DESC" \
+				#		/fd SHA256 \
+				#		/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+				#		/td SHA256 \
+				#		"`cygpath -w \"$dll\"`"
+				#done
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC Updater" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					/td SHA256 \
 					"`cygpath -w \"$APPDIR/updater.exe\"`"
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "Zotero Uninstaller" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC Uninstaller" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					/td SHA256 \
 					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "PDF Converter" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC PDF Converter" \
+					/fd SHA256 \
+                                        /tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+                                        /td SHA256 \
 					"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "PDF Info" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC PDF Info" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					/td SHA256 \
 					"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
 			fi
 			
@@ -546,9 +570,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "Zotero Setup" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC Setup" \
+					/du "$SIGNATURE_URL" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					/td SHA256 \
 					"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
 			fi
 			
@@ -566,9 +594,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 			
 			# Sign Zotero_setup.exe
 			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" sign /a \
-					/d "Zotero Setup" /du "$SIGNATURE_URL" \
-					/t http://timestamp.verisign.com/scripts/timstamp.dll \
+				"`cygpath -u \"$SIGNTOOL\"`" \
+					sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					/d "$SIGNATURE_DESC Setup" \
+					/du "$SIGNATURE_URL" \
+					/fd SHA256 \
+					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+                                        /td SHA256 \
 					"`cygpath -w \"$INSTALLER_PATH\"`"
 			fi
 			

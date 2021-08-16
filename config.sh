@@ -33,9 +33,11 @@ NOTARIZATION_PASSWORD=""
 NSIS_DIR='C:\Program Files (x86)\NSIS\Unicode\'
 
 # Paths for Windows installer build only necessary for signed binaries
-SIGNTOOL='C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\signtool.exe'
+SIGNTOOL='C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe'
+SIGNATURE_DESC='Zotero'
 SIGNATURE_URL='https://www.zotero.org/'
 SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
+SIGNTOOL_TIMESTAMP_SERVER="http://timestamp.sectigo.com"
 
 # Directory for Zotero code repos
 repo_dir=$( cd "$DIR"/.. && pwd )
