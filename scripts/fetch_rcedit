@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+
+cd "$ROOT_DIR"
+
+if [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
+	mkdir -p "xulrunner/bin"
+	curl -L -o "xulrunner/bin/rcedit.exe" https://github.com/electron/rcedit/releases/download/v1.1.1/rcedit-x86.exe
+	chmod 755 xulrunner/bin/rcedit
+fi
