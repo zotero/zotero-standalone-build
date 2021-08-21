@@ -178,3 +178,7 @@ pref("browser.preferences.instantApply", false);
 
 // Allow elements to be displayed full-screen
 pref("full-screen-api.enabled", true);
+
+// Allow chrome access in DevTools
+// This enables the input field in the Browser Console tool
+pref("devtools.chrome.enabled", true);
