@@ -531,6 +531,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/zotero.exe\"`"
+				sleep $SIGNTOOL_DELAY
+
 				#
 				# Windows doesn't check DLL signatures
 				#
@@ -550,6 +552,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/updater.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC Uninstaller" \
@@ -557,6 +560,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC PDF Converter" \
@@ -564,6 +568,7 @@ if [ $BUILD_WIN32 == 1 ]; then
                                         /tr "$SIGNTOOL_TIMESTAMP_SERVER" \
                                         /td SHA256 \
 					"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC PDF Info" \
@@ -571,6 +576,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
+				sleep $SIGNTOOL_DELAY
 			fi
 			
 			# Stage installer
@@ -590,6 +596,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
+				sleep $SIGNTOOL_DELAY
 			fi
 			
 			# Compress application
