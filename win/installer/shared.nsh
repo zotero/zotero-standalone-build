@@ -120,7 +120,7 @@
   ReadRegStr $6 SHCTX "Software\Classes\.csl" ""
   ${If} "$6" != "ZoteroCSL"
     WriteRegStr SHCTX "Software\Classes\.csl"  "" "ZoteroCSL"
-    WriteRegStr SHCTX "Software\Classes\.csl"   "Content Type" "text/x-csl"
+    WriteRegStr SHCTX "Software\Classes\.csl"   "Content Type" "application/vnd.citationstyles.style+xml"
   ${EndIf}
 !macroend
 !define SetHandlers "!insertmacro SetHandlers"

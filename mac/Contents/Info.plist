@@ -17,13 +17,10 @@
 			<key>CFBundleTypeMIMETypes</key>
 			<array>
 				<string>application/x-research-info-systems</string>
-				<string>application/x-endnote-refer</string>
 				<string>text/x-research-info-systems</string>
-				<string>text/x-bibtex</string>
-				<string>application/x-bibtex</string>
-				<string>text/application/x-research-info-systems</string>
 				<string>text/ris</string>
 				<string>ris</string>
+				<string>application/x-endnote-refer</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Research Information Systems Document</string>
@@ -126,7 +123,7 @@
 			<string>document.icns</string>-->
 			<key>CFBundleTypeMIMETypes</key>
 			<array>
-				<string>text/x-csl</string>
+				<string>application/vnd.citationstyles.style+xml</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>CSL Citation Style</string>

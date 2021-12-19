@@ -38,6 +38,7 @@ SIGNATURE_DESC='Zotero'
 SIGNATURE_URL='https://www.zotero.org/'
 SIGNTOOL_CERT_SUBJECT="Corporation for Digital Scholarship"
 SIGNTOOL_TIMESTAMP_SERVER="http://timestamp.sectigo.com"
+SIGNTOOL_DELAY=15
 
 # Directory for Zotero code repos
 repo_dir=$( cd "$DIR"/.. && pwd )

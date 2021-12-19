@@ -142,7 +142,9 @@ fi
 
 cd "$BUILD_DIR/zotero"
 
+# 5.0.96.3 / 5.0.97-beta.37+ddc7be75c
 VERSION=`perl -ne 'print and last if s/.*<em:version>(.+)<\/em:version>.*/\1/;' install.rdf`
+# 5.0.96 / 5.0.97
 VERSION_NUMERIC=`perl -ne 'print and last if s/.*<em:version>(\d+\.\d+\.\d+).*<\/em:version>.*/\1/;' install.rdf`
 if [ -z "$VERSION" ]; then
 	echo "Version number not found in install.rdf"
@@ -448,7 +450,17 @@ if [ $BUILD_WIN32 == 1 ]; then
 	# is modified with Visual Studio resource editor where icon and file details are changed.
 	# Then firefox.exe is rebuilt again
 	cp "$CALLDIR/win/zotero_win32.exe" "$APPDIR/zotero.exe"
-
+	
+	# Update .exe version number (only possible on Windows)
+	if [ $WIN_NATIVE == 1 ]; then
+		# FileVersion is limited to four integers, so it won't be properly updated for non-release
+		# builds (e.g., we'll show 5.0.97.0 for 5.0.97-beta.37). ProductVersion will be the full
+		# version string.
+		rcedit "`cygpath -w \"$APPDIR/zotero.exe\"`" \
+			--set-file-version "$VERSION_NUMERIC" \
+			--set-product-version "$VERSION"
+	fi
+	
 	# Use our own updater, because Mozilla's requires updates signed by Mozilla
 	cp "$CALLDIR/win/updater.exe" "$APPDIR"
 	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
@@ -519,6 +531,8 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/zotero.exe\"`"
+				sleep $SIGNTOOL_DELAY
+
 				#
 				# Windows doesn't check DLL signatures
 				#
@@ -538,6 +552,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/updater.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC Uninstaller" \
@@ -545,6 +560,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC PDF Converter" \
@@ -552,6 +568,7 @@ if [ $BUILD_WIN32 == 1 ]; then
                                         /tr "$SIGNTOOL_TIMESTAMP_SERVER" \
                                         /td SHA256 \
 					"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
+				sleep $SIGNTOOL_DELAY
 				"`cygpath -u \"$SIGNTOOL\"`" \
 					sign /n "$SIGNTOOL_CERT_SUBJECT" \
 					/d "$SIGNATURE_DESC PDF Info" \
@@ -559,6 +576,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
+				sleep $SIGNTOOL_DELAY
 			fi
 			
 			# Stage installer
@@ -578,6 +596,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 					/td SHA256 \
 					"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
+				sleep $SIGNTOOL_DELAY
 			fi
 			
 			# Compress application
