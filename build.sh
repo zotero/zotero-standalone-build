@@ -209,9 +209,13 @@ perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$BUILD_DIR/application.ini"
 cp "$CALLDIR/assets/prefs.js" "$BUILD_DIR/zotero/defaults/preferences"
 perl -pi -e 's/pref\("app\.update\.channel", "[^"]*"\);/pref\("app\.update\.channel", "'"$UPDATE_CHANNEL"'");/' "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 
-# Add devtools manifest and pref
+# Add devtools manifest and prefs
 if [ $DEVTOOLS -eq 1 ]; then
+	# Adjust paths for .jar
 	cat "$CALLDIR/assets/devtools.manifest" >> "$BUILD_DIR/zotero/chrome.manifest"
+	perl -pi -e 's/chrome\/locale\/en-US\/devtools\//jar:devtools.jar!\/locale\/en-US\/devtools\//' "$BUILD_DIR/zotero/chrome.manifest"
+	perl -pi -e 's/chrome\/devtools\//jar:devtools.jar!\//' "$BUILD_DIR/zotero/chrome.manifest"
+	
 	echo 'pref("devtools.debugger.remote-enabled", true);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	echo 'pref("devtools.debugger.remote-port", 6100);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
 	echo 'pref("devtools.debugger.prompt-connection", false);' >> "$BUILD_DIR/zotero/defaults/preferences/prefs.js"
@@ -295,7 +299,17 @@ if [ $BUILD_MAC == 1 ]; then
 	
 	# Add devtools
 	if [ $DEVTOOLS -eq 1 ]; then
-		cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/* "$CONTENTSDIR/Resources/chrome/"
+		# Create devtools.jar
+		cd "$BUILD_DIR"
+		mkdir -p devtools/locale
+		cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/devtools/* devtools/
+		cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/locale/* devtools/locale/
+		cd devtools
+		zip -r -q ../devtools.jar *
+		cd ..
+		rm -rf devtools
+		mv devtools.jar "$CONTENTSDIR/Resources/"
+		
 		cp "$MAC_RUNTIME_PATH/Contents/Resources/devtools-files/components/interfaces.xpt" "$CONTENTSDIR/Resources/components/"
 	fi
 	
@@ -483,7 +497,17 @@ if [ $BUILD_WIN32 == 1 ]; then
 	
 	# Add devtools
 	if [ $DEVTOOLS -eq 1 ]; then
-		cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/* "$APPDIR/chrome/"
+		# Create devtools.jar
+		cd "$BUILD_DIR"
+		mkdir -p devtools/locale
+		cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
+		cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
+		cd devtools
+		zip -r -q ../devtools.jar *
+		cd ..
+		rm -rf devtools
+		mv devtools.jar "$APPDIR"
+		
 		cp "$WIN32_RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
 	fi
 	
@@ -678,7 +702,17 @@ if [ $BUILD_LINUX == 1 ]; then
 		
 		# Add devtools
 		if [ $DEVTOOLS -eq 1 ]; then
-			cp -r "$RUNTIME_PATH"/devtools-files/chrome/* "$APPDIR/chrome/"
+			# Create devtools.jar
+			cd "$BUILD_DIR"
+			mkdir -p devtools/locale
+			cp -r "$RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
+			cp -r "$RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
+			cd devtools
+			zip -r -q ../devtools.jar *
+			cd ..
+			rm -rf devtools
+			mv devtools.jar "$APPDIR"
+			
 			cp "$RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
 		fi
 		
