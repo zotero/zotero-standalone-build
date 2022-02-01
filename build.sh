@@ -117,6 +117,11 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
+# Bundle devtools with dev builds
+if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ]; then
+	DEVTOOLS=1
+fi
+
 BUILD_ID=`date +%Y%m%d%H%M%S`
 
 shopt -s extglob
