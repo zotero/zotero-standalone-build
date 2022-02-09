@@ -12,6 +12,7 @@ import traceback
 DETAILS_URLS = {
     '4.0': 'https://www.zotero.org/support/4.0_changelog',
     '5.0': 'https://www.zotero.org/support/5.0_changelog',
+    '6.0': 'https://www.zotero.org/support/6.0_changelog',
 }
 MAJOR = False
 
