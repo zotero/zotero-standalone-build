@@ -156,11 +156,23 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>pdf</string>
+			</array>
+			<!--<key>CFBundleTypeIconFile</key>
+			<string>document.icns</string>-->
+			<key>CFBundleTypeName</key>
+			<string>PDF Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>zotero</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Zotero {{VERSION}}, © 2006-2018 Contributors</string>
+	<string>Zotero {{VERSION}}, © 2006-2022 Contributors</string>
 	<key>CFBundleIconFile</key>
 	<string>zotero</string>
 	<key>CFBundleIdentifier</key>
