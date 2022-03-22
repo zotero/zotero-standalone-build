@@ -322,7 +322,7 @@ if [ $BUILD_MAC == 1 ]; then
 		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
 		echo -n "$ext Version: "
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
-		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git"
+		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git" "$CONTENTSDIR/Resources/extensions/$ext/.github"
 	done
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
 	echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
@@ -517,7 +517,7 @@ if [ $BUILD_WIN32 == 1 ]; then
 		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/$ext/install.rdf"
 		echo -n "$ext Version: "
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/$ext/install.rdf"
-		rm -rf "$APPDIR/extensions/$ext/.git"
+		rm -rf "$APPDIR/extensions/$ext/.git" "$APPDIR/extensions/$ext/.github"
 	done
 	# Default preferenes are no longer read from built-in extensions in Firefox 60
 	echo >> "$APPDIR/defaults/preferences/prefs.js"
@@ -721,7 +721,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		echo -n "zoteroOpenOfficeIntegration@zotero.org Version: "
 		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
 		echo
-		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git"
+		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.github"
 		# Default preferenes are no longer read from built-in extensions in Firefox 60
 		echo >> "$APPDIR/defaults/preferences/prefs.js"
 		cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
