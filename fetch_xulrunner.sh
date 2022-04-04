@@ -254,6 +254,25 @@ if [ $BUILD_LINUX == 1 ]; then
 	cd ..
 	
 	rm "firefox-$GECKO_VERSION.tar.bz2"
+
+	curl -OL "https://answers.launchpad.net/~mozillateam/+archive/ubuntu/ppa/+build/17514808/+files/firefox-esr_60.9.0esr+build1-0ubuntu0.14.04.1_arm64.deb"
+	rm -rf firefox-aarch64{,-tmp}
+	mkdir firefox-aarch64-tmp
+	cd firefox-aarch64-tmp
+	ar x ../firefox-esr_60.9.0esr+build1-0ubuntu0.14.04.1_arm64.deb
+	tar xvf data.tar.*
+	mv usr/lib/firefox-esr ../firefox-aarch64
+
+	cd ../firefox-aarch64
+	mv firefox-esr firefox
+	rm firefox.sh
+	rm -rf distribution
+	modify_omni linux64
+	extract_devtools
+	cd ..
+
+	rm firefox-esr_60.9.0esr+build1-0ubuntu0.14.04.1_arm64.deb
+	rm -rf firefox-aarch64-tmp
 fi
 
 echo Done
