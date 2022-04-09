@@ -128,13 +128,15 @@ class MyStruct:
             raise AttributeError
 
     def pack(self):
-        extra_data = ""
+        extra_data = b""
         values = []
         string_fields = self.__dict__["string_fields"]
         struct_members = self.__dict__["struct_members"]
         format = self.__dict__["format"]
         for (name,_) in format:
             if name in string_fields:
+                if not isinstance(struct_members[name], bytes):
+                    struct_members[name] = struct_members[name].encode('utf-8')
                 extra_data = extra_data + struct_members[name]
             else:
                 values.append(struct_members[name]);
@@ -243,7 +245,7 @@ def optimizejar(jar, outjar, inlog = None):
         out_offset = dirend.cdir_offset + dirend.cdir_size + size_of(cdir_end) - total_stripped
         outfd.seek(out_offset)
 
-    cdir_data = ""
+    cdir_data = b""
     written_count = 0
     crc_mapping = {}
     dups_found = 0
@@ -355,7 +357,7 @@ def deoptimize(JAR_LOG_DIR, IN_JAR_DIR, OUT_JAR_DIR):
         outjarfile = os.path.join(OUT_JAR_DIR, jarfile) 
         logfile = os.path.join(JAR_LOG_DIR, jarfile + ".log")
         log = optimizejar(injarfile, outjarfile, None)
-        open(logfile, "wb").write("\n".join(log))
+        open(logfile, "wb").write("\n".join(log).encode('utf-8'))
 
 def main():        
     MODE = sys.argv[1]
