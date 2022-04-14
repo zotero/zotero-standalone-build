@@ -30,6 +30,7 @@
   <commandset id="editMenuCommands"/>
 
   <commandset id="consoleCommands">
+    <command id="cmd_copy" oncommand="goDoCommand('cmd_copy')"/>
     <command id="cmd_close" oncommand="closeWindow(true)"/>
   </commandset>
 
