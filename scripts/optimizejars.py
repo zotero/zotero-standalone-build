@@ -356,7 +356,7 @@ def deoptimize(JAR_LOG_DIR, IN_JAR_DIR, OUT_JAR_DIR):
         injarfile = os.path.join(IN_JAR_DIR, jarfile)
         outjarfile = os.path.join(OUT_JAR_DIR, jarfile) 
         logfile = os.path.join(JAR_LOG_DIR, jarfile + ".log")
-        log = optimizejar(injarfile, outjarfile, None)
+        log = str(optimizejar(injarfile, outjarfile, None))
         open(logfile, "wb").write("\n".join(log).encode('utf-8'))
 
 def main():        
