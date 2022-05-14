@@ -322,7 +322,7 @@ if [ $BUILD_MAC == 1 ]; then
 	cp -r "$MAC_RUNTIME_PATH/Contents/Resources/"!(application.ini|browser|defaults|precomplete|removed-files|updater.ini|update-settings.ini|webapprt*|*.icns|*.lproj) "$CONTENTSDIR/Resources"
 
 	# Use our own launcher
-	cp "$CALLDIR/mac/zotero" "$CONTENTSDIR/MacOS/zotero"
+	unzip -q "$CALLDIR/mac/zotero.zip" -d "$CONTENTSDIR/MacOS"
 
 	# TEMP: Modified versions of some Firefox components for Big Sur, placed in xulrunner/MacOS
 	#cp "$MAC_RUNTIME_PATH/../MacOS/"{libc++.1.dylib,libnss3.dylib,XUL} "$CONTENTSDIR/MacOS/"
