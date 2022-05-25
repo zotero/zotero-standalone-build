@@ -67,10 +67,10 @@ if [ $VERSION = "4.0" ]; then
 else
 	PARAMS=""
 	if [ $DEVTOOLS -eq 1 ]; then
-		PARAMS=" -t"
+		PARAMS+=" -t"
 	fi
 	if [ $quick_build -eq 1 ]; then
-		PARAMS=" -q"
+		PARAMS+=" -q"
 	fi
 	
 	hash=`git -C "$ZOTERO_SOURCE_DIR" rev-parse --short HEAD`
