@@ -1,7 +1,9 @@
 #!/bin/bash -e
 
-# To use a custom Zotero profile, enter its name here
-PROFILE=""
+# Set ZOTERO_PROFILE environment variable to choose profile
+if [ -n "${ZOTERO_PROFILE:-}" ]; then
+	profile="-p $ZOTERO_PROFILE"
+fi
 
 REBUILD=0
 SKIP_BUNDLED_FILES=0
@@ -26,10 +28,6 @@ while getopts "rbd" opt; do
 			;;
 	esac
 done
-
-if [ -n "$PROFILE" ]; then
-	PROFILE="-p $PROFILE"
-fi
 
 if [ $REBUILD -eq 1 ]; then
 	PARAMS=""
@@ -70,4 +68,4 @@ else
 	exit 1
 fi
 
-~/zotero-standalone-build/staging/$command $PROFILE -ZoteroDebugText -jsconsole $PARAMS "$@"
+~/zotero-standalone-build/staging/$command $profile -ZoteroDebugText -jsconsole $PARAMS "$@"
