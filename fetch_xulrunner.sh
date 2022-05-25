@@ -147,6 +147,17 @@ function modify_omni {
 	cd ..
 	python3 "$CALLDIR/scripts/optimizejars.py" --optimize ./ ./ ./
 	rm -rf omni
+	
+	# Unzip browser/omni.ja and leave unzipped
+	cd browser
+	mkdir omni
+	mv omni.ja omni
+	cd omni
+	ls -la
+	set +e
+	unzip omni.ja
+	set -e
+	rm omni.ja
 }
 
 mkdir -p xulrunner

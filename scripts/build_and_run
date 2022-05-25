@@ -47,7 +47,7 @@ if [ $REBUILD -eq 1 ]; then
 		echo
 	fi
 	
-	~/zotero-standalone-build/scripts/dir_build $PARAMS
+	~/zotero-standalone-build/scripts/dir_build -q $PARAMS
 fi
 
 PARAMS=""

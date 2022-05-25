@@ -43,6 +43,7 @@ Options
  -c CHANNEL          use update channel CHANNEL
  -e                  enforce signing
  -s                  don't package; only build binaries in staging/ directory
+ -q                  quick build (skip compression and other optional steps for faster restarts during development)
 DONE
 	exit 1
 }
@@ -64,7 +65,8 @@ BUILD_WIN32=0
 BUILD_LINUX=0
 PACKAGE=1
 DEVTOOLS=0
-while getopts "d:f:p:c:tse" opt; do
+quick_build=0
+while getopts "d:f:p:c:tseq" opt; do
 	case $opt in
 		d)
 			SOURCE_DIR="$OPTARG"
@@ -98,6 +100,9 @@ while getopts "d:f:p:c:tse" opt; do
 		s)
 			PACKAGE=0
 			;;
+		q)
+			quick_build=1
+			;;
 		*)
 			usage
 			;;
@@ -126,6 +131,7 @@ BUILD_ID=`date +%Y%m%d%H%M%S`
 
 base_dir="$BUILD_DIR/base"
 app_dir="$BUILD_DIR/base/app"
+omni_dir="$BUILD_DIR/base/app/omni"
 
 shopt -s extglob
 mkdir -p "$app_dir"
@@ -140,16 +146,19 @@ echo $BUILD_ID > "$DIST_DIR/build_id"
 cd "$app_dir"
 
 # Copy 'browser' files from Firefox
+#
+# omni.ja is left uncompressed within the Firefox application files by fetch_xulrunner
 set +e
 if [ $BUILD_MAC == 1 ]; then
-	unzip "$MAC_RUNTIME_PATH"/Contents/Resources/browser/omni.ja -d "$app_dir"
+	cp -Rp "$MAC_RUNTIME_PATH"/Contents/Resources/browser/omni "$app_dir"
 elif [ $BUILD_WIN32 == 1 ]; then
-	unzip "$WIN32_RUNTIME_PATH"/browser/omni.ja -d "$app_dir"
+	cp -Rp "$WIN32_RUNTIME_PATH"/browser/omni "$app_dir"
 elif [ $BUILD_LINUX == 1 ]; then
 	# Non-arch-specific files, so just use 64-bit version
-	unzip "$LINUX_x86_64_RUNTIME_PATH"/browser/omni.ja -d "$app_dir"
+	cp -Rp "$LINUX_x86_64_RUNTIME_PATH"/browser/omni "$app_dir"
 fi
 set -e
+cd omni
 # Move some Firefox files that would be overwritten out of the way
 mv chrome.manifest chrome.manifest-fx
 mv components components-fx
@@ -159,7 +168,7 @@ mv defaults defaults-fx
 if [ -n "$ZIP_FILE" ]; then
 	ZIP_FILE="`abspath $ZIP_FILE`"
 	echo "Building from $ZIP_FILE"
-	unzip -q $ZIP_FILE -d "$app_dir"
+	unzip -q $ZIP_FILE -d "$omni_dir"
 else
 	# TODO: Could probably just mv instead, at least if these repos are merged
 	rsync -a "$SOURCE_DIR/" ./
@@ -253,9 +262,9 @@ cp -R "$CALLDIR"/assets/branding/content/* chrome/browser/content/branding/
 cp "$CALLDIR/assets/branding/locale/brand.ftl" localization/en-US/branding/brand.ftl
 
 # Copy localization .ftl files
-for locale in `ls $app_dir/chrome/locale/`; do
-	mkdir -p "$app_dir/localization/$locale/zotero"
-	cp $app_dir/chrome/locale/$locale/zotero/mozilla/*.ftl "$app_dir/localization/$locale/zotero/"
+for locale in `ls $omni_dir/chrome/locale/`; do
+	mkdir -p "$omni_dir/localization/$locale/zotero"
+	cp $omni_dir/chrome/locale/$locale/zotero/mozilla/*.ftl "$omni_dir/localization/$locale/zotero/"
 done
 
 # Add to chrome manifest
@@ -279,9 +288,16 @@ fi
 find chrome -name .DS_Store -exec rm -f {} \;
 
 # Zip browser and Zotero files into omni.ja
-zip -qr9XD omni.ja *
-python3 "$CALLDIR/scripts/optimizejars.py" --optimize ./ ./ ./
-rm -rf "$app_dir/"!(omni.ja)
+if [ $quick_build -eq 1 ]; then
+	# If quick build, don't compress or optimize
+	zip -qrXD omni.ja *
+else
+	zip -qr9XD omni.ja *
+	python3 "$CALLDIR/scripts/optimizejars.py" --optimize ./ ./ ./
+fi
+
+mv omni.ja ..
+rm -rf "$omni_dir"
 
 # Copy updater.ini
 cp "$CALLDIR/assets/updater.ini" "$base_dir"

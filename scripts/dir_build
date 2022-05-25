@@ -11,13 +11,15 @@ Usage: $0 -p platforms
 Options
  -p PLATFORMS        Platforms to build (m=Mac, w=Windows, l=Linux)
  -t                  add devtools
+ -q                  quick build (skip compression and other optional steps for faster restarts during development)
 DONE
 	exit 1
 }
 
 DEVTOOLS=0
 PLATFORM=""
-while getopts "p:t" opt; do
+quick_build=0
+while getopts "tp:q" opt; do
 	case $opt in
 		t)
 			DEVTOOLS=1
@@ -35,7 +37,10 @@ while getopts "p:t" opt; do
 						;;
 				esac
 			done
-			;;		
+			;;
+		q)
+			quick_build=1
+			;;
 		\?)
 			echo "Invalid option: -$OPTARG" >&2
 			exit 1
@@ -62,7 +67,10 @@ if [ $VERSION = "4.0" ]; then
 else
 	PARAMS=""
 	if [ $DEVTOOLS -eq 1 ]; then
-		PARAMS="-t"
+		PARAMS=" -t"
+	fi
+	if [ $quick_build -eq 1 ]; then
+		PARAMS=" -q"
 	fi
 	
 	hash=`git -C "$ZOTERO_SOURCE_DIR" rev-parse --short HEAD`
