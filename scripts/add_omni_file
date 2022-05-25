@@ -1,0 +1,81 @@
+#!/bin/bash
+set -euo pipefail
+
+#
+# Zip a file directly into app/omni.ja in staging/
+#
+# Zip paths are relative to the current directory, so this should be run from
+# the client build/ directory
+#
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+. "$ROOT_DIR/config.sh"
+
+function usage {
+	cat >&2 <<DONE
+Usage: $0 [-p PLATFORM] path/to/file
+Options
+ -p PLATFORM        Platform to use in staging/ (m=Mac, w=Windows, l=Linux)
+DONE
+	exit 1
+}
+
+if [ -z "${1:-}" ]; then
+	usage
+fi
+file="$1"
+
+platform=""
+while getopts "tp:q" opt; do
+	case $opt in
+		p)
+			for i in `seq 0 1 $((${#OPTARG}-1))`
+			do
+				case ${OPTARG:i:1} in
+					m) platform="m";;
+					w) platform="w";;
+					l) platform="l";;
+					*)
+						echo "$0: Invalid platform option ${OPTARG:i:1}"
+						usage
+						;;
+				esac
+			done
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+	esac
+done
+
+if [[ -z $platform ]]; then
+	if [ "`uname`" = "Darwin" ]; then
+		platform="m"
+	elif [ "`uname`" = "Linux" ]; then
+		platform="l"
+	elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
+		platform="w"
+	fi
+fi
+
+if [ $platform == "m" ]; then
+	omni_path="$STAGE_DIR/Zotero.app/Contents/Resources/app/omni.ja"
+elif [ $platform == "w" ]; then
+	omni_path="$STAGE_DIR/Zotero_win32/app/omni.ja"
+elif [ $platform == "l" ]; then
+	omni_path="$STAGE_DIR/Zotero_linux-x86_64/app/omni.ja"
+fi
+
+if [ ! -f "$omni_path" ]; then
+	echo "Error: $omni_path not found!"
+	exit 1
+fi
+
+if [ ! -f "$file" ]; then
+	echo "Error: $file not found!"
+	exit 1
+fi
+
+zip "$omni_path" "$file"
