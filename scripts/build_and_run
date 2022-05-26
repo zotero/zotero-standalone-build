@@ -1,5 +1,19 @@
 #!/bin/bash -e
 
+# Set ZOTERO_REPOS_DIR to use directory other than $HOME for zotero-client and zotero-standalone-build
+if [ -n "${ZOTERO_REPOS_DIR:-}" ]; then
+	repos_dir=$ZOTERO_REPOS_DIR
+else
+	repos_dir=$HOME
+fi
+
+for dir in zotero-client zotero-standalone-build; do
+	if [ ! -d "$repos_dir/$dir" ]; then
+		echo "$repos_dir/$dir not found" >&2
+		exit 1
+	fi
+done
+
 # Set ZOTERO_PROFILE environment variable to choose profile
 if [ -n "${ZOTERO_PROFILE:-}" ]; then
 	profile="-p $ZOTERO_PROFILE"
@@ -40,12 +54,12 @@ if [ $REBUILD -eq 1 ]; then
 	if ! ps u | grep scripts/build.js | grep -v grep > /dev/null; then
 		echo "Running JS build process"
 		echo
-		cd ~/zotero-client
+		cd $repos_dir/zotero-client
 		npm run build
 		echo
 	fi
 	
-	~/zotero-standalone-build/scripts/dir_build -q $PARAMS
+	$repos_dir/zotero-standalone-build/scripts/dir_build -q $PARAMS
 fi
 
 PARAMS=""
@@ -68,4 +82,4 @@ else
 	exit 1
 fi
 
-~/zotero-standalone-build/staging/$command $profile -ZoteroDebugText -jsconsole $PARAMS "$@"
+$repos_dir/zotero-standalone-build/staging/$command $profile -ZoteroDebugText -jsconsole $PARAMS "$@"
