@@ -122,6 +122,12 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; 
 	usage
 fi
 
+if [[ -z "${ZOTERO_INCLUDE_TESTS:-}" ]] || [[ $ZOTERO_INCLUDE_TESTS == "0" ]]; then
+	include_tests=0
+else
+	include_tests=1
+fi
+
 # Bundle devtools with dev builds
 if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ]; then
 	DEVTOOLS=1
@@ -170,8 +176,11 @@ if [ -n "$ZIP_FILE" ]; then
 	echo "Building from $ZIP_FILE"
 	unzip -q $ZIP_FILE -d "$omni_dir"
 else
-	# TODO: Could probably just mv instead, at least if these repos are merged
-	rsync -a "$SOURCE_DIR/" ./
+	rsync_params=""
+	if [ $include_tests -eq 0 ]; then
+		rsync_params="--exclude /test"
+	fi
+	rsync -a $rsync_params "$SOURCE_DIR/" ./
 fi
 
 #
@@ -271,6 +280,13 @@ done
 echo "" >> chrome.manifest
 cat "$CALLDIR/assets/chrome.manifest" >> chrome.manifest
 
+# Move test files to root directory
+if [ $include_tests -eq 1 ]; then
+	cat test/chrome.manifest >> chrome.manifest
+	rm test/chrome.manifest
+	cp -R test/tests "$base_dir/tests"
+fi
+
 # Copy platform-specific assets
 if [ $BUILD_MAC == 1 ]; then
 	rsync -a "$CALLDIR/assets/mac/" ./
@@ -316,7 +332,6 @@ perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$app_dir/application.ini"
 
 # Remove unnecessary files
 find "$BUILD_DIR" -name .DS_Store -exec rm -f {} \;
-rm -rf "$base_dir/test"
 
 cd "$CALLDIR"
 
