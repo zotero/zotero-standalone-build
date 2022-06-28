@@ -241,9 +241,9 @@ if [ $BUILD_LINUX == 1 ]; then
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-i686
 	
-	cd firefox-i686
+	pushd firefox-i686
 	modify_omni linux32
-	cd ..
+	popd
 	
 	rm "firefox-$GECKO_VERSION.tar.bz2"
 	
@@ -252,9 +252,9 @@ if [ $BUILD_LINUX == 1 ]; then
 	tar xvf firefox-$GECKO_VERSION.tar.bz2
 	mv firefox firefox-x86_64
 	
-	cd firefox-x86_64
+	pushd firefox-x86_64
 	modify_omni linux64
-	cd ..
+	popd
 	
 	rm "firefox-$GECKO_VERSION.tar.bz2"
 fi
