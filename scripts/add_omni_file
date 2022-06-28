@@ -34,7 +34,7 @@ done
 
 mac_path="$STAGE_DIR/Zotero.app/Contents/Resources"
 win_path="$STAGE_DIR/Zotero_win32"
-linux_path="$STAGE_DIR/Zotero_win32"
+linux_path="$STAGE_DIR/Zotero_linux-x86_64"
 
 added=0
 for path in "$mac_path" "$win_path" "$linux_path"; do
