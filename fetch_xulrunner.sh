@@ -101,8 +101,15 @@ function modify_omni {
 	#  rm -f jsloader/resource/gre/modules/Sqlite.jsm
 	#  
 	# Disable unwanted components
-	cat components/components.manifest | grep -vi telemetry > components/components2.manifest
+	cat components/components.manifest | egrep -vi '(RemoteSettings|services-|telemetry|URLDecorationAnnotationsService)' > components/components2.manifest
 	mv components/components2.manifest components/components.manifest
+	
+	# Remove unwanted files
+	rm modules/FxAccounts*
+	# Causes a startup error -- try an empty file or a shim instead?
+	#rm modules/Telemetry*
+	rm modules/URLDecorationAnnotationsService.jsm
+	rm -rf modules/services-*
 	
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
 	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
