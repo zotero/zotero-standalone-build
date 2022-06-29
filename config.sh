@@ -1,9 +1,10 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Version of Gecko to build with
-GECKO_VERSION_MAC="101.0b3"
-GECKO_VERSION_LINUX="101.0b3"
+GECKO_VERSION_MAC="102.0b9"
+GECKO_VERSION_LINUX="102.0b9"
 GECKO_VERSION_WIN="78.1.0esr"
+RUST_VERSION=1.60.0
 
 # URL prefix for custom builds of Firefox components
 custom_components_url="https://download.zotero.org/dev/"
