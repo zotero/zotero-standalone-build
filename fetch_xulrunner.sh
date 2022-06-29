@@ -80,22 +80,19 @@ function modify_omni {
 	# https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/preferences.html
 	#
 	# It's not clear that most of these do anything anymore when not compiled in, but just in case
-	perl -pi -e 's/MOZILLA_OFFICIAL:/MOZILLA_OFFICIAL: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_REQUIRE_SIGNING:/MOZ_REQUIRE_SIGNING: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_ALLOW_LEGACY_EXTENSIONS:/MOZ_ALLOW_LEGACY_EXTENSIONS: true, _: /' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_DATA_REPORTING:/MOZ_DATA_REPORTING: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_SERVICES_HEALTHREPORT:/MOZ_SERVICES_HEALTHREPORT: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_TELEMETRY_REPORTING:/MOZ_TELEMETRY_REPORTING: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_TELEMETRY_ON_BY_DEFAULT:/MOZ_TELEMETRY_ON_BY_DEFAULT: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_CRASHREPORTER:/MOZ_CRASHREPORTER: false \&\&/' modules/AppConstants.jsm
 	perl -pi -e 's/MOZ_UPDATE_CHANNEL:.+/MOZ_UPDATE_CHANNEL: "none",/' modules/AppConstants.jsm
+	perl -pi -e 's/"https:\/\/[^\/]+mozilla.com.+"/""/' modules/AppConstants.jsm
 	
-	perl -pi -e 's/pref\("toolkit.telemetry.unified".+/pref("toolkit.telemetry.unified", false);/' greprefs.js
+	perl -pi -e 's/pref\("network.captive-portal-service.enabled".+/pref("network.captive-portal-service.enabled", false);/' greprefs.js
+	perl -pi -e 's/pref\("network.connectivity-service.enabled".+/pref("network.connectivity-service.enabled", false);/' greprefs.js
 	perl -pi -e 's/pref\("toolkit.telemetry.server".+/pref("toolkit.telemetry.server", "");/' greprefs.js
-	# This doesn't work, but the other two should take care of it
-	echo 'pref("toolkit.telemetry.enabled", false);' >> greprefs.js
-	
-	
+	perl -pi -e 's/pref\("toolkit.telemetry.unified".+/pref("toolkit.telemetry.unified", false);/' greprefs.js
 	
 	#  
 	#  # Disable transaction timeout

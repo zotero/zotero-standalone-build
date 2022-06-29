@@ -164,7 +164,7 @@ elif [ $BUILD_LINUX == 1 ]; then
 	cp -Rp "$LINUX_x86_64_RUNTIME_PATH"/browser/omni "$app_dir"
 fi
 set -e
-cd omni
+cd $omni_dir
 # Move some Firefox files that would be overwritten out of the way
 mv chrome.manifest chrome.manifest-fx
 mv components components-fx
@@ -191,19 +191,27 @@ mv components/* components-fx
 rmdir components
 mv components-fx components
 
-# defaults
-cp "$CALLDIR/assets/prefs.js" defaults-fx/preferences/zotero.js
-cat defaults/preferences/zotero.js >> defaults-fx/preferences/zotero.js
-
-# Remove telemetry prefs
-grep -v telemetry defaults-fx/preferences/firefox.js > defaults-fx/preferences/firefox.js.tmp
-mv defaults-fx/preferences/firefox.js.tmp defaults-fx/preferences/firefox.js
-
-prefs_file=defaults/preferences/zotero.js
-rm $prefs_file
-rmdir defaults/preferences
-rmdir defaults
+mv defaults defaults-z
 mv defaults-fx defaults
+prefs_file=defaults/preferences/zotero.js
+
+# Transfer Firefox prefs, omitting some that are set in greprefs.js by fetch_xulrunner
+egrep -v '(network.captive-portal-service.enabled)' defaults/preferences/firefox.js > $prefs_file
+rm defaults/preferences/firefox.js
+
+# Combine app and "extension" Zotero prefs
+echo "" >> $prefs_file
+echo "#" >> $prefs_file
+echo "# Zotero app prefs" >> $prefs_file
+echo "#" >> $prefs_file
+echo "" >> $prefs_file
+cat "$CALLDIR/assets/prefs.js" >> $prefs_file
+echo "" >> $prefs_file
+echo "# Zotero extension prefs" >> $prefs_file
+echo "" >> $prefs_file
+cat defaults-z/preferences/zotero.js >> $prefs_file
+
+rm -rf defaults-z
 
 # Platform-specific prefs
 if [ $BUILD_MAC == 1 ]; then

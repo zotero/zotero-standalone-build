@@ -82,12 +82,12 @@ pref("places.history.enabled", false);
 // Probably not used, but prevent an error in the console
 pref("app.support.baseURL", "https://www.zotero.org/support/");
 
-// Disable Telemetry, Health Report, and error reporting
+// Disable Telemetry, Health Report, error reporting, and remote settings
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
-pref("datareporting.healthreport.service.enabled", false);
 pref("datareporting.policy.dataSubmissionEnabled", false);
 pref("toolkit.crashreporter.enabled", false);
+pref("extensions.remoteSettings.disabled", true);
 
 // Preferences to allow updating add-ons from AMO
 // TODO: Does this work for Standalone, or do we need to pretend to be Firefox?
