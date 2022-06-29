@@ -307,10 +307,6 @@ elif [ $BUILD_LINUX == 1 ]; then
 	rsync -a "$CALLDIR/assets/unix/" ./
 fi
 
-if [ $BUILD_MAC == 1 ]; then
-	mv chrome/content/zotero/standalone/hiddenWindow.xul chrome/browser/content/browser/hiddenWindowMac.xhtml
-fi
-
 # Delete files that shouldn't be distributed
 find chrome -name .DS_Store -exec rm -f {} \;
 
