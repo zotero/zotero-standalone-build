@@ -265,15 +265,14 @@ echo "Version: $VERSION"
 rm -rf META-INF
 
 # Copy branding
-cp -R "$CALLDIR/assets/branding" chrome/branding
-rm -rf chrome/browser/content/branding/*
-cp -R "$CALLDIR"/assets/branding/content/* chrome/browser/content/branding/
+#cp -R "$CALLDIR/assets/branding/content" chrome/branding/content
+cp -R "$CALLDIR"/assets/branding/locale/brand.{dtd,properties} chrome/en-US/locale/branding/
 cp "$CALLDIR/assets/branding/locale/brand.ftl" localization/en-US/branding/brand.ftl
 
 # Copy localization .ftl files
-for locale in `ls $omni_dir/chrome/locale/`; do
-	mkdir -p "$omni_dir/localization/$locale/zotero"
-	cp $omni_dir/chrome/locale/$locale/zotero/mozilla/*.ftl "$omni_dir/localization/$locale/zotero/"
+for locale in `ls chrome/locale/`; do
+	mkdir -p localization/$locale/zotero
+	cp chrome/locale/$locale/zotero/mozilla/*.ftl localization/$locale/zotero/
 done
 
 # Add to chrome manifest

@@ -1,4 +1,4 @@
-locale	branding en-US		chrome/branding/locale/
+locale	branding en-US		chrome/en-US/locale/branding/
 content	branding			chrome/branding/content/
 skin	browser				preferences		chrome/skin/
 
