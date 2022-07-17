@@ -1,8 +1,8 @@
 ac_add_options --with-macos-sdk=$HOME/tmp/MacOSX10.11.sdk
 
-export PATH="/usr/local/opt/llvm@6/bin:$PATH"
-export LDFLAGS="-L/usr/local/opt/llvm@6/lib"
-export CPPFLAGS="-I/usr/local/opt/llvm@6/include"
+export PATH="/usr/local/opt/llvm@7/bin:$PATH"
+export LDFLAGS="-L/usr/local/opt/llvm@7/lib"
+export CPPFLAGS="-I/usr/local/opt/llvm@7/include"
 export CXXFLAGS="$CXXFLAGS -stdlib=libc++"
 mk_add_options AUTOCONF=/usr/local/Cellar/autoconf@2.13/2.13/bin/autoconf213
 
