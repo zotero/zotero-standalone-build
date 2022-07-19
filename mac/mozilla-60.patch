@@ -212,13 +212,13 @@ diff -r d8dd10ac5430 nsprpub/pr/src/linking/prlink.c
  #endif
 diff -r d8dd10ac5430 toolkit/xre/nsNativeAppSupportCocoa.mm
 --- a/toolkit/xre/nsNativeAppSupportCocoa.mm	Thu Aug 22 09:31:51 2019 +0200
-+++ b/toolkit/xre/nsNativeAppSupportCocoa.mm	Sun Jul 17 05:00:05 2022 -0400
++++ b/toolkit/xre/nsNativeAppSupportCocoa.mm	Tue Jul 19 17:10:35 2022 -0400
 @@ -89,7 +89,7 @@
    // alert here.  But the alert's message and buttons would require custom
    // localization.  So (for now at least) we just log an English message
    // to the console before quitting.
 -  if (major < 10 || minor < 6) {
-+  if (major < 10 || (major == 10 && minor < 12)) {
++  if (major < 10 || (major == 10 && minor < 11)) {
      NSLog(@"Minimum OS version requirement not met!");
      return NS_OK;
    }
