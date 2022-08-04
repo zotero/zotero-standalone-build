@@ -151,6 +151,9 @@ function modify_omni {
 	perl -pi -e 's/window.sizeToContent\(\);/if (ui.infoIcon.complete) window.sizeToContent();/' chrome/toolkit/content/global/commonDialog.js
 	perl -pi -e 's/ui.infoIcon.addEventListener/if (!ui.infoIcon.complete) ui.infoIcon.addEventListener/' chrome/toolkit/content/global/commonDialog.js
 	
+	# Use native checkbox instead of Firefox-themed version
+	perl -pi -e 's/<xul:checkbox/<xul:checkbox native=\"true\"/' chrome/toolkit/content/global/commonDialog.xhtml
+	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
 	cd ..
