@@ -145,7 +145,9 @@ function modify_omni {
 	#  echo '.detail-view-container #warning-container { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
 	#  # Hide legacy label
 	#  echo '.legacy-warning { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-
+	
+	# The first displayed Services.prompt dialog's size jumps around because sizeToContent() is called twice
+	# Fix by preventing the first sizeToContent() call if the icon hasn't been loaded yet
 	perl -pi -e 's/window.sizeToContent\(\);/if (ui.infoIcon.complete) window.sizeToContent();/' chrome/toolkit/content/global/commonDialog.js
 	perl -pi -e 's/ui.infoIcon.addEventListener/if (!ui.infoIcon.complete) ui.infoIcon.addEventListener/' chrome/toolkit/content/global/commonDialog.js
 	
