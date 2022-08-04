@@ -145,6 +145,9 @@ function modify_omni {
 	#  echo '.detail-view-container #warning-container { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
 	#  # Hide legacy label
 	#  echo '.legacy-warning { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+
+	perl -pi -e 's/window.sizeToContent\(\);/if (ui.infoIcon.complete) window.sizeToContent();/' chrome/toolkit/content/global/commonDialog.js
+	perl -pi -e 's/ui.infoIcon.addEventListener/if (!ui.infoIcon.complete) ui.infoIcon.addEventListener/' chrome/toolkit/content/global/commonDialog.js
 	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
