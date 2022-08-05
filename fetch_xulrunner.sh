@@ -111,6 +111,22 @@ function modify_omni {
 	rm modules/URLDecorationAnnotationsService.jsm
 	rm -rf modules/services-*
 	
+	# Clear most WebExtension manifest properties
+	if ! grep -qE 'manifest = normalized.value' modules/Extension.jsm; then echo "'manifest = normalized.value' not found"; exit 1; fi
+	perl -pi -e 's/manifest = normalized.value;/manifest = normalized.value;
+    if (this.type == "extension") {
+      if (!manifest.applications?.gecko?.id
+          || !manifest.applications?.gecko?.update_url) {
+        return null;
+      }
+      manifest.browser_specific_settings = [];
+      manifest.content_scripts = [];
+      manifest.permissions = [];
+      manifest.host_permissions = [];
+      manifest.web_accessible_resources = undefined;
+      manifest.experiment_apis = {};
+    }/' modules/Extension.jsm
+    
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
 	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
 	#  
@@ -178,6 +194,14 @@ function modify_omni {
 	unzip omni.ja
 	set -e
 	rm omni.ja
+	
+	# Remove Firefox overrides (e.g., to use Firefox-specific strings for connection errors)
+	egrep -v '(override)' chrome/chrome.manifest > chrome/chrome.manifest2
+	mv chrome/chrome.manifest2 chrome/chrome.manifest
+	
+	# Remove WebExtension APIs
+	egrep -v ext-browser.json components/components.manifest > components/components.manifest2
+	mv components/components.manifest2 components/components.manifest
 }
 
 mkdir -p xulrunner

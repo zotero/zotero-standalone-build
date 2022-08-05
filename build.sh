@@ -287,10 +287,6 @@ done
 echo "" >> chrome.manifest
 cat "$CALLDIR/assets/chrome.manifest" >> chrome.manifest
 
-# Remove Firefox overrides (e.g., to use Firefox-specific strings for connection errors)
-egrep -v '(override)' chrome/chrome.manifest > chrome/chrome.manifest2
-mv chrome/chrome.manifest2 chrome/chrome.manifest
-
 # Move test files to root directory
 if [ $include_tests -eq 1 ]; then
 	cat test/chrome.manifest >> chrome.manifest
