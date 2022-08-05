@@ -131,20 +131,36 @@ function modify_omni {
 	#  if [[ $platform == 'mac' ]]; then
 	#  	echo "* { font-family: Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, -apple-system, sans-serif !important; }" >> chrome/toolkit/skin/classic/global/global.css
 	#  fi
-	#  
-	#  # Modify Add-ons window
-	#  echo >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  echo '#category-theme { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  echo '#category-plugin { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  # Hide add-on warning in list view unless explicitly allowed (in standalone.js)
-	#  echo '.addon > .warning:not(.allowed-warning) image { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  echo '.addon > .warning:not(.allowed-warning) label[anonid="warning"] { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  # Always hide add-on warning text link, since it would go to Mozilla
-	#  echo '.addon > .warning .text-link { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  # Always hide add-on warning in detail view
-	#  echo '.detail-view-container #warning-container { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
-	#  # Hide legacy label
-	#  echo '.legacy-warning { display: none; }' >> chrome/toolkit/content/mozapps/extensions/extensions.css
+	
+	#
+	# Modify Add-ons window
+	#
+	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.css"
+	echo >> $file
+	# Hide search bar, Themes and Plugins tabs, and sidebar footer
+	echo '.main-search, button[name="theme"], button[name="plugin"], sidebar-footer { display: none; }' >> $file
+	echo '.main-heading { margin-top: 2em; }' >> $file
+	# Hide Details/Permissions tabs in addon details so we only show details
+	echo 'addon-details > button-group { display: none !important; }' >> $file
+	# Hide "Debug Addons" and "Manage Extension Shortcuts"
+	echo 'panel-item[action="debug-addons"], panel-item[action="reset-update-states"] + panel-item-separator, panel-item[action="manage-shortcuts"] { display: none }' >> $file
+	
+	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.js"
+	# Hide unsigned-addon warning
+	perl -pi -e 's/if \(!isCorrectlySigned\(addon\)\) \{/if (!isCorrectlySigned(addon)) {return {};/' $file
+	# Hide Private Browsing setting in addon details
+	perl -pi -e 's/pbRow\./\/\/pbRow./' $file
+	perl -pi -e 's/let isAllowed = await isAllowedInPrivateBrowsing/\/\/let isAllowed = await isAllowedInPrivateBrowsing/' $file
+	# Use our own strings for the removal prompt
+	perl -pi -e 's/let \{ BrowserAddonUI \} = windowRoot.ownerGlobal;//' $file
+	perl -pi -e 's/await BrowserAddonUI.promptRemoveExtension/promptRemoveExtension/' $file
+	
+	# Hide Recommendations tab in sidebar and recommendations in main pane
+	perl -pi -e 's/function isDiscoverEnabled\(\) \{/function isDiscoverEnabled() {return false;/' chrome/toolkit/content/mozapps/extensions/aboutaddonsCommon.js
+	perl -pi -e 's/pref\("extensions.htmlaboutaddons.recommendations.enabled".+/pref("extensions.htmlaboutaddons.recommendations.enabled", false);/' greprefs.js
+	
+	# Hide Report option
+	perl -pi -e 's/pref\("extensions.abuseReport.enabled".+/pref("extensions.abuseReport.enabled", false);/' greprefs.js
 	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
