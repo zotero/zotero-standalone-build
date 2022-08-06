@@ -171,6 +171,13 @@ function modify_omni {
 	perl -pi -e 's/let \{ BrowserAddonUI \} = windowRoot.ownerGlobal;//' $file
 	perl -pi -e 's/await BrowserAddonUI.promptRemoveExtension/promptRemoveExtension/' $file
 	
+	# Customize empty-list message
+	perl -pi -e 's/createEmptyListMessage\(\) {/createEmptyListMessage() {
+        var p = document.createElement("p");
+        p.id = "empty-list-message";
+        return p;/' $file
+	# Swap in include.js, which we need for Zotero.getString(), for abuse-reports.js, which we don't need
+	
 	# Hide Recommendations tab in sidebar and recommendations in main pane
 	perl -pi -e 's/function isDiscoverEnabled\(\) \{/function isDiscoverEnabled() {return false;/' chrome/toolkit/content/mozapps/extensions/aboutaddonsCommon.js
 	perl -pi -e 's/pref\("extensions.htmlaboutaddons.recommendations.enabled".+/pref("extensions.htmlaboutaddons.recommendations.enabled", false);/' greprefs.js
