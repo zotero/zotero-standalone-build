@@ -127,6 +127,18 @@ function modify_omni {
       manifest.experiment_apis = {};
     }/' modules/Extension.jsm
     
+    # Allow addon installation by bypassing confirmation dialogs. If we want a confirmation dialog,
+    # we need to either add gXPInstallObserver from browser-addons.js [1][2] or provide our own with
+    # Ci.amIWebInstallPrompt [3].
+    #
+    # [1] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser.js#1902-1923
+    # [2] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser-addons.js#201
+    # [3] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/toolkit/mozapps/extensions/AddonManager.jsm#3114-3124
+	perl -pi -e 's/if \(info.addon.userPermissions\) \{/if (false) {/' modules/AddonManager.jsm
+	perl -pi -e 's/\} else if \(info.addon.sitePermissions\) \{/} else if (false) {/' modules/AddonManager.jsm
+	perl -pi -e 's/\} else if \(requireConfirm\) \{/} else if (false) {/' modules/AddonManager.jsm
+    
+    
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
 	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
 	#  
