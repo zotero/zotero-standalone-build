@@ -195,7 +195,10 @@ mv defaults defaults-z
 mv defaults-fx defaults
 prefs_file=defaults/preferences/zotero.js
 
-# Transfer Firefox prefs, omitting some that are set in greprefs.js by fetch_xulrunner
+# Transfer Firefox prefs, omitting some with undesirable overrides from the base prefs
+#
+# - network.captive-portal-service.enabled
+#       Disable the captive portal check against Mozilla servers
 egrep -v '(network.captive-portal-service.enabled)' defaults/preferences/firefox.js > $prefs_file
 rm defaults/preferences/firefox.js
 
