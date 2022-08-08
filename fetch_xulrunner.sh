@@ -137,8 +137,17 @@ function modify_omni {
 	perl -pi -e 's/if \(info.addon.userPermissions\) \{/if (false) {/' modules/AddonManager.jsm
 	perl -pi -e 's/\} else if \(info.addon.sitePermissions\) \{/} else if (false) {/' modules/AddonManager.jsm
 	perl -pi -e 's/\} else if \(requireConfirm\) \{/} else if (false) {/' modules/AddonManager.jsm
-    
-    
+	
+	# Look for applications.zotero instead of applications.gecko in manifest.json and use the app
+	# id and version for strict_min_version/strict_max_version comparisons
+	perl -pi -e 's/gecko: \{\},/zotero: {},/' modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e 's/if \(!\("gecko" in applications\)\) \{/if (!("zotero" in applications)) {/' modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e 's/"gecko not in application entry/"zotero not in application entry/' modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e 's/let app = getProperty\(applications, "gecko", "object"\);/let app = getProperty(applications, "zotero", "object");/' modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e 's/AddonManagerPrivate.webExtensionsMinPlatformVersion/7.0/' modules/addons/AddonUpdateChecker.jsm
+	perl -pi -e 's/result.targetApplications.push/false && result.targetApplications.push/' modules/addons/AddonUpdateChecker.jsm
+	
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
 	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
 	#  
