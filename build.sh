@@ -454,9 +454,7 @@ if [ $BUILD_MAC == 1 ]; then
 			"$APPDIR/Contents/MacOS/pdftotext" \
 			"$APPDIR/Contents/MacOS/pdfinfo" \
 			"$APPDIR/Contents/MacOS/XUL" \
-			"$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater" \
-			"$APPDIR/Contents/XPCServices/ZoteroWordIntegrationService.xpc/Contents/MacOS/ZoteroWordIntegrationService" \
-			"$APPDIR/Contents/XPCServices/ZoteroWordIntegrationService.xpc"
+			"$APPDIR/Contents/MacOS/updater.app/Contents/MacOS/org.mozilla.updater"
 		find "$APPDIR/Contents" -name '*.dylib' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		find "$APPDIR/Contents" -name '*.app' -exec /usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" {} \;
 		/usr/bin/codesign --force --options runtime --entitlements "$entitlements_file" --sign "$DEVELOPER_ID" "$APPDIR/Contents/MacOS/zotero"
