@@ -169,6 +169,9 @@ function modify_omni {
 	#  	echo "* { font-family: Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, -apple-system, sans-serif !important; }" >> chrome/toolkit/skin/classic/global/global.css
 	#  fi
 	
+	# Use Zotero URL opening in Mozilla dialogs (e.g., app update dialog)
+	perl -pi -e 's/function openURL\(aURL\) \{/function openURL(aURL) {let {Zotero} = ChromeUtils.import("chrome:\/\/zotero\/content\/include.jsm"); Zotero.launchURL(aURL); return;/' chrome/toolkit/content/global/contentAreaUtils.js
+	
 	#
 	# Modify Add-ons window
 	#
@@ -222,6 +225,10 @@ function modify_omni {
 	unzip omni.ja
 	set -e
 	rm omni.ja
+	
+	# Remove Firefox update URLs
+	egrep -v 'pref\("app.update.url.(manual|details)' defaults/preferences/firefox-branding.js > defaults/preferences/firefox-branding.js2
+	mv defaults/preferences/firefox-branding.js2 defaults/preferences/firefox-branding.js
 	
 	# Remove Firefox overrides (e.g., to use Firefox-specific strings for connection errors)
 	egrep -v '(override)' chrome/chrome.manifest > chrome/chrome.manifest2
