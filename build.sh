@@ -282,8 +282,11 @@ cp "$CALLDIR/assets/branding/locale/brand.ftl" localization/en-US/branding/brand
 
 # Copy localization .ftl files
 for locale in `ls chrome/locale/`; do
-	mkdir -p localization/$locale/zotero
-	cp chrome/locale/$locale/zotero/mozilla/*.ftl localization/$locale/zotero/
+	mkdir -p localization/$locale/mozilla
+	cp chrome/locale/$locale/zotero/mozilla/*.ftl localization/$locale/mozilla/
+	# TEMP: Until we've created zotero.ftl in all locales
+	touch chrome/locale/$locale/zotero/zotero.ftl
+	cp chrome/locale/$locale/zotero/*.ftl localization/$locale/
 done
 
 # Add to chrome manifest
