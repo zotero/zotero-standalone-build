@@ -115,11 +115,16 @@ function modify_omni {
 	if ! grep -qE 'manifest = normalized.value' modules/Extension.jsm; then echo "'manifest = normalized.value' not found"; exit 1; fi
 	perl -pi -e 's/manifest = normalized.value;/manifest = normalized.value;
     if (this.type == "extension") {
-      if (!manifest.applications?.gecko?.id
-          || !manifest.applications?.gecko?.update_url) {
-        return null;
+      if (!manifest.applications?.zotero?.id) {
+        this.manifestError("applications.zotero.id not provided");
       }
-      manifest.browser_specific_settings = [];
+      if (!manifest.applications?.zotero?.update_url) {
+        this.manifestError("applications.zotero.update_url not provided");
+      }
+      if (!manifest.applications?.zotero?.strict_max_version) {
+        this.manifestError("applications.zotero.strict_max_version not provided");
+      }
+      manifest.browser_specific_settings = undefined;
       manifest.content_scripts = [];
       manifest.permissions = [];
       manifest.host_permissions = [];
@@ -127,19 +132,16 @@ function modify_omni {
       manifest.experiment_apis = {};
     }/' modules/Extension.jsm
     
-    # Allow addon installation by bypassing confirmation dialogs. If we want a confirmation dialog,
-    # we need to either add gXPInstallObserver from browser-addons.js [1][2] or provide our own with
-    # Ci.amIWebInstallPrompt [3].
-    #
-    # [1] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser.js#1902-1923
-    # [2] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser-addons.js#201
-    # [3] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/toolkit/mozapps/extensions/AddonManager.jsm#3114-3124
-	perl -pi -e 's/if \(info.addon.userPermissions\) \{/if (false) {/' modules/AddonManager.jsm
-	perl -pi -e 's/\} else if \(info.addon.sitePermissions\) \{/} else if (false) {/' modules/AddonManager.jsm
-	perl -pi -e 's/\} else if \(requireConfirm\) \{/} else if (false) {/' modules/AddonManager.jsm
+	# Use applications.zotero instead of applications.gecko
+	perl -pi -e 's/let bss = manifest.applications\?.gecko/let bss = manifest.applications?.zotero/' modules/addons/XPIInstall.jsm
+	perl -pi -e 's/manifest.applications\?.gecko/manifest.applications?.zotero/' modules/Extension.jsm
 	
-	# Look for applications.zotero instead of applications.gecko in manifest.json and use the app
-	# id and version for strict_min_version/strict_max_version comparisons
+	# When installing addon, use app version instead of toolkit version for targetApplication
+	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/XPIInstall.jsm
+	perl -pi -e 's/let version;/dump(app.id + " " + Services.appinfo.ID + "\\n\\n"); let version;/' modules/addons/XPIDatabase.jsm
+	
+	# For updates, look for applications.zotero instead of applications.gecko in manifest.json and
+	# use the app id and version for strict_min_version/strict_max_version comparisons
 	perl -pi -e 's/gecko: \{\},/zotero: {},/' modules/addons/AddonUpdateChecker.jsm
 	perl -pi -e 's/if \(!\("gecko" in applications\)\) \{/if (!("zotero" in applications)) {/' modules/addons/AddonUpdateChecker.jsm
 	perl -pi -e 's/"gecko not in application entry/"zotero not in application entry/' modules/addons/AddonUpdateChecker.jsm
@@ -147,6 +149,17 @@ function modify_omni {
 	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/AddonUpdateChecker.jsm
 	perl -pi -e 's/AddonManagerPrivate.webExtensionsMinPlatformVersion/7.0/' modules/addons/AddonUpdateChecker.jsm
 	perl -pi -e 's/result.targetApplications.push/false && result.targetApplications.push/' modules/addons/AddonUpdateChecker.jsm
+	
+	# Allow addon installation by bypassing confirmation dialogs. If we want a confirmation dialog,
+	# we need to either add gXPInstallObserver from browser-addons.js [1][2] or provide our own with
+	# Ci.amIWebInstallPrompt [3].
+	#
+	# [1] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser.js#1902-1923
+	# [2] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser-addons.js#201
+	# [3] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/toolkit/mozapps/extensions/AddonManager.jsm#3114-3124
+	perl -pi -e 's/if \(info.addon.userPermissions\) \{/if (false) {/' modules/AddonManager.jsm
+	perl -pi -e 's/\} else if \(info.addon.sitePermissions\) \{/} else if (false) {/' modules/AddonManager.jsm
+	perl -pi -e 's/\} else if \(requireConfirm\) \{/} else if (false) {/' modules/AddonManager.jsm
 	
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
 	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
