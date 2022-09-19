@@ -138,7 +138,6 @@ function modify_omni {
 	
 	# When installing addon, use app version instead of toolkit version for targetApplication
 	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/XPIInstall.jsm
-	perl -pi -e 's/let version;/dump(app.id + " " + Services.appinfo.ID + "\\n\\n"); let version;/' modules/addons/XPIDatabase.jsm
 	
 	# For updates, look for applications.zotero instead of applications.gecko in manifest.json and
 	# use the app id and version for strict_min_version/strict_max_version comparisons
