@@ -309,6 +309,49 @@ elif [ $BUILD_LINUX == 1 ]; then
 	rsync -a "$CALLDIR/assets/unix/" ./
 fi
 
+# Add word processor plug-ins
+if [ $BUILD_MAC == 1 ]; then
+	pluginDir="$CALLDIR/modules/zotero-word-for-mac-integration"
+	mkdir -p "integration/word-for-mac"
+	cp -RH "$pluginDir/components" \
+		"$pluginDir/resource" \
+		"$pluginDir/chrome.manifest" \
+		"integration/word-for-mac"
+	echo -n "Word for Mac plugin version: "
+	cat "integration/word-for-mac/resource/version.txt"
+	echo
+	echo >> $prefs_file
+	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> $prefs_file
+	echo >> $prefs_file
+elif [ $BUILD_WIN32 == 1 ]; then
+	pluginDir="$CALLDIR/modules/zotero-word-for-windows-integration"
+	mkdir -p "integration/word-for-windows"
+	cp -RH "$pluginDir/components" \
+		"$pluginDir/resource" \
+		"$pluginDir/chrome.manifest" \
+		"integration/word-for-windows"
+	echo -n "Word for Windows plugin version: "
+	cat "integration/word-for-windows/resource/version.txt"
+	echo
+	echo >> $prefs_file
+	cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> $prefs_file
+	echo >> $prefs_file
+fi
+# Libreoffice plugin for all platforms
+pluginDir="$CALLDIR/modules/zotero-libreoffice-integration"
+mkdir -p "integration/libreoffice"
+cp -RH "$pluginDir/chrome" \
+	"$pluginDir/components" \
+	"$pluginDir/resource" \
+	"$pluginDir/chrome.manifest" \
+	"integration/libreoffice"
+echo -n "LibreOffice plugin version: "
+cat "integration/libreoffice/resource/version.txt"
+echo
+echo >> $prefs_file
+cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroLibreOfficeIntegration.js" >> $prefs_file
+echo >> $prefs_file
+
 # Delete files that shouldn't be distributed
 find chrome -name .DS_Store -exec rm -f {} \;
 
@@ -398,44 +441,14 @@ if [ $BUILD_MAC == 1 ]; then
 	# Copy app files
 	rsync -a "$base_dir/" "$CONTENTSDIR/Resources/"
 	
-	# Add devtools
-	#if [ $DEVTOOLS -eq 1 ]; then
-	#	# Create devtools.jar
-	#	cd "$BUILD_DIR"
-	#	mkdir -p devtools/locale
-	#	cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/devtools/* devtools/
-	#	cp -r "$MAC_RUNTIME_PATH"/Contents/Resources/devtools-files/chrome/locale/* devtools/locale/
-	#	cd devtools
-	#	zip -r -q ../devtools.jar *
-	#	cd ..
-	#	rm -rf devtools
-	#	mv devtools.jar "$CONTENTSDIR/Resources/"
-	#	
-	#	cp "$MAC_RUNTIME_PATH/Contents/Resources/devtools-files/components/interfaces.xpt" "$CONTENTSDIR/Resources/components/"
-	#fi
-	
 	# Add word processor plug-ins
-	mkdir "$CONTENTSDIR/Resources/extensions"
-	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration" "$CONTENTSDIR/Resources/extensions/zoteroMacWordIntegration@zotero.org"
-	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$CONTENTSDIR/Resources/extensions/zoteroOpenOfficeIntegration@zotero.org"
-	echo
-	for ext in "zoteroMacWordIntegration@zotero.org" "zoteroOpenOfficeIntegration@zotero.org"; do
-		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
-		echo -n "$ext Version: "
-		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$CONTENTSDIR/Resources/extensions/$ext/install.rdf"
-		rm -rf "$CONTENTSDIR/Resources/extensions/$ext/.git" "$CONTENTSDIR/Resources/extensions/$ext/.github"
-	done
-	# Default preferenes are no longer read from built-in extensions in Firefox 60
-	#echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	#cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	#echo >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$CONTENTSDIR/Resources/defaults/preferences/prefs.js"
-	#echo
+	mkdir "$CONTENTSDIR/Resources/integration"
+	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$CONTENTSDIR/Resources/integration/libreoffice"
+	cp -RH "$CALLDIR/modules/zotero-word-for-mac-integration/install" "$CONTENTSDIR/Resources/integration/word-for-mac"
 	
 	# Delete extraneous files
 	find "$CONTENTSDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$CONTENTSDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
-	find "$CONTENTSDIR/Resources/extensions" -depth -type d -name build -exec rm -rf {} \;
 
 	# Copy over removed-files and make a precomplete file since it
 	# needs to be stable for the signature
@@ -602,28 +615,13 @@ if [ $BUILD_WIN32 == 1 ]; then
 	#fi
 	
 	# Add word processor plug-ins
-	mkdir "$APPDIR/extensions"
-	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration" "$APPDIR/extensions/zoteroWinWordIntegration@zotero.org"
-	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
-	echo
-	for ext in "zoteroWinWordIntegration@zotero.org" "zoteroOpenOfficeIntegration@zotero.org"; do
-		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/$ext/install.rdf"
-		echo -n "$ext Version: "
-		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/$ext/install.rdf"
-		rm -rf "$APPDIR/extensions/$ext/.git" "$APPDIR/extensions/$ext/.github"
-	done
-	# Default preferenes are no longer read from built-in extensions in Firefox 60
-	#echo >> "$APPDIR/defaults/preferences/prefs.js"
-	#cat "$CALLDIR/modules/zotero-word-for-windows-integration/defaults/preferences/zoteroWinWordIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-	#echo >> "$APPDIR/defaults/preferences/prefs.js"
-	#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-	#echo >> "$APPDIR/defaults/preferences/prefs.js"
-	#echo
+	mkdir -p "$APPDIR/integration"
+	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$APPDIR/integration/libreoffice"
+	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration/install" "$APPDIR/integration/word-for-windows"
 
 	# Delete extraneous files
 	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
 	find "$APPDIR" \( -name .DS_Store -or -name '.git*' -or -name '.travis.yml' -or -name update.rdf -or -name '*.bak' \) -exec rm -f {} \;
-	find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 	find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
 	
 	if [ $PACKAGE == 1 ]; then
@@ -783,40 +781,13 @@ if [ $BUILD_LINUX == 1 ]; then
 		# Copy app files
 		rsync -a "$base_dir/" "$APPDIR/"
 		
-		# Add devtools
-		#if [ $DEVTOOLS -eq 1 ]; then
-		#	# Create devtools.jar
-		#	cd "$BUILD_DIR"
-		#	mkdir -p devtools/locale
-		#	cp -r "$RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
-		#	cp -r "$RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
-		#	cd devtools
-		#	zip -r -q ../devtools.jar *
-		#	cd ..
-		#	rm -rf devtools
-		#	mv devtools.jar "$APPDIR"
-		#	
-		#	cp "$RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
-		#fi
-		
 		# Add word processor plug-ins
-		mkdir "$APPDIR/extensions"
-		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org"
-		perl -pi -e 's/\.SOURCE<\/em:version>/.SA.'"$VERSION"'<\/em:version>/' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
-		echo
-		echo -n "zoteroOpenOfficeIntegration@zotero.org Version: "
-		perl -ne 'print and last if s/.*<em:version>(.*)<\/em:version>.*/\1/;' "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/install.rdf"
-		echo
-		rm -rf "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.git" "$APPDIR/extensions/zoteroOpenOfficeIntegration@zotero.org/.github"
-		# Default preferenes are no longer read from built-in extensions in Firefox 60
-		#echo >> "$APPDIR/defaults/preferences/prefs.js"
-		#cat "$CALLDIR/modules/zotero-libreoffice-integration/defaults/preferences/zoteroOpenOfficeIntegration.js" >> "$APPDIR/defaults/preferences/prefs.js"
-		#echo >> "$APPDIR/defaults/preferences/prefs.js"
+		mkdir "$APPDIR/integration"
+		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$APPDIR/integration/libreoffice"
 		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
 		find "$APPDIR" \( -name .DS_Store -or -name update.rdf \) -exec rm -f {} \;
-		find "$APPDIR/extensions" -depth -type d -name build -exec rm -rf {} \;
 		
 		if [ $PACKAGE == 1 ]; then
 			# Create tar
