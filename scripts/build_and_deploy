@@ -133,7 +133,7 @@ do
 			architectures="mac"
 			;;
 		w)
-			architectures="win32"
+			architectures="win32 win64"
 			;;
 		l)
 			architectures="linux-i686 linux-x86_64"

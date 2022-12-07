@@ -3,17 +3,11 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Version of Gecko to build with
 GECKO_VERSION_MAC="102.0b9"
 GECKO_VERSION_LINUX="102.0b9"
-GECKO_VERSION_WIN="78.1.0esr"
+GECKO_VERSION_WIN="102.0b9"
 RUST_VERSION=1.60.0
 
 # URL prefix for custom builds of Firefox components
 custom_components_url="https://download.zotero.org/dev/"
-
-# Paths to Gecko runtimes
-MAC_RUNTIME_PATH="$DIR/xulrunner/Firefox.app"
-WIN32_RUNTIME_PATH="$DIR/xulrunner/firefox-win32"
-LINUX_i686_RUNTIME_PATH="$DIR/xulrunner/firefox-i686"
-LINUX_x86_64_RUNTIME_PATH="$DIR/xulrunner/firefox-x86_64"
 
 APP_NAME="Zotero"
 APP_ID="zotero\@zotero.org"

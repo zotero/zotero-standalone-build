@@ -61,7 +61,7 @@ function abspath {
 SOURCE_DIR=""
 ZIP_FILE=""
 BUILD_MAC=0
-BUILD_WIN32=0
+BUILD_WIN=0
 BUILD_LINUX=0
 PACKAGE=1
 DEVTOOLS=0
@@ -79,7 +79,7 @@ while getopts "d:f:p:c:tseq" opt; do
 			do
 				case ${OPTARG:i:1} in
 					m) BUILD_MAC=1;;
-					w) BUILD_WIN32=1;;
+					w) BUILD_WIN=1;;
 					l) BUILD_LINUX=1;;
 					*)
 						echo "$0: Invalid platform option ${OPTARG:i:1}"
@@ -118,7 +118,7 @@ elif [[ -n "$SOURCE_DIR" ]] && [[ -n "$ZIP_FILE" ]]; then
 fi
 
 # Require at least one platform
-if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN32 == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
+if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN == 0 ]] && [[ $BUILD_LINUX == 0 ]]; then
 	usage
 fi
 
@@ -134,6 +134,11 @@ if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ] || [ $UPDATE_CH
 fi
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
 BUILD_ID=`date +%Y%m%d%H%M%S`
+
+# Paths to Gecko runtimes
+MAC_RUNTIME_PATH="$CALLDIR/xulrunner/Firefox.app"
+WIN_RUNTIME_PATH_PREFIX="$CALLDIR/xulrunner/firefox-"
+LINUX_RUNTIME_PATH_PREFIX="$CALLDIR/xulrunner/firefox-"
 
 base_dir="$BUILD_DIR/base"
 app_dir="$BUILD_DIR/base/app"
@@ -157,11 +162,12 @@ cd "$app_dir"
 set +e
 if [ $BUILD_MAC == 1 ]; then
 	cp -Rp "$MAC_RUNTIME_PATH"/Contents/Resources/browser/omni "$app_dir"
-elif [ $BUILD_WIN32 == 1 ]; then
-	cp -Rp "$WIN32_RUNTIME_PATH"/browser/omni "$app_dir"
+elif [ $BUILD_WIN == 1 ]; then
+	# Non-arch-specific files, so just use 64-bit version
+	cp -Rp "${WIN_RUNTIME_PATH_PREFIX}win64"/browser/omni "$app_dir"
 elif [ $BUILD_LINUX == 1 ]; then
 	# Non-arch-specific files, so just use 64-bit version
-	cp -Rp "$LINUX_x86_64_RUNTIME_PATH"/browser/omni "$app_dir"
+	cp -Rp "${LINUX_RUNTIME_PATH_PREFIX}x86_64"/browser/omni "$app_dir"
 fi
 set -e
 cd $omni_dir
@@ -223,7 +229,7 @@ if [ $BUILD_MAC == 1 ]; then
 	# Fix horizontal mousewheel scrolling (this is set to 4 in the Fx60 .app greprefs.js, but
 	# defaults to 1 in later versions of Firefox, and needs to be 1 to work on macOS)
 	echo 'pref("mousewheel.with_shift.action", 1);' >> $prefs_file
-elif [ $BUILD_WIN32 == 1 ]; then
+elif [ $BUILD_WIN == 1 ]; then
 	perl -pi -e 's/%GECKO_VERSION%/'"$GECKO_VERSION_WIN"'/g' $prefs_file
 elif [ $BUILD_LINUX == 1 ]; then
 	# Modify platform-specific prefs
@@ -303,7 +309,7 @@ fi
 # Copy platform-specific assets
 if [ $BUILD_MAC == 1 ]; then
 	rsync -a "$CALLDIR/assets/mac/" ./
-elif [ $BUILD_WIN32 == 1 ]; then
+elif [ $BUILD_WIN == 1 ]; then
 	rsync -a "$CALLDIR/assets/win/" ./
 elif [ $BUILD_LINUX == 1 ]; then
 	rsync -a "$CALLDIR/assets/unix/" ./
@@ -323,7 +329,7 @@ if [ $BUILD_MAC == 1 ]; then
 	echo >> $prefs_file
 	cat "$CALLDIR/modules/zotero-word-for-mac-integration/defaults/preferences/zoteroMacWordIntegration.js" >> $prefs_file
 	echo >> $prefs_file
-elif [ $BUILD_WIN32 == 1 ]; then
+elif [ $BUILD_WIN == 1 ]; then
 	pluginDir="$CALLDIR/modules/zotero-word-for-windows-integration"
 	mkdir -p "integration/word-for-windows"
 	cp -RH "$pluginDir/components" \
@@ -557,201 +563,203 @@ if [ $BUILD_MAC == 1 ]; then
 	fi
 fi
 
-# Win32
-if [ $BUILD_WIN32 == 1 ]; then
-	echo 'Building Zotero_win32'
-	
-	# Set up directory
-	APPDIR="$STAGE_DIR/Zotero_win32"
-	rm -rf "$APPDIR"
-	mkdir "$APPDIR"
-	
-	# Copy relevant assets from Firefox
-	cp -R "$WIN32_RUNTIME_PATH"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
-
-	# Copy zotero_win32.exe, which is built directly from Firefox source
-	#
-	# After the initial build the temporary resource in "C:\mozilla-source\obj-i686-pc-mingw32\browser\app\module.res"
-	# is modified with Visual Studio resource editor where icon and file details are changed.
-	# Then firefox.exe is rebuilt again
-	cp "$CALLDIR/win/zotero_win32.exe" "$APPDIR/zotero.exe"
-	
-	# Update .exe version number (only possible on Windows)
-	if [ $WIN_NATIVE == 1 ]; then
-		# FileVersion is limited to four integers, so it won't be properly updated for non-release
-		# builds (e.g., we'll show 5.0.97.0 for 5.0.97-beta.37). ProductVersion will be the full
-		# version string.
-		rcedit "`cygpath -w \"$APPDIR/zotero.exe\"`" \
-			--set-file-version "$VERSION_NUMERIC" \
-			--set-product-version "$VERSION"
-	fi
-	
-	# Use our own updater, because Mozilla's requires updates signed by Mozilla
-	cp "$CALLDIR/win/updater.exe" "$APPDIR"
-	cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
-
-	# Copy PDF tools and data
-	cp "$CALLDIR/pdftools/pdftotext-win.exe" "$APPDIR/pdftotext.exe"
-	cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
-	cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
-	
-	# Copy app files
-	rsync -a "$base_dir/" "$APPDIR/"
-	
-	# Add devtools
-	#if [ $DEVTOOLS -eq 1 ]; then
-	#	# Create devtools.jar
-	#	cd "$BUILD_DIR"
-	#	mkdir -p devtools/locale
-	#	cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/devtools/* devtools/
-	#	cp -r "$WIN32_RUNTIME_PATH"/devtools-files/chrome/locale/* devtools/locale/
-	#	cd devtools
-	#	zip -r -q ../devtools.jar *
-	#	cd ..
-	#	rm -rf devtools
-	#	mv devtools.jar "$APPDIR"
-	#	
-	#	cp "$WIN32_RUNTIME_PATH/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
-	#fi
-	
-	# Add word processor plug-ins
-	mkdir -p "$APPDIR/integration"
-	cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$APPDIR/integration/libreoffice"
-	cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration/install" "$APPDIR/integration/word-for-windows"
-
-	# Delete extraneous files
-	find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
-	find "$APPDIR" \( -name .DS_Store -or -name '.git*' -or -name '.travis.yml' -or -name update.rdf -or -name '*.bak' \) -exec rm -f {} \;
-	find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
-	
-	if [ $PACKAGE == 1 ]; then
+# Windows
+if [ $BUILD_WIN == 1 ]; then
+	for arch in "win32" "win64"; do
+		echo "Building Zotero_$arch"
+		
+		runtime_path="${WIN_RUNTIME_PATH_PREFIX}${arch}"
+		
+		# Set up directory
+		APPDIR="$STAGE_DIR/Zotero_$arch"
+		rm -rf "$APPDIR"
+		mkdir "$APPDIR"
+		
+		# Copy relevant assets from Firefox
+		cp -R "$runtime_path"/!(application.ini|browser|defaults|devtools-files|crashreporter*|firefox.exe|maintenanceservice*|precomplete|removed-files|uninstall|update*) "$APPDIR"
+		
+		# Copy zotero.exe, which is built directly from Firefox source and then modified by
+		# ResourceHacker to add icons
+		cp "$CALLDIR/win/zotero_$arch.exe" "$APPDIR/zotero.exe"
+		
+		# Update .exe version number (only possible on Windows)
 		if [ $WIN_NATIVE == 1 ]; then
-			INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
-			
-			echo 'Creating Windows installer'
-			# Copy installer files
-			cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
-			
-			# Build and sign uninstaller
-			perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
-			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
-			mkdir "$APPDIR/uninstall"
-			mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
-			
-			# Sign zotero.exe, updater, uninstaller and PDF tools
-			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC" \
-					/du "$SIGNATURE_URL" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					/td SHA256 \
-					"`cygpath -w \"$APPDIR/zotero.exe\"`"
-				sleep $SIGNTOOL_DELAY
-
-				#
-				# Windows doesn't check DLL signatures
-				#
-				#for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
-				#	"`cygpath -u \"$SIGNTOOL\"`" \
-				#		sign /n "$SIGNTOOL_CERT_SUBJECT" \
-				#		/d "$SIGNATURE_DESC" \
-				#		/fd SHA256 \
-				#		/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-				#		/td SHA256 \
-				#		"`cygpath -w \"$dll\"`"
-				#done
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC Updater" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					/td SHA256 \
-					"`cygpath -w \"$APPDIR/updater.exe\"`"
-				sleep $SIGNTOOL_DELAY
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC Uninstaller" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					/td SHA256 \
-					"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
-				sleep $SIGNTOOL_DELAY
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC PDF Converter" \
-					/fd SHA256 \
-                                        /tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-                                        /td SHA256 \
-					"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
-				sleep $SIGNTOOL_DELAY
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC PDF Info" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					/td SHA256 \
-					"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
-				sleep $SIGNTOOL_DELAY
-			fi
-			
-			# Stage installer
-			INSTALLER_STAGE_DIR="$BUILD_DIR/win_installer/staging"
-			mkdir "$INSTALLER_STAGE_DIR"
-			cp -R "$APPDIR" "$INSTALLER_STAGE_DIR/core"
-			
-			# Build and sign setup.exe
-			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
-			mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
-			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC Setup" \
-					/du "$SIGNATURE_URL" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					/td SHA256 \
-					"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
-				sleep $SIGNTOOL_DELAY
-			fi
-			
-			# Compress application
-			cd "$INSTALLER_STAGE_DIR" && 7z a -r -t7z "`cygpath -w \"$BUILD_DIR/app_win32.7z\"`" \
-				-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
-				
-			# Compress 7zSD.sfx
-			upx --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
-				"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
-			
-			# Combine 7zSD.sfx and app.tag into setup.exe
-			cat "$BUILD_DIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
-				"$BUILD_DIR/app_win32.7z" > "$INSTALLER_PATH"
-			
-			# Sign Zotero_setup.exe
-			if [ $SIGN == 1 ]; then
-				"`cygpath -u \"$SIGNTOOL\"`" \
-					sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					/d "$SIGNATURE_DESC Setup" \
-					/du "$SIGNATURE_URL" \
-					/fd SHA256 \
-					/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-                                        /td SHA256 \
-					"`cygpath -w \"$INSTALLER_PATH\"`"
-			fi
-			
-			chmod 755 "$INSTALLER_PATH"
-		else
-			echo 'Not building on Windows; only building zip file'
+			# FileVersion is limited to four integers, so it won't be properly updated for non-release
+			# builds (e.g., we'll show 5.0.97.0 for 5.0.97-beta.37). ProductVersion will be the full
+			# version string.
+			rcedit "`cygpath -w \"$APPDIR/zotero.exe\"`" \
+				--set-file-version "$VERSION_NUMERIC" \
+				--set-product-version "$VERSION"
 		fi
-		cd "$STAGE_DIR" && zip -rqX "$DIST_DIR/Zotero-${VERSION}_win32.zip" Zotero_win32
-	fi
+		
+		# Use our own updater, because Mozilla's requires updates signed by Mozilla
+		cp "$CALLDIR/win/updater.exe" "$APPDIR"
+		cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
+	
+		# Copy PDF tools and data
+		cp "$CALLDIR/pdftools/pdftotext-win.exe" "$APPDIR/pdftotext.exe"
+		cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
+		cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
+		
+		# Copy app files
+		rsync -a "$base_dir/" "$APPDIR/"
+		#mv "$APPDIR/app/application.ini" "$APPDIR/"
+		
+		# Add devtools
+		#if [ $DEVTOOLS -eq 1 ]; then
+		#	# Create devtools.jar
+		#	cd "$BUILD_DIR"
+		#	mkdir -p devtools/locale
+		#	cp -r "$runtime_path"/devtools-files/chrome/devtools/* devtools/
+		#	cp -r "$runtime_path"/devtools-files/chrome/locale/* devtools/locale/
+		#	cd devtools
+		#	zip -r -q ../devtools.jar *
+		#	cd ..
+		#	rm -rf devtools
+		#	mv devtools.jar "$APPDIR"
+		#	
+		#	cp "$runtime_path/devtools-files/components/interfaces.xpt" "$APPDIR/components/"
+		#fi
+		
+		# Add word processor plug-ins
+		mkdir -p "$APPDIR/integration"
+		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$APPDIR/integration/libreoffice"
+		cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration/install" "$APPDIR/integration/word-for-windows"
+	
+		# Delete extraneous files
+		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
+		find "$APPDIR" \( -name .DS_Store -or -name '.git*' -or -name '.travis.yml' -or -name update.rdf -or -name '*.bak' \) -exec rm -f {} \;
+		find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
+		
+		if [ $PACKAGE == 1 ]; then
+			if [ $WIN_NATIVE == 1 ]; then
+				INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
+				
+				echo 'Creating Windows installer'
+				# Copy installer files
+				cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
+				
+				# Build and sign uninstaller
+				perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
+				"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+				mkdir "$APPDIR/uninstall"
+				mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
+				
+				# Sign zotero.exe, updater, uninstaller and PDF tools
+				if [ $SIGN == 1 ]; then
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC" \
+						/du "$SIGNATURE_URL" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$APPDIR/zotero.exe\"`"
+					sleep $SIGNTOOL_DELAY
+	
+					#
+					# Windows doesn't check DLL signatures
+					#
+					#for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
+					#	"`cygpath -u \"$SIGNTOOL\"`" \
+					#		sign /n "$SIGNTOOL_CERT_SUBJECT" \
+					#		/d "$SIGNATURE_DESC" \
+					#		/fd SHA256 \
+					#		/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+					#		/td SHA256 \
+					#		"`cygpath -w \"$dll\"`"
+					#done
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC Updater" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$APPDIR/updater.exe\"`"
+					sleep $SIGNTOOL_DELAY
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC Uninstaller" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+					sleep $SIGNTOOL_DELAY
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC PDF Converter" \
+						/fd SHA256 \
+											/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+											/td SHA256 \
+						"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
+					sleep $SIGNTOOL_DELAY
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC PDF Info" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
+					sleep $SIGNTOOL_DELAY
+				fi
+				
+				# Stage installer
+				INSTALLER_STAGE_DIR="$BUILD_DIR/win_installer/staging"
+				mkdir "$INSTALLER_STAGE_DIR"
+				cp -R "$APPDIR" "$INSTALLER_STAGE_DIR/core"
+				
+				# Build and sign setup.exe
+				"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
+				mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
+				if [ $SIGN == 1 ]; then
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC Setup" \
+						/du "$SIGNATURE_URL" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$INSTALLER_STAGE_DIR/setup.exe\"`"
+					sleep $SIGNTOOL_DELAY
+				fi
+				
+				# Compress application
+				cd "$INSTALLER_STAGE_DIR" && 7z a -r -t7z "`cygpath -w \"$BUILD_DIR/app_$arch.7z\"`" \
+					-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
+					
+				# Compress 7zSD.sfx
+				upx --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
+					"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
+				
+				# Combine 7zSD.sfx and app.tag into setup.exe
+				cat "$BUILD_DIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
+					"$BUILD_DIR/app_$arch.7z" > "$INSTALLER_PATH"
+				
+				# Sign Zotero_setup.exe
+				if [ $SIGN == 1 ]; then
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC Setup" \
+						/du "$SIGNATURE_URL" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+											/td SHA256 \
+						"`cygpath -w \"$INSTALLER_PATH\"`"
+				fi
+				
+				chmod 755 "$INSTALLER_PATH"
+			else
+				echo 'Not building on Windows; only building zip file'
+			fi
+			cd "$STAGE_DIR" && zip -rqX "$DIST_DIR/Zotero-${VERSION}_$arch.zip" Zotero_$arch
+		fi
+	done
 fi
 
 # Linux
 if [ $BUILD_LINUX == 1 ]; then
 	for arch in "i686" "x86_64"; do
-		RUNTIME_PATH=`eval echo '$LINUX_'$arch'_RUNTIME_PATH'`
+		runtime_path="${LINUX_RUNTIME_PATH_PREFIX}${arch}"
 		
 		# Set up directory
 		echo 'Building Zotero_linux-'$arch
@@ -760,7 +768,7 @@ if [ $BUILD_LINUX == 1 ]; then
 		mkdir "$APPDIR"
 		
 		# Merge relevant assets from Firefox
-		cp -r "$RUNTIME_PATH/"!(application.ini|browser|defaults|devtools-files|crashreporter|crashreporter.ini|firefox|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
+		cp -r "$runtime_path/"!(application.ini|browser|defaults|devtools-files|crashreporter|crashreporter.ini|firefox|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
 		
 		# Use our own launcher that calls the original Firefox executable with -app
 		mv "$APPDIR"/firefox-bin "$APPDIR"/zotero-bin
