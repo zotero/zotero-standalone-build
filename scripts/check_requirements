@@ -42,6 +42,13 @@ if [ $platform = "w" ]; then
 	echo -n "Checking for 7z: "
 	which 7z || { $FAIL_CMD; FAILED=1; }
 	
+	echo "Checking for vcruntime140_1.dll: "
+	for arch in win64; do
+		echo -n "  xulrunner/vc-$arch/vcruntime140_1.dll "
+		[ -f "$ROOT_DIR/xulrunner/vc-$arch/vcruntime140_1.dll" ] || { $FAIL_CMD; FAILED=1; }
+	done
+	echo
+	
 	echo -n "Checking for rcedit: "
 	which rcedit || { $FAIL_CMD; FAILED=1; echo " -- Install with scripts/fetch_rcedit"; }
 fi
