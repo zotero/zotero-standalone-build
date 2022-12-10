@@ -371,6 +371,7 @@ else
 fi
 
 mv omni.ja ..
+cd "$CALLDIR"
 rm -rf "$omni_dir"
 
 # Copy updater.ini
@@ -390,8 +391,6 @@ perl -pi -e "s/\{\{BUILDID}}/$BUILD_ID/" "$app_dir/application.ini"
 
 # Remove unnecessary files
 find "$BUILD_DIR" -name .DS_Store -exec rm -f {} \;
-
-cd "$CALLDIR"
 
 # Mac
 if [ $BUILD_MAC == 1 ]; then
