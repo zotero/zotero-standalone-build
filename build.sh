@@ -564,6 +564,71 @@ fi
 
 # Windows
 if [ $BUILD_WIN == 1 ]; then
+	echo "Building Windows common"
+	
+	COMMON_APPDIR="$STAGE_DIR/Zotero_common"
+	mkdir "$COMMON_APPDIR"
+	
+	# Copy PDF tools and data
+	cp "$CALLDIR/pdftools/pdftotext-win.exe" "$COMMON_APPDIR/pdftotext.exe"
+	cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$COMMON_APPDIR/pdfinfo.exe"
+	
+	# Package non-arch-specific components
+	if [ $PACKAGE -eq 1 ]; then
+		# Copy installer files
+		cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
+		
+		# Build uninstaller
+		perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
+		"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+		mkdir "$COMMON_APPDIR/uninstall"
+		mv "$BUILD_DIR/win_installer/helper.exe" "$COMMON_APPDIR/uninstall"
+		
+		# Use our own updater, because Mozilla's requires updates signed by Mozilla
+		cp "$CALLDIR/win/updater.exe" "$COMMON_APPDIR"
+		cat "$CALLDIR/win/installer/updater_append.ini" >> "$COMMON_APPDIR/updater.ini"
+		
+		# Sign PDF tools, uninstaller, and updater
+		if [ $SIGN -eq 1 ]; then
+			"`cygpath -u \"$SIGNTOOL\"`" \
+				sign /n "$SIGNTOOL_CERT_SUBJECT" \
+				/d "$SIGNATURE_DESC PDF Converter" \
+				/fd SHA256 \
+				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+				/td SHA256 \
+				"`cygpath -w \"$COMMON_APPDIR/pdftotext.exe\"`"
+			sleep $SIGNTOOL_DELAY
+			"`cygpath -u \"$SIGNTOOL\"`" \
+				sign /n "$SIGNTOOL_CERT_SUBJECT" \
+				/d "$SIGNATURE_DESC PDF Info" \
+				/fd SHA256 \
+				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+				/td SHA256 \
+				"`cygpath -w \"$COMMON_APPDIR/pdfinfo.exe\"`"
+			sleep $SIGNTOOL_DELAY
+			"`cygpath -u \"$SIGNTOOL\"`" \
+				sign /n "$SIGNTOOL_CERT_SUBJECT" \
+				/d "$SIGNATURE_DESC Uninstaller" \
+				/fd SHA256 \
+				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+				/td SHA256 \
+				"`cygpath -w \"$COMMON_APPDIR/uninstall/helper.exe\"`"
+			sleep $SIGNTOOL_DELAY
+			"`cygpath -u \"$SIGNTOOL\"`" \
+				sign /n "$SIGNTOOL_CERT_SUBJECT" \
+				/d "$SIGNATURE_DESC Updater" \
+				/fd SHA256 \
+				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+				/td SHA256 \
+				"`cygpath -w \"$COMMON_APPDIR/updater.exe\"`"
+		fi
+		
+		# Compress 7zSD.sfx
+		upx --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
+			"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
+	
+	fi
+	
 	for arch in "win32" "win64"; do
 		echo "Building Zotero_$arch"
 		
@@ -571,7 +636,6 @@ if [ $BUILD_WIN == 1 ]; then
 		
 		# Set up directory
 		APPDIR="$STAGE_DIR/Zotero_$arch"
-		rm -rf "$APPDIR"
 		mkdir "$APPDIR"
 		
 		# Copy relevant assets from Firefox
@@ -596,18 +660,12 @@ if [ $BUILD_WIN == 1 ]; then
 				--set-product-version "$VERSION"
 		fi
 		
-		# Use our own updater, because Mozilla's requires updates signed by Mozilla
-		cp "$CALLDIR/win/updater.exe" "$APPDIR"
-		cat "$CALLDIR/win/installer/updater_append.ini" >> "$APPDIR/updater.ini"
-	
-		# Copy PDF tools and data
-		cp "$CALLDIR/pdftools/pdftotext-win.exe" "$APPDIR/pdftotext.exe"
-		cp "$CALLDIR/pdftools/pdfinfo-win.exe" "$APPDIR/pdfinfo.exe"
-		cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
-		
 		# Copy app files
 		rsync -a "$base_dir/" "$APPDIR/"
 		#mv "$APPDIR/app/application.ini" "$APPDIR/"
+		
+		# Copy in common files
+		rsync -a "$COMMON_APPDIR/" "$APPDIR/"
 		
 		# Add devtools
 		#if [ $DEVTOOLS -eq 1 ]; then
@@ -629,28 +687,27 @@ if [ $BUILD_WIN == 1 ]; then
 		mkdir -p "$APPDIR/integration"
 		cp -RH "$CALLDIR/modules/zotero-libreoffice-integration/install" "$APPDIR/integration/libreoffice"
 		cp -RH "$CALLDIR/modules/zotero-word-for-windows-integration/install" "$APPDIR/integration/word-for-windows"
-	
+		
+		# Copy PDF tools data
+		cp -R "$CALLDIR/pdftools/poppler-data" "$APPDIR/"
+		
 		# Delete extraneous files
 		find "$APPDIR" -depth -type d -name .git -exec rm -rf {} \;
 		find "$APPDIR" \( -name .DS_Store -or -name '.git*' -or -name '.travis.yml' -or -name update.rdf -or -name '*.bak' \) -exec rm -f {} \;
 		find "$APPDIR" \( -name '*.exe' -or -name '*.dll' \) -exec chmod 755 {} \;
 		
-		if [ $PACKAGE == 1 ]; then
-			if [ $WIN_NATIVE == 1 ]; then
-				INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
+		if [ $PACKAGE -eq 1 ]; then
+			if [ $WIN_NATIVE -eq 1 ]; then
+				echo "Creating Windows installer"
 				
-				echo 'Creating Windows installer'
-				# Copy installer files
-				cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
+				if [ $arch = "win32" ]; then
+					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_win32_setup.exe"
+				elif [ $arch = "win64" ]; then
+					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
+				fi
 				
-				# Build and sign uninstaller
-				perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
-				"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
-				mkdir "$APPDIR/uninstall"
-				mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
-				
-				# Sign zotero.exe, updater, uninstaller and PDF tools
-				if [ $SIGN == 1 ]; then
+				if [ $SIGN -eq 1 ]; then
+					# Sign zotero.exe
 					"`cygpath -u \"$SIGNTOOL\"`" \
 						sign /n "$SIGNTOOL_CERT_SUBJECT" \
 						/d "$SIGNATURE_DESC" \
@@ -660,57 +717,13 @@ if [ $BUILD_WIN == 1 ]; then
 						/td SHA256 \
 						"`cygpath -w \"$APPDIR/zotero.exe\"`"
 					sleep $SIGNTOOL_DELAY
-	
-					#
-					# Windows doesn't check DLL signatures
-					#
-					#for dll in "$APPDIR/"*.dll "$APPDIR/"*.dll; do
-					#	"`cygpath -u \"$SIGNTOOL\"`" \
-					#		sign /n "$SIGNTOOL_CERT_SUBJECT" \
-					#		/d "$SIGNATURE_DESC" \
-					#		/fd SHA256 \
-					#		/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-					#		/td SHA256 \
-					#		"`cygpath -w \"$dll\"`"
-					#done
-					"`cygpath -u \"$SIGNTOOL\"`" \
-						sign /n "$SIGNTOOL_CERT_SUBJECT" \
-						/d "$SIGNATURE_DESC Updater" \
-						/fd SHA256 \
-						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-						/td SHA256 \
-						"`cygpath -w \"$APPDIR/updater.exe\"`"
-					sleep $SIGNTOOL_DELAY
-					"`cygpath -u \"$SIGNTOOL\"`" \
-						sign /n "$SIGNTOOL_CERT_SUBJECT" \
-						/d "$SIGNATURE_DESC Uninstaller" \
-						/fd SHA256 \
-						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-						/td SHA256 \
-						"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
-					sleep $SIGNTOOL_DELAY
-					"`cygpath -u \"$SIGNTOOL\"`" \
-						sign /n "$SIGNTOOL_CERT_SUBJECT" \
-						/d "$SIGNATURE_DESC PDF Converter" \
-						/fd SHA256 \
-											/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-											/td SHA256 \
-						"`cygpath -w \"$APPDIR/pdftotext.exe\"`"
-					sleep $SIGNTOOL_DELAY
-					"`cygpath -u \"$SIGNTOOL\"`" \
-						sign /n "$SIGNTOOL_CERT_SUBJECT" \
-						/d "$SIGNATURE_DESC PDF Info" \
-						/fd SHA256 \
-						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-						/td SHA256 \
-						"`cygpath -w \"$APPDIR/pdfinfo.exe\"`"
-					sleep $SIGNTOOL_DELAY
 				fi
 				
 				# Stage installer
 				INSTALLER_STAGE_DIR="$BUILD_DIR/win_installer/staging"
+				rm -rf "$INSTALLER_STAGE_DIR"
 				mkdir "$INSTALLER_STAGE_DIR"
-				cp -R "$APPDIR" "$INSTALLER_STAGE_DIR/core"
+				cp -r "$APPDIR" "$INSTALLER_STAGE_DIR/core"
 				
 				# Build and sign setup.exe
 				"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
@@ -730,16 +743,12 @@ if [ $BUILD_WIN == 1 ]; then
 				# Compress application
 				cd "$INSTALLER_STAGE_DIR" && 7z a -r -t7z "`cygpath -w \"$BUILD_DIR/app_$arch.7z\"`" \
 					-mx -m0=BCJ2 -m1=LZMA:d24 -m2=LZMA:d19 -m3=LZMA:d19  -mb0:1 -mb0s1:2 -mb0s2:3 > /dev/null
-					
-				# Compress 7zSD.sfx
-				upx --best -o "`cygpath -w \"$BUILD_DIR/7zSD.sfx\"`" \
-					"`cygpath -w \"$CALLDIR/win/installer/7zstub/firefox/7zSD.sfx\"`" > /dev/null
 				
 				# Combine 7zSD.sfx and app.tag into setup.exe
 				cat "$BUILD_DIR/7zSD.sfx" "$CALLDIR/win/installer/app.tag" \
 					"$BUILD_DIR/app_$arch.7z" > "$INSTALLER_PATH"
 				
-				# Sign Zotero_setup.exe
+				# Sign installer .exe
 				if [ $SIGN == 1 ]; then
 					"`cygpath -u \"$SIGNTOOL\"`" \
 						sign /n "$SIGNTOOL_CERT_SUBJECT" \
@@ -747,7 +756,7 @@ if [ $BUILD_WIN == 1 ]; then
 						/du "$SIGNATURE_URL" \
 						/fd SHA256 \
 						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-											/td SHA256 \
+						/td SHA256 \
 						"`cygpath -w \"$INSTALLER_PATH\"`"
 				fi
 				
