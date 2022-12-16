@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+rh="ResourceHacker/ResourceHacker.exe"
+
+if [[ ${1:-} != "32" ]] && [[ ${1:-} != "64" ]]; then
+	echo "Usage: $0 32_or_64" 2>&1
+	exit 1
+fi
+
+if [ ! -f "$rh" ]; then
+	echo "win/$rh not found" 2>&1
+	exit 1
+fi
+
+if [ ! -f firefox.exe ]; then
+	echo "win/firefox.exe not found" 2>&1
+	exit 1
+fi
+
+arch="win$1"
+
+$rh -open VersionInfo1.rc -save VersionInfo1.res -action compile
+
+config=`cat resource-hacker-config.txt`
+config_file="resource-hacker-config-$arch.txt"
+echo "${config/\{\{ARCH\}\}/$arch}" > $config_file
+$rh -script $config_file
+rm $config_file
+
+rm VersionInfo1.res
