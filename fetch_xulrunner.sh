@@ -59,6 +59,32 @@ if [[ $BUILD_MAC == 0 ]] && [[ $BUILD_WIN == 0 ]] && [[ $BUILD_LINUX == 0 ]]; th
 	usage
 fi
 
+function replace_line {
+	pattern=$1
+	replacement=$2
+	file=$3
+	
+	if egrep -q "$pattern" "$file"; then
+		perl -pi -e "s/$pattern/$replacement/" "$file"
+	else
+		echo "$pattern" not found in "$file" -- aborting 2>&1
+		exit 1
+	fi
+}
+
+function remove_line {
+	pattern=$1
+	file=$2
+	
+	if egrep -q "$pattern" "$file"; then
+		egrep -v "$pattern" "$file" > "$file.tmp"
+		mv "$file.tmp" "$file"
+	else
+		echo "$pattern" not found in "$infile" -- aborting 2>&1
+		exit 1
+	fi
+}
+
 #
 # Make various modifications to the stock Firefox app
 #
@@ -75,24 +101,24 @@ function modify_omni {
 	unzip omni.ja
 	rm omni.ja
 	
-	perl -pi -e 's/BROWSER_CHROME_URL:.+/BROWSER_CHROME_URL: "chrome:\/\/zotero\/content\/zoteroPane.xhtml",/' modules/AppConstants.jsm
+	replace_line 'BROWSER_CHROME_URL:.+' 'BROWSER_CHROME_URL: "chrome:\/\/zotero\/content\/zoteroPane.xhtml",' modules/AppConstants.jsm
 	
 	# https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/preferences.html
 	#
 	# It's not clear that most of these do anything anymore when not compiled in, but just in case
-	perl -pi -e 's/MOZ_REQUIRE_SIGNING:/MOZ_REQUIRE_SIGNING: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_DATA_REPORTING:/MOZ_DATA_REPORTING: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_SERVICES_HEALTHREPORT:/MOZ_SERVICES_HEALTHREPORT: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_TELEMETRY_REPORTING:/MOZ_TELEMETRY_REPORTING: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_TELEMETRY_ON_BY_DEFAULT:/MOZ_TELEMETRY_ON_BY_DEFAULT: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_CRASHREPORTER:/MOZ_CRASHREPORTER: false \&\&/' modules/AppConstants.jsm
-	perl -pi -e 's/MOZ_UPDATE_CHANNEL:.+/MOZ_UPDATE_CHANNEL: "none",/' modules/AppConstants.jsm
-	perl -pi -e 's/"https:\/\/[^\/]+mozilla.com.+"/""/' modules/AppConstants.jsm
+	replace_line 'MOZ_REQUIRE_SIGNING:' 'MOZ_REQUIRE_SIGNING: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_DATA_REPORTING:' 'MOZ_DATA_REPORTING: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_SERVICES_HEALTHREPORT:' 'MOZ_SERVICES_HEALTHREPORT: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_TELEMETRY_REPORTING:' 'MOZ_TELEMETRY_REPORTING: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_TELEMETRY_ON_BY_DEFAULT:' 'MOZ_TELEMETRY_ON_BY_DEFAULT: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_CRASHREPORTER:' 'MOZ_CRASHREPORTER: false \&\&' modules/AppConstants.jsm
+	replace_line 'MOZ_UPDATE_CHANNEL:.+' 'MOZ_UPDATE_CHANNEL: "none",' modules/AppConstants.jsm
+	replace_line '"https:\/\/[^\/]+mozilla.com.+"' '""' modules/AppConstants.jsm
 	
-	perl -pi -e 's/pref\("network.captive-portal-service.enabled".+/pref("network.captive-portal-service.enabled", false);/' greprefs.js
-	perl -pi -e 's/pref\("network.connectivity-service.enabled".+/pref("network.connectivity-service.enabled", false);/' greprefs.js
-	perl -pi -e 's/pref\("toolkit.telemetry.server".+/pref("toolkit.telemetry.server", "");/' greprefs.js
-	perl -pi -e 's/pref\("toolkit.telemetry.unified".+/pref("toolkit.telemetry.unified", false);/' greprefs.js
+	replace_line 'pref\("network.captive-portal-service.enabled".+' 'pref("network.captive-portal-service.enabled", false);' greprefs.js
+	replace_line 'pref\("network.connectivity-service.enabled".+' 'pref("network.connectivity-service.enabled", false);' greprefs.js
+	replace_line 'pref\("toolkit.telemetry.server".+' 'pref("toolkit.telemetry.server", "");' greprefs.js
+	replace_line 'pref\("toolkit.telemetry.unified".+' 'pref("toolkit.telemetry.unified", false);' greprefs.js
 	
 	#  
 	#  # Disable transaction timeout
@@ -101,8 +127,7 @@ function modify_omni {
 	#  rm -f jsloader/resource/gre/modules/Sqlite.jsm
 	#  
 	# Disable unwanted components
-	cat components/components.manifest | egrep -vi '(RemoteSettings|services-|telemetry|URLDecorationAnnotationsService)' > components/components2.manifest
-	mv components/components2.manifest components/components.manifest
+	remove_line '(RemoteSettings|services-|telemetry|Telemetry|URLDecorationAnnotationsService)' components/components.manifest
 	
 	# Remove unwanted files
 	rm modules/FxAccounts*
@@ -112,8 +137,7 @@ function modify_omni {
 	rm -rf modules/services-*
 	
 	# Clear most WebExtension manifest properties
-	if ! grep -qE 'manifest = normalized.value' modules/Extension.jsm; then echo "'manifest = normalized.value' not found"; exit 1; fi
-	perl -pi -e 's/manifest = normalized.value;/manifest = normalized.value;
+	replace_line 'manifest = normalized.value;' 'manifest = normalized.value;
     if (this.type == "extension") {
       if (!manifest.applications?.zotero?.id) {
         this.manifestError("applications.zotero.id not provided");
@@ -130,24 +154,24 @@ function modify_omni {
       manifest.host_permissions = [];
       manifest.web_accessible_resources = undefined;
       manifest.experiment_apis = {};
-    }/' modules/Extension.jsm
+    }' modules/Extension.jsm
     
 	# Use applications.zotero instead of applications.gecko
-	perl -pi -e 's/let bss = manifest.applications\?.gecko/let bss = manifest.applications?.zotero/' modules/addons/XPIInstall.jsm
-	perl -pi -e 's/manifest.applications\?.gecko/manifest.applications?.zotero/' modules/Extension.jsm
+	replace_line 'let bss = manifest.applications\?.gecko' 'let bss = manifest.applications?.zotero' modules/addons/XPIInstall.jsm
+	replace_line 'manifest.applications\?.gecko' 'manifest.applications?.zotero' modules/Extension.jsm
 	
 	# When installing addon, use app version instead of toolkit version for targetApplication
-	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/XPIInstall.jsm
+	replace_line "id: TOOLKIT_ID," "id: '$APP_ID'," modules/addons/XPIInstall.jsm
 	
 	# For updates, look for applications.zotero instead of applications.gecko in manifest.json and
 	# use the app id and version for strict_min_version/strict_max_version comparisons
-	perl -pi -e 's/gecko: \{\},/zotero: {},/' modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e 's/if \(!\("gecko" in applications\)\) \{/if (!("zotero" in applications)) {/' modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e 's/"gecko not in application entry/"zotero not in application entry/' modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e 's/let app = getProperty\(applications, "gecko", "object"\);/let app = getProperty(applications, "zotero", "object");/' modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e "s/id: TOOLKIT_ID,/id: '$APP_ID',/" modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e 's/AddonManagerPrivate.webExtensionsMinPlatformVersion/7.0/' modules/addons/AddonUpdateChecker.jsm
-	perl -pi -e 's/result.targetApplications.push/false && result.targetApplications.push/' modules/addons/AddonUpdateChecker.jsm
+	replace_line 'gecko: \{\},' 'zotero: {},' modules/addons/AddonUpdateChecker.jsm
+	replace_line 'if \(!\("gecko" in applications\)\) \{'  'if (!("zotero" in applications)) {' modules/addons/AddonUpdateChecker.jsm
+	replace_line '"gecko not in application entry' '"zotero not in application entry' modules/addons/AddonUpdateChecker.jsm
+	replace_line 'let app = getProperty\(applications, "gecko", "object"\);' 'let app = getProperty(applications, "zotero", "object");' modules/addons/AddonUpdateChecker.jsm
+	replace_line "id: TOOLKIT_ID," "id: '$APP_ID'," modules/addons/AddonUpdateChecker.jsm
+	replace_line 'AddonManagerPrivate.webExtensionsMinPlatformVersion' '7.0' modules/addons/AddonUpdateChecker.jsm
+	replace_line 'result.targetApplications.push' 'false && result.targetApplications.push' modules/addons/AddonUpdateChecker.jsm
 	
 	# Allow addon installation by bypassing confirmation dialogs. If we want a confirmation dialog,
 	# we need to either add gXPInstallObserver from browser-addons.js [1][2] or provide our own with
@@ -156,12 +180,12 @@ function modify_omni {
 	# [1] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser.js#1902-1923
 	# [2] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/browser/base/content/browser-addons.js#201
 	# [3] https://searchfox.org/mozilla-esr102/rev/5a6d529652045050c5cdedc0558238949b113741/toolkit/mozapps/extensions/AddonManager.jsm#3114-3124
-	perl -pi -e 's/if \(info.addon.userPermissions\) \{/if (false) {/' modules/AddonManager.jsm
-	perl -pi -e 's/\} else if \(info.addon.sitePermissions\) \{/} else if (false) {/' modules/AddonManager.jsm
-	perl -pi -e 's/\} else if \(requireConfirm\) \{/} else if (false) {/' modules/AddonManager.jsm
+	replace_line 'if \(info.addon.userPermissions\) \{' 'if (false) {' modules/AddonManager.jsm
+	replace_line '\} else if \(info.addon.sitePermissions\) \{' '} else if (false) {' modules/AddonManager.jsm
+	replace_line '\} else if \(requireConfirm\) \{' '} else if (false) {' modules/AddonManager.jsm
 	
 	# No idea why this is necessary, but without it initialization fails with "TypeError: "constructor" is read-only"
-	perl -pi -e 's/LoginStore.prototype.constructor = LoginStore;/\/\/LoginStore.prototype.constructor = LoginStore;/' modules/LoginStore.jsm
+	replace_line 'LoginStore.prototype.constructor = LoginStore;' '\/\/LoginStore.prototype.constructor = LoginStore;' modules/LoginStore.jsm
 	#  
 	#  # Allow proxy password saving
 	#  perl -pi -e 's/get _inPrivateBrowsing\(\) \{/get _inPrivateBrowsing() {if (true) { return false; }/' components/nsLoginManagerPrompter.js
@@ -182,7 +206,7 @@ function modify_omni {
 	#  fi
 	
 	# Use Zotero URL opening in Mozilla dialogs (e.g., app update dialog)
-	perl -pi -e 's/function openURL\(aURL\) \{/function openURL(aURL) {let {Zotero} = ChromeUtils.import("chrome:\/\/zotero\/content\/include.jsm"); Zotero.launchURL(aURL); return;/' chrome/toolkit/content/global/contentAreaUtils.js
+	replace_line 'function openURL\(aURL\) \{' 'function openURL(aURL) {let {Zotero} = ChromeUtils.import("chrome:\/\/zotero\/content\/include.jsm"); Zotero.launchURL(aURL); return;' chrome/toolkit/content/global/contentAreaUtils.js
 	
 	#
 	# Modify Add-ons window
@@ -199,27 +223,27 @@ function modify_omni {
 	
 	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.js"
 	# Hide unsigned-addon warning
-	perl -pi -e 's/if \(!isCorrectlySigned\(addon\)\) \{/if (!isCorrectlySigned(addon)) {return {};/' $file
+	replace_line 'if \(!isCorrectlySigned\(addon\)\) \{' 'if (!isCorrectlySigned(addon)) {return {};' $file
 	# Hide Private Browsing setting in addon details
-	perl -pi -e 's/pbRow\./\/\/pbRow./' $file
-	perl -pi -e 's/let isAllowed = await isAllowedInPrivateBrowsing/\/\/let isAllowed = await isAllowedInPrivateBrowsing/' $file
+	replace_line 'pbRow\.' '\/\/pbRow.' $file
+	replace_line 'let isAllowed = await isAllowedInPrivateBrowsing' '\/\/let isAllowed = await isAllowedInPrivateBrowsing' $file
 	# Use our own strings for the removal prompt
-	perl -pi -e 's/let \{ BrowserAddonUI \} = windowRoot.ownerGlobal;//' $file
-	perl -pi -e 's/await BrowserAddonUI.promptRemoveExtension/promptRemoveExtension/' $file
+	replace_line 'let \{ BrowserAddonUI \} = windowRoot.ownerGlobal;' '' $file
+	replace_line 'await BrowserAddonUI.promptRemoveExtension' 'promptRemoveExtension' $file
 	
 	# Customize empty-list message
-	perl -pi -e 's/createEmptyListMessage\(\) {/createEmptyListMessage() {
+	replace_line 'createEmptyListMessage\(\) {' 'createEmptyListMessage() {
         var p = document.createElement("p");
         p.id = "empty-list-message";
-        return p;/' $file
+        return p;' $file
 	# Swap in include.js, which we need for Zotero.getString(), for abuse-reports.js, which we don't need
 	
 	# Hide Recommendations tab in sidebar and recommendations in main pane
-	perl -pi -e 's/function isDiscoverEnabled\(\) \{/function isDiscoverEnabled() {return false;/' chrome/toolkit/content/mozapps/extensions/aboutaddonsCommon.js
-	perl -pi -e 's/pref\("extensions.htmlaboutaddons.recommendations.enabled".+/pref("extensions.htmlaboutaddons.recommendations.enabled", false);/' greprefs.js
+	replace_line 'function isDiscoverEnabled\(\) \{' 'function isDiscoverEnabled() {return false;' chrome/toolkit/content/mozapps/extensions/aboutaddonsCommon.js
+	replace_line 'pref\("extensions.htmlaboutaddons.recommendations.enabled".+' 'pref("extensions.htmlaboutaddons.recommendations.enabled", false);' greprefs.js
 	
 	# Hide Report option
-	perl -pi -e 's/pref\("extensions.abuseReport.enabled".+/pref("extensions.abuseReport.enabled", false);/' greprefs.js
+	replace_line 'pref\("extensions.abuseReport.enabled".+' 'pref("extensions.abuseReport.enabled", false);' greprefs.js
 	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
@@ -239,16 +263,13 @@ function modify_omni {
 	rm omni.ja
 	
 	# Remove Firefox update URLs
-	egrep -v 'pref\("app.update.url.(manual|details)' defaults/preferences/firefox-branding.js > defaults/preferences/firefox-branding.js2
-	mv defaults/preferences/firefox-branding.js2 defaults/preferences/firefox-branding.js
+	remove_line 'pref\("app.update.url.(manual|details)' defaults/preferences/firefox-branding.js
 	
 	# Remove Firefox overrides (e.g., to use Firefox-specific strings for connection errors)
-	egrep -v '(override)' chrome/chrome.manifest > chrome/chrome.manifest2
-	mv chrome/chrome.manifest2 chrome/chrome.manifest
+	remove_line '(override)' chrome/chrome.manifest
 	
 	# Remove WebExtension APIs
-	egrep -v ext-browser.json components/components.manifest > components/components.manifest2
-	mv components/components.manifest2 components/components.manifest
+	remove_line ext-browser.json components/components.manifest
 }
 
 mkdir -p xulrunner
