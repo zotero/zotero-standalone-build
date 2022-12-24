@@ -1,8 +1,7 @@
 diff --git a/browser/app/nsBrowserApp.cpp b/browser/app/nsBrowserApp.cpp
-index db2eb9637c57..a75b380f9424 100644
 --- a/browser/app/nsBrowserApp.cpp
 +++ b/browser/app/nsBrowserApp.cpp
-@@ -151,7 +151,13 @@ Bootstrap::UniquePtr gBootstrap;
+@@ -156,7 +156,13 @@ Bootstrap::UniquePtr gBootstrap;
  static int do_main(int argc, char* argv[], char* envp[]) {
    // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
    // Note that -app must be the *first* argument.
@@ -18,10 +17,9 @@ index db2eb9637c57..a75b380f9424 100644
      if (argc == 2) {
        Output("Incorrect number of arguments passed to -app");
 diff --git a/xpcom/build/BinaryPath.h b/xpcom/build/BinaryPath.h
-index 4721c5b5b36d..5269bd75c7b3 100644
 --- a/xpcom/build/BinaryPath.h
 +++ b/xpcom/build/BinaryPath.h
-@@ -261,6 +261,33 @@ class BinaryPath {
+@@ -272,6 +272,33 @@ class BinaryPath {
      return result;
    }
  
@@ -42,7 +40,7 @@ index 4721c5b5b36d..5269bd75c7b3 100644
 +	}
 +
 +	char iniPath[MAXPATHLEN];
-+	int n = snprintf(iniPath, MAXPATHLEN, "%sapplication.ini", path);
++	int n = snprintf(iniPath, MAXPATHLEN, "%s\\app\\application.ini", path);
 +	if (n < 0 || n >= MAXPATHLEN) {
 +		return nullptr;
 +	}
