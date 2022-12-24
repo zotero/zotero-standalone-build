@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-rh="ResourceHacker/ResourceHacker.exe"
+rh="resource_hacker/ResourceHacker.exe"
 
 if [[ ${1:-} != "32" ]] && [[ ${1:-} != "64" ]]; then
 	echo "Usage: $0 32_or_64" 2>&1
