@@ -767,6 +767,8 @@ if [ $BUILD_WIN == 1 ]; then
 			cd "$STAGE_DIR" && zip -rqX "$DIST_DIR/Zotero-${VERSION}_$arch.zip" Zotero_$arch
 		fi
 	done
+	
+	rm -rf "$COMMON_APPDIR"
 fi
 
 # Linux
