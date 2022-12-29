@@ -35,6 +35,9 @@ which zip || { $FAIL_CMD; FAILED=1; }
 echo -n "Checking for unzip: "
 which unzip || { $FAIL_CMD; FAILED=1; }
 
+echo -n "Checking for xz: "
+which xz || { $FAIL_CMD; FAILED=1; }
+
 echo -n "Checking for awk: "
 which awk || { $FAIL_CMD; FAILED=1; }
 

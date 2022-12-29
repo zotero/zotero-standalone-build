@@ -1,0 +1,1 @@
+tar -Jcv zotero_win32.exe zotero_win64.exe > zotero.exe.tar.xz

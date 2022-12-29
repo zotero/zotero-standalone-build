@@ -648,7 +648,7 @@ if [ $BUILD_WIN == 1 ]; then
 		
 		# Copy zotero.exe, which is built directly from Firefox source and then modified by
 		# ResourceHacker to add icons
-		cp "$CALLDIR/win/zotero_$arch.exe" "$APPDIR/zotero.exe"
+		tar xf "$CALLDIR/win/zotero.exe.tar.xz" --to-stdout zotero_$arch.exe > "$APPDIR/zotero.exe"
 		
 		# Update .exe version number (only possible on Windows)
 		if [ $WIN_NATIVE == 1 ]; then
