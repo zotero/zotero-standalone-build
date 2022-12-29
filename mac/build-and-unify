@@ -63,6 +63,5 @@ mv x86_64 x64
 $mach python "$GECKO_PATH/toolkit/mozapps/installer/unify.py" x64/*.app aarch64/*.app
 
 cp x64/$fx_app_name/Contents/MacOS/firefox zotero
-zip zotero.zip zotero
-rm zotero
-mv zotero.zip "$repos_dir"/zotero-standalone-build/mac/zotero.zip
+xz zotero
+mv zotero.xz "$repos_dir"/zotero-standalone-build/mac/zotero.xz
