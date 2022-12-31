@@ -90,6 +90,14 @@ function modify_omni {
 		rm -f jsloader/resource/gre/modules/AppConstants.jsm
 	fi
 	
+	perl -pi -e 's/if \(!Services.prefs.getBoolPref\(PREF_APP_UPDATE_AUTO, true\)\) \{/if (update.type == "major") {
+	    LOG("UpdateService:_selectAndInstallUpdate - prompting because it is a major update");
+	    Services.obs.notifyObservers(update, "update-available", "show-prompt");
+	    this._showPrompt(update);
+	    return;
+	}
+	if \(!Services.prefs.getBoolPref\(PREF_APP_UPDATE_AUTO, true\)\) \{/' components/nsUpdateService.js
+	
 	# Update URL for built-in add-ons list
 	echo '{"system": []}' > modules/addons/built_in_addons.json
 	perl -pi -e 's/const BUILT_IN_ADDONS_URI.+/const BUILT_IN_ADDONS_URI = "resource:\/\/gre\/modules\/addons\/built_in_addons.json";/' modules/addons/XPIProvider.jsm
