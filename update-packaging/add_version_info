@@ -14,7 +14,7 @@ DETAILS_URLS = {
     '5.0': 'https://www.zotero.org/support/5.0_changelog',
     '6.0': 'https://www.zotero.org/support/6.0_changelog',
 }
-MAJOR = False
+MAJOR = None
 
 parser = argparse.ArgumentParser(
     description='Update a builds manifest with info on a given build',
