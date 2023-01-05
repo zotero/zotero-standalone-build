@@ -173,3 +173,8 @@ pref("full-screen-api.enabled", true);
 // Allow chrome access in DevTools
 // This enables the input field in the Browser Console tool
 pref("devtools.chrome.enabled", true);
+
+// Default mousewheel action with Alt/Option is History Back/Forward in Firefox
+// We don't have History navigation and users want to scroll the tree with Option
+// key held down
+pref("mousewheel.with_alt.action", 1);
