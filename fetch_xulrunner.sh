@@ -115,6 +115,14 @@ function modify_omni {
 	replace_line 'MOZ_UPDATE_CHANNEL:.+' 'MOZ_UPDATE_CHANNEL: "none",' modules/AppConstants.jsm
 	replace_line '"https:\/\/[^\/]+mozilla.com.+"' '""' modules/AppConstants.jsm
 	
+	replace_line 'if \(!updateAuto\) \{' 'if (update.type == "major") {
+      LOG("UpdateService:_selectAndInstallUpdate - prompting because it is a major update");
+      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_SHOWPROMPT_PREF);
+      Services.obs.notifyObservers(update, "update-available", "show-prompt");
+      return;
+    }
+    if (!updateAuto) {' modules/UpdateService.jsm
+	
 	replace_line 'pref\("network.captive-portal-service.enabled".+' 'pref("network.captive-portal-service.enabled", false);' greprefs.js
 	replace_line 'pref\("network.connectivity-service.enabled".+' 'pref("network.connectivity-service.enabled", false);' greprefs.js
 	replace_line 'pref\("toolkit.telemetry.server".+' 'pref("toolkit.telemetry.server", "");' greprefs.js
