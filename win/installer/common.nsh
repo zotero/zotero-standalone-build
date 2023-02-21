@@ -4152,7 +4152,7 @@ FunctionEnd
 
       !ifdef HAVE_64BIT_OS
         ${Unless} ${RunningX64}
-        ${OrUnless} ${AtLeastWinVista}
+        ${OrUnless} ${AtLeastWin7}
           MessageBox MB_OK|MB_ICONSTOP "$R9" IDOK
           ; Nothing initialized so no need to call OnEndCommon
           Quit
@@ -4160,35 +4160,10 @@ FunctionEnd
 
         SetRegView 64
       !else
-        StrCpy $R8 "0"
-        ${If} ${AtMostWin2000}
-          StrCpy $R8 "1"
-        ${EndIf}
-
-        ${If} ${IsWinXP}
-        ${AndIf} ${AtMostServicePack} 1
-          StrCpy $R8 "1"
-        ${EndIf}
-
-        ${If} $R8 == "1"
-          ; XXX-rstrong - some systems failed the AtLeastWin2000 test that we
-          ; used to use for an unknown reason and likely fail the AtMostWin2000
-          ; and possibly the IsWinXP test as well. To work around this also
-          ; check if the Windows NT registry Key exists and if it does if the
-          ; first char in CurrentVersion is equal to 3 (Windows NT 3.5 and
-          ; 3.5.1), to 4 (Windows NT 4) or 5 (Windows 2000 and Windows XP).
-          StrCpy $R8 ""
-          ClearErrors
-          ReadRegStr $R8 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" "CurrentVersion"
-          StrCpy $R8 "$R8" 1
-          ${If} ${Errors}
-          ${OrIf} "$R8" == "3"
-          ${OrIf} "$R8" == "4"
-          ${OrIf} "$R8" == "5"
-            MessageBox MB_OK|MB_ICONSTOP "$R9" IDOK
-            ; Nothing initialized so no need to call OnEndCommon
-            Quit
-          ${EndIf}
+        ${Unless} ${AtLeastWin7}
+          MessageBox MB_OK|MB_ICONSTOP "$R9" IDOK
+          ; Nothing initialized so no need to call OnEndCommon
+          Quit
         ${EndUnless}
       !endif
 
