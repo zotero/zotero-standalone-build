@@ -129,7 +129,7 @@ else
 fi
 
 # Bundle devtools with dev builds
-if [ $UPDATE_CHANNEL == "beta" ] || [ $UPDATE_CHANNEL == "dev" ] || [ $UPDATE_CHANNEL == "test" ]; then
+if [ "$UPDATE_CHANNEL" == "beta" ] || [ "$UPDATE_CHANNEL" == "dev" ] || [ "$UPDATE_CHANNEL" == "test" ]; then
 	DEVTOOLS=1
 fi
 if [ -z "$UPDATE_CHANNEL" ]; then UPDATE_CHANNEL="default"; fi
@@ -581,10 +581,11 @@ if [ $BUILD_WIN == 1 ]; then
 		
 		# Build uninstaller
 		perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
-		if [ $arch = "win32" ]; then
+		if [ "$arch" = "win32" ]; then
 			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
-		elif [ $arch = "win64" ]; then
+		elif [ "$arch" = "win64" ]; then
 			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /DHAVE_64BIT_OS /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+		fi			
 		
 		mkdir "$COMMON_APPDIR/uninstall"
 		mv "$BUILD_DIR/win_installer/helper.exe" "$COMMON_APPDIR/uninstall"
@@ -705,9 +706,9 @@ if [ $BUILD_WIN == 1 ]; then
 			if [ $WIN_NATIVE -eq 1 ]; then
 				echo "Creating Windows installer"
 				
-				if [ $arch = "win32" ]; then
+				if [ "$arch" = "win32" ]; then
 					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_win32_setup.exe"
-				elif [ $arch = "win64" ]; then
+				elif [ "$arch" = "win64" ]; then
 					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
 				fi
 				
@@ -731,9 +732,9 @@ if [ $BUILD_WIN == 1 ]; then
 				cp -r "$APPDIR" "$INSTALLER_STAGE_DIR/core"
 				
 				# Build and sign setup.exe
-				if [ $arch = "win32" ]; then
+				if [ "$arch" = "win32" ]; then
 					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
-				elif [ $arch = "win64" ]; then
+				elif [ "$arch" = "win64" ]; then
 					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /DHAVE_64BIT_OS /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 				fi
 				mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"

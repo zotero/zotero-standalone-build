@@ -167,6 +167,71 @@ Page custom preSummary
 ; Use the default dialog for IDD_VERIFY for a simple Banner
 ChangeUI IDD_VERIFY "${NSISDIR}\Contrib\UIs\default.exe"
 
+; If a version beginning with $R1 is installed, uninstall that.
+; This is used to uninstall the old Zotero Standalone installer and a 32-bit version on 64-bit Windows
+Function UninstallOld
+  Push $R1
+  Push $R2
+  StrCpy $0 0
+  
+  enum_uninst_keys:
+    EnumRegKey $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall" $0
+    StrCmp $1 "" continue_installation
+    ; $R1 migth be "Zotero Standalone" or "Zotero", registry key name contains version and locale e.g. "Zotero 6.0.0 (x86 en-US)" so:
+    StrLen $3 $R1 ; $3 = length of $R1, e.g. 17 for "Zotero Standalone"
+    StrCpy $2 $1 $3 ; $2 = first $3 characters of $1, i.e. name without version and locale, e.g. "Zotero Standalone"
+    StrCmp $2 $R1 get_uninst_exe ; if the key we found is the one we're looking for (e.g. "Zotero Standalone"), go to get_uninst_exe
+    IntOp $0 $0 + 1 
+    Goto enum_uninst_keys ; loop through all keys
+  
+  get_uninst_exe:
+    ReadRegStr $2 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "UninstallString"
+    ReadRegStr $3 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "InstallLocation"
+  
+  MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+    $R2 \
+    /SD IDOK IDOK uninst
+  Abort
+  
+  uninst:
+    ; This doesn't actually wait, since the uninstaller copies itself to a temp folder, runs that,
+    ; and exits, so give it a few seconds to finish
+    ExecWait '"$2" /S'
+    Sleep 3000
+    
+    ; Files that were added by an in-app update won't be automatically deleted by the 4.0 uninstaller,
+    ; so manually delete everything we know about as long as the directory name begins with "Zotero".
+    ; We don't just delete the directory because we don't know for sure that the user didn't do
+    ; something crazy like put their data directory in it.
+    ${GetFileName} $3 $4
+    StrCpy $5 $4 6
+    StrCmp $5 "Zotero" +1 continue_installation
+    RMDir /r /REBOOTOK "$3\chrome"
+    RMDir /r /REBOOTOK "$3\components"
+    RMDir /r /REBOOTOK "$3\defaults"
+    RMDir /r /REBOOTOK "$3\dictionaries"
+    RMDir /r /REBOOTOK "$3\extensions"
+    RMDir /r /REBOOTOK "$3\fonts"
+    RMDir /r /REBOOTOK "$3\gmp-clearkey"
+    RMDir /r /REBOOTOK "$3\uninstall"
+    RMDir /r /REBOOTOK "$3\xulrunner"
+    Delete /REBOOTOK "$3\*.chk"
+    Delete /REBOOTOK "$3\*.dll"
+    Delete /REBOOTOK "$3\*.exe"
+    Delete /REBOOTOK "$3\Accessible.tlb"
+    Delete /REBOOTOK "$3\dependentlibs.list"
+    Delete /REBOOTOK "$3\firefox.VisualElementsManifest.xml"
+    Delete /REBOOTOK "$3\omni.ja"
+    Delete /REBOOTOK "$3\platform.ini"
+    Delete /REBOOTOK "$3\precomplete"
+    Delete /REBOOTOK "$3\voucher.bin"
+    RMDir /REBOOTOK $3
+  continue_installation:
+    ; End uninstallation
+    Pop $R2
+    Pop $R1
+FunctionEnd
+
 ################################################################################
 # Install Sections
 
@@ -859,64 +924,17 @@ Function .onInit
 
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
 
-  ; If a version beginning with "Zotero Standalone" is installed, uninstall that first, since we're now
-  ; just "Zotero"
-  StrCpy $0 0
-  enum_uninst_keys:
-    EnumRegKey $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall" $0
-    StrCmp $1 "" continue_installation
-    ; "Zotero Standalone" included a version suffix, so check the beginning
-    StrCpy $2 $1 17
-    StrCmp $2 "Zotero Standalone" get_uninst_exe
-    IntOp $0 $0 + 1
-    Goto enum_uninst_keys
-  
-  get_uninst_exe:
-    ReadRegStr $2 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "UninstallString"
-    ReadRegStr $3 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "InstallLocation"
-  
-  MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-    "An older version of Zotero is installed. $\n$\nIf you continue, the existing version \
-    will be removed. Your Zotero data will not be affected." \
-    /SD IDOK IDOK uninst
-  Abort
-  
-  uninst:
-    ; This doesn't actually wait, since the uninstaller copies itself to a temp folder, runs that,
-    ; and exits, so give it a few seconds to finish
-    ExecWait '"$2" /S'
-    Sleep 3000
-    
-    ; Files that were added by an in-app update won't be automatically deleted by the 4.0 uninstaller,
-    ; so manually delete everything we know about as long as the directory name begins with "Zotero".
-    ; We don't just delete the directory because we don't know for sure that the user didn't do
-    ; something crazy like put their data directory in it.
-    ${GetFileName} $3 $4
-    StrCpy $5 $4 6
-    StrCmp $5 "Zotero" +1 continue_installation
-    RMDir /r /REBOOTOK "$3\chrome"
-    RMDir /r /REBOOTOK "$3\components"
-    RMDir /r /REBOOTOK "$3\defaults"
-    RMDir /r /REBOOTOK "$3\dictionaries"
-    RMDir /r /REBOOTOK "$3\extensions"
-    RMDir /r /REBOOTOK "$3\fonts"
-    RMDir /r /REBOOTOK "$3\gmp-clearkey"
-    RMDir /r /REBOOTOK "$3\uninstall"
-    RMDir /r /REBOOTOK "$3\xulrunner"
-    Delete /REBOOTOK "$3\*.chk"
-    Delete /REBOOTOK "$3\*.dll"
-    Delete /REBOOTOK "$3\*.exe"
-    Delete /REBOOTOK "$3\Accessible.tlb"
-    Delete /REBOOTOK "$3\dependentlibs.list"
-    Delete /REBOOTOK "$3\firefox.VisualElementsManifest.xml"
-    Delete /REBOOTOK "$3\omni.ja"
-    Delete /REBOOTOK "$3\platform.ini"
-    Delete /REBOOTOK "$3\precomplete"
-    Delete /REBOOTOK "$3\voucher.bin"
-    RMDir /REBOOTOK $3
-  continue_installation:
-  ; End uninstallation
+  StrCpy $R1 "Zotero Standalone"
+  StrCpy $R2 "An older version of Zotero is installed. $\n$\nIf you continue, the existing version will be removed. Your Zotero data will not be affected."
+  Call UninstallOld
 
+  !ifdef HAVE_64BIT_OS
+    SetRegView 32
+      StrCpy $R1 "Zotero"
+      StrCpy $R2 "A 32-bit version of Zotero is installed. $\n$\nThis installer installs 64-bit version, which offers better performance. If you continue, the existing version will be removed. Your Zotero data will not be affected."
+      Call UninstallOld
+    SetRegView 64
+  !endif
 
   !insertmacro InitInstallOptionsFile "options.ini"
   !insertmacro InitInstallOptionsFile "shortcuts.ini"
