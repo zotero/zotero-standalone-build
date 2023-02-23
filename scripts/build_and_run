@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+
 # Set ZOTERO_REPOS_DIR to use directory other than $HOME for zotero-client and zotero-standalone-build
 if [ -n "${ZOTERO_REPOS_DIR:-}" ]; then
 	repos_dir=$ZOTERO_REPOS_DIR
@@ -72,6 +75,8 @@ fi
 
 if [ "`uname`" = "Darwin" ]; then
 	command="Zotero.app/Contents/MacOS/zotero"
+	# Sign the Word dylib so it works on Apple Silicon
+	$SCRIPT_DIR/codesign_local $repos_dir/zotero-standalone-build/staging/Zotero.app
 elif [ "`uname`" = "Linux" ]; then
 	command="Zotero_linux-x86_64/zotero"
 elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
@@ -81,4 +86,4 @@ else
 	exit 1
 fi
 
-$repos_dir/zotero-standalone-build/staging/$command $profile -ZoteroDebugText -jsconsole $PARAMS "$@"
+$repos_dir/zotero-standalone-build/staging/$command $profile -ZoteroDebugText -jsconsole -purgecaches $PARAMS "$@"
