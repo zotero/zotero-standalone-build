@@ -935,6 +935,17 @@ Function .onInit
       Call UninstallOld
     SetRegView 64
   !endif
+  
+  !ifndef HAVE_64BIT_OS
+    ${If} ${RunningX64}
+      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+        "This installer is for a 32-bit version of Zotero but it appears you are running a 64-bit system. It is recommended that you install a 64-bit version which offers better performance. If you continue, a 32-bit version will be installed." \
+        /SD IDOK IDOK continue_architecture IDCANCEL cancel_architecture
+        cancel_architecture:
+          Abort
+        continue_architecture:
+    ${EndIf}
+  !endif
 
   !insertmacro InitInstallOptionsFile "options.ini"
   !insertmacro InitInstallOptionsFile "shortcuts.ini"
