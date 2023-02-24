@@ -578,23 +578,15 @@ if [ $BUILD_WIN == 1 ]; then
 	if [ $PACKAGE -eq 1 ]; then
 		# Copy installer files
 		cp -r "$CALLDIR/win/installer" "$BUILD_DIR/win_installer"
-		
-		# Build uninstaller
+
 		perl -pi -e "s/\{\{VERSION}}/$VERSION/" "$BUILD_DIR/win_installer/defines.nsi"
-		if [ "$arch" = "win32" ]; then
-			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
-		elif [ "$arch" = "win64" ]; then
-			"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /DHAVE_64BIT_OS /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
-		fi			
-		
 		mkdir "$COMMON_APPDIR/uninstall"
-		mv "$BUILD_DIR/win_installer/helper.exe" "$COMMON_APPDIR/uninstall"
 		
 		# Use our own updater, because Mozilla's requires updates signed by Mozilla
 		cp "$CALLDIR/win/updater.exe" "$COMMON_APPDIR"
 		cat "$CALLDIR/win/installer/updater_append.ini" >> "$COMMON_APPDIR/updater.ini"
 		
-		# Sign PDF tools, uninstaller, and updater
+		# Sign PDF tools and updater
 		if [ $SIGN -eq 1 ]; then
 			"`cygpath -u \"$SIGNTOOL\"`" \
 				sign /n "$SIGNTOOL_CERT_SUBJECT" \
@@ -611,14 +603,6 @@ if [ $BUILD_WIN == 1 ]; then
 				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
 				/td SHA256 \
 				"`cygpath -w \"$COMMON_APPDIR/pdfinfo.exe\"`"
-			sleep $SIGNTOOL_DELAY
-			"`cygpath -u \"$SIGNTOOL\"`" \
-				sign /n "$SIGNTOOL_CERT_SUBJECT" \
-				/d "$SIGNATURE_DESC Uninstaller" \
-				/fd SHA256 \
-				/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
-				/td SHA256 \
-				"`cygpath -w \"$COMMON_APPDIR/uninstall/helper.exe\"`"
 			sleep $SIGNTOOL_DELAY
 			"`cygpath -u \"$SIGNTOOL\"`" \
 				sign /n "$SIGNTOOL_CERT_SUBJECT" \
@@ -705,6 +689,26 @@ if [ $BUILD_WIN == 1 ]; then
 		if [ $PACKAGE -eq 1 ]; then
 			if [ $WIN_NATIVE -eq 1 ]; then
 				echo "Creating Windows installer"
+				# Build uninstaller
+				if [ "$arch" = "win32" ]; then
+					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+				elif [ "$arch" = "win64" ]; then
+					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /DHAVE_64BIT_OS /V1 "`cygpath -w \"$BUILD_DIR/win_installer/uninstaller.nsi\"`"
+				fi
+
+				mv "$BUILD_DIR/win_installer/helper.exe" "$APPDIR/uninstall"
+
+				if [ $SIGN -eq 1 ]; then
+					"`cygpath -u \"$SIGNTOOL\"`" \
+						sign /n "$SIGNTOOL_CERT_SUBJECT" \
+						/d "$SIGNATURE_DESC Uninstaller" \
+						/fd SHA256 \
+						/tr "$SIGNTOOL_TIMESTAMP_SERVER" \
+						/td SHA256 \
+						"`cygpath -w \"$APPDIR/uninstall/helper.exe\"`"
+					sleep $SIGNTOOL_DELAY
+				fi
+				
 				
 				if [ "$arch" = "win32" ]; then
 					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_win32_setup.exe"
@@ -732,12 +736,14 @@ if [ $BUILD_WIN == 1 ]; then
 				cp -r "$APPDIR" "$INSTALLER_STAGE_DIR/core"
 				
 				# Build and sign setup.exe
-				if [ "$arch" = "win32" ]; then
+				if [ "$arch" = "win32" ]; then	
 					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 				elif [ "$arch" = "win64" ]; then
 					"`cygpath -u \"${NSIS_DIR}makensis.exe\"`" /DHAVE_64BIT_OS /V1 "`cygpath -w \"$BUILD_DIR/win_installer/installer.nsi\"`"
 				fi
+
 				mv "$BUILD_DIR/win_installer/setup.exe" "$INSTALLER_STAGE_DIR"
+
 				if [ $SIGN == 1 ]; then
 					"`cygpath -u \"$SIGNTOOL\"`" \
 						sign /n "$SIGNTOOL_CERT_SUBJECT" \

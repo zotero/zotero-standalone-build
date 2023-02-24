@@ -173,7 +173,7 @@ Function UninstallOld
   Push $R1
   Push $R2
   StrCpy $0 0
-  
+
   enum_uninst_keys:
     EnumRegKey $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall" $0
     StrCmp $1 "" continue_installation
@@ -183,22 +183,22 @@ Function UninstallOld
     StrCmp $2 $R1 get_uninst_exe ; if the key we found is the one we're looking for (e.g. "Zotero Standalone"), go to get_uninst_exe
     IntOp $0 $0 + 1 
     Goto enum_uninst_keys ; loop through all keys
-  
+
   get_uninst_exe:
     ReadRegStr $2 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "UninstallString"
     ReadRegStr $3 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\$1" "InstallLocation"
-  
+
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
     $R2 \
     /SD IDOK IDOK uninst
   Abort
-  
+
   uninst:
     ; This doesn't actually wait, since the uninstaller copies itself to a temp folder, runs that,
     ; and exits, so give it a few seconds to finish
     ExecWait '"$2" /S'
     Sleep 3000
-    
+
     ; Files that were added by an in-app update won't be automatically deleted by the 4.0 uninstaller,
     ; so manually delete everything we know about as long as the directory name begins with "Zotero".
     ; We don't just delete the directory because we don't know for sure that the user didn't do
