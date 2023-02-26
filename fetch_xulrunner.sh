@@ -253,6 +253,14 @@ function modify_omni {
 	# Hide Report option
 	replace_line 'pref\("extensions.abuseReport.enabled".+' 'pref("extensions.abuseReport.enabled", false);' greprefs.js
 	
+	# The first displayed Services.prompt dialog's size jumps around because sizeToContent() is called twice
+	# Fix by preventing the first sizeToContent() call if the icon hasn't been loaded yet
+	replace_line 'window.sizeToContent\(\);' 'if (ui.infoIcon.complete) window.sizeToContent();' chrome/toolkit/content/global/commonDialog.js
+	replace_line 'ui.infoIcon.addEventListener' 'if (!ui.infoIcon.complete) ui.infoIcon.addEventListener' chrome/toolkit/content/global/commonDialog.js
+	
+	# Use native checkbox instead of Firefox-themed version in prompt dialogs
+	replace_line '<xul:checkbox' '<xul:checkbox native=\"true\"' chrome/toolkit/content/global/commonDialog.xhtml
+	
 	zip -qr9XD omni.ja *
 	mv omni.ja ..
 	cd ..
