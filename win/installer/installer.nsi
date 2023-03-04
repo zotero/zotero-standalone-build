@@ -925,13 +925,13 @@ Function .onInit
   ${InstallOnInitCommon} "$(WARN_MIN_SUPPORTED_OS_MSG)"
 
   StrCpy $R1 "Zotero Standalone"
-  StrCpy $R2 "An older version of Zotero is installed. $\n$\nIf you continue, the existing version will be removed. Your Zotero data will not be affected."
+  StrCpy $R2 "An older version of Zotero is installed. If you continue, the existing version will be removed.$\n$\nYour Zotero data will not be affected."
   Call UninstallOld
 
   !ifdef HAVE_64BIT_OS
     SetRegView 32
       StrCpy $R1 "Zotero"
-      StrCpy $R2 "A 32-bit version of Zotero is installed. $\n$\nThis installer installs 64-bit version, which offers better performance. If you continue, the existing version will be removed. Your Zotero data will not be affected."
+      StrCpy $R2 "A 32-bit version of Zotero is installed. If you continue, it will be replaced with a 64-bit version that offers better performance.$\n$\nYour Zotero data will not be affected."
       Call UninstallOld
     SetRegView 64
   !endif
@@ -939,7 +939,7 @@ Function .onInit
   !ifndef HAVE_64BIT_OS
     ${If} ${RunningX64}
       MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-        "This installer is for a 32-bit version of Zotero but it appears you are running a 64-bit system. It is recommended that you install a 64-bit version which offers better performance. If you continue, a 32-bit version will be installed." \
+        "This installer is for the 32-bit version of Zotero, but you appear to be running a 64-bit version of Windows.$\n$\nFor the best performance, please cancel and download the 64-bit version of Zotero." \
         /SD IDOK IDOK continue_architecture IDCANCEL cancel_architecture
         cancel_architecture:
           Abort
