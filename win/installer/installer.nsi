@@ -938,7 +938,7 @@ Function .onInit
   
   !ifndef HAVE_64BIT_OS
     ${If} ${RunningX64}
-      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION|MB_DEFBUTTON2 \
         "This installer is for the 32-bit version of Zotero, but you appear to be running a 64-bit version of Windows.$\n$\nFor the best performance, please cancel and download the 64-bit version of Zotero." \
         /SD IDOK IDOK continue_architecture IDCANCEL cancel_architecture
         cancel_architecture:
