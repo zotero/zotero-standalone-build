@@ -713,7 +713,7 @@ if [ $BUILD_WIN == 1 ]; then
 				if [ "$arch" = "win32" ]; then
 					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_win32_setup.exe"
 				elif [ "$arch" = "win64" ]; then
-					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_setup.exe"
+					INSTALLER_PATH="$DIST_DIR/Zotero-${VERSION}_x64_setup.exe"
 				fi
 				
 				if [ $SIGN -eq 1 ]; then
@@ -784,7 +784,7 @@ if [ $BUILD_WIN == 1 ]; then
 			if [ $arch = "win32" ]; then
 				zip -rqX "$DIST_DIR/Zotero-${VERSION}_$arch.zip" Zotero_$arch
 			elif [ $arch = "win64" ]; then
-				zip -rqX "$DIST_DIR/Zotero-${VERSION}.zip" Zotero_$arch
+				zip -rqX "$DIST_DIR/Zotero-${VERSION}_win-x64.zip" Zotero_$arch
 			fi
 		fi
 	done
