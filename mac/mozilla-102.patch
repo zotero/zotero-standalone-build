@@ -1,13 +1,18 @@
 diff --git a/browser/app/nsBrowserApp.cpp b/browser/app/nsBrowserApp.cpp
 --- a/browser/app/nsBrowserApp.cpp
 +++ b/browser/app/nsBrowserApp.cpp
-@@ -151,17 +151,24 @@ static bool IsArg(const char* arg, const
+@@ -149,19 +149,29 @@ static bool IsArg(const char* arg, const
+ #endif
+ 
    return false;
  }
  
  Bootstrap::UniquePtr gBootstrap;
  
  static int do_main(int argc, char* argv[], char* envp[]) {
++  // Allow profile downgrade for Zotero
++  setenv("MOZ_ALLOW_DOWNGRADE", "1", 1);
++
    // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
    // Note that -app must be the *first* argument.
 -  const char* appDataFile = getenv("XUL_APP_FILE");
