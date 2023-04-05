@@ -171,6 +171,10 @@ function modify_omni {
 	# When installing addon, use app version instead of toolkit version for targetApplication
 	replace_line "id: TOOLKIT_ID," "id: '$APP_ID'," modules/addons/XPIInstall.jsm
 	
+	# Accept zotero@chnm.gmu.edu for target application to allow Zotero 6 plugins to remain
+	# installed in Zotero 7
+	replace_line "if \(targetApp.id == Services.appinfo.ID\) \{" "if (targetApp.id == 'zotero\@chnm.gmu.edu') targetApp.id = '$APP_ID'; if (targetApp.id == Services.appinfo.ID) {" modules/addons/XPIDatabase.jsm
+	
 	# For updates, look for applications.zotero instead of applications.gecko in manifest.json and
 	# use the app id and version for strict_min_version/strict_max_version comparisons
 	replace_line 'gecko: \{\},' 'zotero: {},' modules/addons/AddonUpdateChecker.jsm
