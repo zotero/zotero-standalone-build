@@ -137,12 +137,16 @@ function modify_omni {
 	# Disable unwanted components
 	remove_line '(RemoteSettings|services-|telemetry|Telemetry|URLDecorationAnnotationsService)' components/components.manifest
 	
+	#
 	# Remove unwanted files
+	#
 	rm modules/FxAccounts*
 	# Causes a startup error -- try an empty file or a shim instead?
 	#rm modules/Telemetry*
 	rm modules/URLDecorationAnnotationsService.jsm
 	rm -rf modules/services-*
+	# Included in Zotero locales
+	rm localization/en-US/toolkit/global/textActions.ftl
 	
 	# Clear most WebExtension manifest properties
 	replace_line 'manifest = normalized.value;' 'manifest = normalized.value;
