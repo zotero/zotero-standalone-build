@@ -1,5 +1,5 @@
 [FILENAMES]
-Open=firefox.exe
+Open=firefox-{{ARCH}}.exe
 Save=zotero_{{ARCH}}.exe
 Log=CONSOLE
 [COMMANDS]
