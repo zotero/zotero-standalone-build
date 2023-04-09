@@ -63,6 +63,11 @@ if [ $REBUILD -eq 1 ]; then
 	fi
 	
 	$repos_dir/zotero-standalone-build/scripts/dir_build -q $PARAMS
+	
+	if [ "`uname`" = "Darwin" ]; then
+		# Sign the Word dylib so it works on Apple Silicon
+		$SCRIPT_DIR/codesign_local $repos_dir/zotero-standalone-build/staging/Zotero.app
+	fi
 fi
 
 PARAMS=""
@@ -75,8 +80,6 @@ fi
 
 if [ "`uname`" = "Darwin" ]; then
 	command="Zotero.app/Contents/MacOS/zotero"
-	# Sign the Word dylib so it works on Apple Silicon
-	$SCRIPT_DIR/codesign_local $repos_dir/zotero-standalone-build/staging/Zotero.app
 elif [ "`uname`" = "Linux" ]; then
 	command="Zotero_linux-x86_64/zotero"
 elif [ "`uname -o 2> /dev/null`" = "Cygwin" ]; then
