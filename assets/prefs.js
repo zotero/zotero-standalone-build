@@ -181,3 +181,6 @@ pref("devtools.chrome.enabled", true);
 // We don't have History navigation and users want to scroll the tree with Option
 // key held down
 pref("mousewheel.with_alt.action", 1);
+
+// Use the system print dialog instead of the new tab-based print dialog in Firefox
+pref("print.prefer_system_dialog", true);
