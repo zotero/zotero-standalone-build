@@ -1,7 +1,3 @@
 locale	branding en-US		chrome/en-US/locale/branding/
 content	branding			chrome/branding/content/
 skin	browser				preferences		chrome/skin/
-
-overlay chrome://mozapps/content/extensions/extensions.xul chrome://zotero/content/standalone/extensionsOverlay.xul
-overlay chrome://mozapps/content/update/updates.xul chrome://zotero/content/standalone/updatesOverlay.xul
-style	chrome://global/content/customizeToolbar.xul	chrome://zotero/skin/zotero.css
