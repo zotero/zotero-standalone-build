@@ -6,7 +6,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 . "$ROOT_DIR/config.sh"
 
 CHANNEL="release"
-BRANCH="master"
+BRANCH="6.0"
 if [ "`uname`" = "Darwin" ]; then
 	export SAFARI_APPEX="$ROOT_DIR/../safari-app-extension-builds/release/ZoteroSafariExtension.appex"
 fi
