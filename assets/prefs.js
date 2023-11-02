@@ -189,3 +189,13 @@ pref("full-screen-api.enabled", true);
 // We don't have History navigation and users want to scroll the tree with Option
 // key held down
 pref("mousewheel.with_alt.action", 1);
+
+// Disable libvpx decoding/encoding
+pref("media.webm.enabled", false);
+pref("media.encoder.webm.enabled", false);
+pref("media.mediasource.webm.enabled", false);
+pref("media.mediasource.webm.audio.enabled", false);
+pref("media.mediasource.vp9.enabled", false);
+pref("media.ffvpx.enabled", false);
+pref("media.rdd-ffvpx.enabled", false);
+pref("media.utility-ffvpx.enabled", false);
